@@ -67,8 +67,8 @@ if __name__ == "__main__":
     pdf2 = "data/4563050_AmberLuesink_P5Report_TheRevivaloftheJustCity.pdf"
     img_dir = "./img/pyPDF2/"
 
-    # extract_images(pdf_classic, img_dir)
-    extract_images(pdf2, img_dir)
+    extract_images(pdf_classic, img_dir)
+    # extract_images(pdf2, img_dir)
 
     
     

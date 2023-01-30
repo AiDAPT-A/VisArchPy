@@ -75,8 +75,8 @@ if __name__ == "__main__":
     img_dir = "./img/pymuPDF/"
 
 
-    extract_images(pdf_classic, img_dir)
-    # extract_images(pdf2, img_dir)
+    # extract_images(pdf_classic, img_dir)
+    extract_images(pdf2, img_dir)
 
 
 
