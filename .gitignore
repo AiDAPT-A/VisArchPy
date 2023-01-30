@@ -1,0 +1,11 @@
+
+# Environments
+.venv/
+
+# Data directories
+.data/*.pdf
+.img/
+
+# notes
+.dev/
+
