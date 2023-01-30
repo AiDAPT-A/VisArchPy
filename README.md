@@ -22,3 +22,4 @@ Pipelines for the extraction and processing of visuals from PDFs.
     ```
 3. Clone the repository and run the scripts in the recent virtual environment.
 
+> Outputs are organized in the the `img` directory per PDF file.
