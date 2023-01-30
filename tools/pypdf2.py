@@ -42,14 +42,21 @@ def extract_images(pdf_file: str, output_dir: str) -> None:
     # print(len(reader.pages))
     # extract images per page
 
+
     for page_index in range(0,len(reader.pages)):
         page = reader.pages[page_index]
-        count = 0
-        print(page.images)
-        for image_file_object in page.images:
-            with open(str(output_directory)+'/' + 'page' +str(page_index) +'-'+str(count) + image_file_object.name, "wb") as fp:
-                fp.write(image_file_object.data)
-                count += 1
+
+        # TODO: fix issue with ValueError: not enough data in PIL
+        try:
+            count=1
+            print('page/img index', page_index, count)
+       
+            for image_file_object in page.images:
+                with open(str(output_directory)+'/' + 'page' +str(page_index) +'-'+str(count) + image_file_object.name, "wb") as fp:
+                    fp.write(image_file_object.data)
+                    count += 1
+        except ValueError:
+            pass
 
     return None
 
