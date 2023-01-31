@@ -1,3 +1,8 @@
+"""
+This script extract images from a PDF file using PyPDF2
+Author: M.G. Garcia
+"""
+
 from PyPDF2 import PdfReader
 import pathlib
 

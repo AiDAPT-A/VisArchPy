@@ -1,3 +1,8 @@
+"""
+This script extract images from a PDF file using pyMUPDF
+Author: M.G. Garcia
+"""
+
 import fitz
 import io
 from PIL import Image
