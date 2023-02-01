@@ -9,3 +9,6 @@ img/
 # notes
 dev/
 
+# Python
+*/__pycache__/
+*/*/__pycache__/
