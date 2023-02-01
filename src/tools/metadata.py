@@ -64,3 +64,4 @@ def main() -> None:
 if __name__ == "__main__":
     main()
 
+# TODO: check how to parse HTML: https://realpython.com/beautiful-soup-web-scraper-python/
