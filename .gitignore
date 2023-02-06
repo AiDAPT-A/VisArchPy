@@ -5,6 +5,7 @@ venv/
 # Data directories
 data/*.pdf
 img/
+data/student-data/
 
 # notes
 dev/
