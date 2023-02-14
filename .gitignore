@@ -1,11 +1,14 @@
 
 # Environments
 venv/
+venv2/
+
 
 # Data directories
 data/*.pdf
 img/
 data/student-data/
+vector/
 
 # notes
 dev/
