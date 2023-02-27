@@ -10,6 +10,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Optional, List, Tuple
 from bs4 import BeautifulSoup
+from .image import create_output_dir
 
 
 @dataclass
@@ -90,7 +91,10 @@ def download_PDF(download_url: str, destination: str) -> None:
     # remove double quoates from file name
     new_file_name = file_name.strip('"')
 
-    file_path = os.path.join(destination, new_file_name)   
+    # prepare output directory, it will be created if it
+    # doesn't exists
+    full_path =create_output_dir(destination)
+    file_path = os.path.join(full_path, new_file_name)   
 
     # stream file content and save it to destination
     with open(file_path, 'wb') as f:
