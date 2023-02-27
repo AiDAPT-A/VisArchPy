@@ -3,20 +3,18 @@ from PyPDF2 import PdfReader
 
 # From https://pypdf2.readthedocs.io/en/latest/user/extract-images.html
 
-def create_output_dir(base_path: str, name: str) -> bool:
+def create_output_dir(base_path: str, name="") -> bool:
     """
     creates a directory in the root path if it doesn't exists.
 
     params:
         base_path: path to destination directory
-        name: name for the directory
+        name: name for the directory. If left empty, no directory will be created, 
+        and the base_path will be returned 
     returns:
         path to the new created directory
     """
-
     full_path = base_path + name
-
-    print(full_path)
     pathlib.Path(full_path).mkdir(parents=True, exist_ok=True)
 
     return pathlib.Path(full_path)
@@ -60,18 +58,4 @@ def extract_images(pdf_file: str, output_dir: str) -> None:
 
 if __name__ == "__main__":
 
-    pdf_classic = "data/RethinkWaste_research_paper_LisaUbbens_4397436.pdf"
-    # pdf2 = "data-pipelines/data/4563050_AmberLuesink_P5Report_TheRevivaloftheJustCity.pdf"
-
-    img_dir = "./data-pipelines/img/pyPDF2/"
-
-    extract_images(pdf_classic, img_dir)
-    # extract_images(pdf2, img_dir)
-
-    
-
-
-    
-    
-    
-
+    pass
