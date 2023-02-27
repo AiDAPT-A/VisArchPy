@@ -1,11 +1,20 @@
 
 # Environments
 venv/
+venv2/
+
 
 # Data directories
 data/*.pdf
 img/
+data/student-data/
+data/test-download/
+vector/
+*.html
 
 # notes
 dev/
 
+# Python
+*/__pycache__/
+*/*/__pycache__/
