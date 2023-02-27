@@ -1,5 +1,5 @@
-from PyPDF2 import PdfReader
 import pathlib
+from PyPDF2 import PdfReader
 
 # From https://pypdf2.readthedocs.io/en/latest/user/extract-images.html
 
@@ -39,10 +39,6 @@ def extract_images(pdf_file: str, output_dir: str) -> None:
     pdf_file_name = pathlib.Path(pdf_file).stem
     output_directory = create_output_dir(output_dir, pdf_file_name)
 
-    # print(len(reader.pages))
-    # extract images per page
-
-
     for page_index in range(0,len(reader.pages)):
         page = reader.pages[page_index]
 
@@ -52,6 +48,7 @@ def extract_images(pdf_file: str, output_dir: str) -> None:
             print('page/img index', page_index, count)
        
             for image_file_object in page.images:
+            
                 with open(str(output_directory)+'/' + 'page' +str(page_index) +'-'+str(count) + image_file_object.name, "wb") as fp:
                     fp.write(image_file_object.data)
                     count += 1
@@ -63,12 +60,17 @@ def extract_images(pdf_file: str, output_dir: str) -> None:
 
 if __name__ == "__main__":
 
-    pdf_classic = "data/RethinkWaste_research_paper_LisaUbbens_4397436.pdf"
-    pdf2 = "data/4563050_AmberLuesink_P5Report_TheRevivaloftheJustCity.pdf"
-    img_dir = "./img/pyPDF2/"
+    # pdf_classic = "data/RethinkWaste_research_paper_LisaUbbens_4397436.pdf"
+    pdf2 = "data-pipelines/data/4563050_AmberLuesink_P5Report_TheRevivaloftheJustCity.pdf"
 
-    extract_images(pdf_classic, img_dir)
+    img_dir = "./data-pipelines/img/pyPDF2/"
+
+    # extract_images(pdf_classic, img_dir)
     # extract_images(pdf2, img_dir)
+    
+    # streaming data
+    
+
 
     
     
