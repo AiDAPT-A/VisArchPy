@@ -8,7 +8,9 @@ venv2/
 data/*.pdf
 img/
 data/student-data/
+data/test-download/
 vector/
+*.html
 
 # notes
 dev/
