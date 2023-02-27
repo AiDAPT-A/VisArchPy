@@ -60,15 +60,14 @@ def extract_images(pdf_file: str, output_dir: str) -> None:
 
 if __name__ == "__main__":
 
-    # pdf_classic = "data/RethinkWaste_research_paper_LisaUbbens_4397436.pdf"
-    pdf2 = "data-pipelines/data/4563050_AmberLuesink_P5Report_TheRevivaloftheJustCity.pdf"
+    pdf_classic = "data/RethinkWaste_research_paper_LisaUbbens_4397436.pdf"
+    # pdf2 = "data-pipelines/data/4563050_AmberLuesink_P5Report_TheRevivaloftheJustCity.pdf"
 
     img_dir = "./data-pipelines/img/pyPDF2/"
 
-    # extract_images(pdf_classic, img_dir)
+    extract_images(pdf_classic, img_dir)
     # extract_images(pdf2, img_dir)
-    
-    # streaming data
+
     
 
 
