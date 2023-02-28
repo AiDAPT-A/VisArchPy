@@ -18,3 +18,4 @@ dev/
 # Python
 */__pycache__/
 */*/__pycache__/
+src/*.egg-info
