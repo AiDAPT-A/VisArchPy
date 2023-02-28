@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=64.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aidapta"
+version = "0.0.1"
+authors = [
+    {name = "Manuel Garcia", email = "manu@own.edu"},
+]
+description = "data pipelines for extraction of architectural visuals"
+readme = "README.md"
+requires-python = ">=3.8"
+keywords = ["one", "two"]
+license = {text = "BSD-3-Clause"}
+classifiers = ["Development Status :: 3 - Alpha",
+ "Environment :: Python",
+ "Intended Audience :: Science/Research",
+ "Operating System :: OS Independent",
+ "Programming Language :: Python :: 3",
+]
+dependencies = [
+    "Pillow",
+    "PyPDF2", 
+    "requests",
+    "pdfminer.six",
+    "PyMuPDF",
+    "beautifulsoup4",
+]
+
+[tool.pytest.ini_options]
+pythonpath = "src"
+addopts = [
+    "--import-mode=importlib",
+]
+

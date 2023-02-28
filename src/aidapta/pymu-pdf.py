@@ -7,7 +7,6 @@ import fitz
 import io
 from PIL import Image
 import pathlib
-import fitz 
 
 
 def create_output_dir(base_path: str, name: str) -> bool:

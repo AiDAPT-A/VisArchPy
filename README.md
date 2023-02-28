@@ -9,17 +9,17 @@ Pipelines for the extraction and processing of visuals from PDFs.
 - [pymuPDF](https://pymupdf.readthedocs.io/en/latest/intro.html)
 - [pyPDF2](https://pypdf2.readthedocs.io/en/3.0.0/)
 
-# Installation
+## Installing the AiDAT-A library
 
 1. Create a virtual environment:
     ```shell
     python3 -m venv .venv/
     ```
-2. Install required packages:
+2. Install required aidapta package. From the repository root run:
 
     ```shell
-    pip install -r requirements.txt
+    pip install -e .
     ```
-3. Clone the repository and run the scripts in the recent virtual environment.
 
-> Outputs will be in the `img` directory, and per PDF file name.
+## Examples
+Check the [examples directory](examples) to learn how to use the library.
