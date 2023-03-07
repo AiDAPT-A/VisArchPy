@@ -9,6 +9,7 @@ data/*.pdf
 img/
 data/student-data/
 data/test-download/
+data/caption-tests/
 vector/
 *.html
 
