@@ -6,6 +6,8 @@ venv2/
 
 # Data directories
 data/*.pdf
+data/*.xml
+
 img/
 data/student-data/
 data/test-download/
