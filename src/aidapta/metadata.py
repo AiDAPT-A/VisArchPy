@@ -11,10 +11,114 @@ from datetime import datetime
 from typing import Optional, List, Tuple
 from bs4 import BeautifulSoup
 from .image import create_output_dir
+from datetime import date
+
+
+
+
+dataclass
+class Person:
+    """
+    Represents a person 
+    """
+    name: str
+    role: str
+
+
+dataclass
+class Department:
+    """
+    Represents a department in a Faculty
+    """
+    name: str
+
+
+dataclass
+class Faculty:
+    """
+    Represents a Faculty
+    """
+    name: str
+    departments: List(Department)
+
+
+dataclass
+class RepositoryEntry:
+    """
+    Represents metadata of an entry in a repository
+    """
+
+    persons: List[Person]
+    faculty: Faculty 
+
+    title: str = field(init=False)
+    abstract: str = field(init=False)
+    submission_date: date # year, month, day
+    thesis_type: str = field(init=False) # master or bachelor thesis
+    subjects: List = field(init=False) # list of subjects defined in repository
+    copyright: str = field(init=False) 
+    languages: List[dict] = field(init=False) # list of languages
+    uuid: Optional[str] = field(init=False)  # unique identifier
+    identifiers: List = field(init=False) #
+    iid: str = field(init=False) # internal identifier
+    media_type: List = field(init=False) # internet media type
+    issuance: List = field(init=False) # type of issuance
+    digital_origin: str = field(init=False) # digital origin
+    doi: str = field(init=False) # digital object identifier
+    edition: str = field(init=False) # edition
+    extent: List = field(init=False) # extent
+    form: List = field(init=False) # form
+    classification: List = field(init=False) # classification
+    collection: str = field(init=False) # collection
+    geo_code: List = field(init=False) # geographic code
+    corp_names: List = field(init=False) # corporate names
+    creators: List = field(init=False) # creators
+    physical_description: List = field(init=False) # physical description
+    physical_location: List = field(init=False) # physical location
+    pid: str = field(init=False) # persistent identifier
+    publication_place: List = field(init=False) # publication place
+    publisher: List = field(init=False) # publisher
+    purl: str = field(init=False) # persistent URL
+    type_resource: str = field(init=False) # type of resource
+
+    def set_metadata(metadata:dict, self) -> None:
+        """ Sets metadata for a repository entry """
+        
+        self.title = metadata.get('title')
+        self.abstract = metadata.get('abstract')
+        self.submission_date = date.fromisoformat(metadata.get('date'))
+        self.thesis_type = metadata.get('genre') 
+        self.subjects = metadata.get('subjects')
+        self.copyright = metadata.get('rights') 
+        self.languages = metadata.get('language')
+        uuid: str = field(init=False)  # unique identifier
+        identifiers: List = field(init=False) #
+        iid: str = field(init=False) # internal identifier
+        media_type: List = field(init=False) # internet media type
+        issuance: List = field(init=False) # type of issuance
+        digital_origin: str = field(init=False) # digital origin
+        doi: str = field(init=False) # digital object identifier
+        edition: str = field(init=False) # edition
+        extent: List = field(init=False) # extent
+        form: List = field(init=False) # form
+        classification: List = field(init=False) # classification
+        collection: str = field(init=False) # collection
+        geo_code: List = field(init=False) # geographic code
+        corp_names: List = field(init=False) # corporate names
+        creators: List = field(init=False) # creators
+        physical_description: List = field(init=False) # physical description
+        physical_location: List = field(init=False) # physical location
+        pid: str = field(init=False) # persistent identifier
+        publication_place: List = field(init=False) # publication place
+        publisher: List = field(init=False) # publisher
+        purl: str = field(init=False) # persistent URL
+        type_resource: str = field(init=False) # type of resource
+
+
 
 
 @dataclass
-class PDFVisual:
+class Visual:
     """A class for handling metadata for architectural visuals
     extracted from PDF files"""
 
@@ -65,6 +169,8 @@ def extract_metadata_from_html(reference_url: str) -> dict:
 
     values_ =[]
     for val in val_element:
+        if val.text == "Subject":
+            print("this is the subject")
         values_.append(val.find("p").text)
     
     # assamble result in a dictionary
