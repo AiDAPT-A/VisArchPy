@@ -1,5 +1,20 @@
 from pymods import MODSReader, MODSRecord
-mods = MODSReader("data-pipelines/data/4Manuel_MODS.xml")
+from dataclasses import dataclass, field
+
+
+
+@dataclass
+class Metadata:
+    """
+    Represents metadata of an entry in a repository
+    """
+
+    mods_file: str # path to MODS file
+
+    
+
+
+
 
 
 def extract_mods_metadata(mods_file: str) -> dict:
@@ -13,6 +28,9 @@ def extract_mods_metadata(mods_file: str) -> dict:
     =======
     Dictionary with MODS elements and values
     """
+    
+    mods = MODSReader(mods_file)
+
     meta = {}
 
     for record in mods:
@@ -30,7 +48,9 @@ def extract_mods_metadata(mods_file: str) -> dict:
         dates = [] # MODS allows multiple dates
         for date in record.dates:
             dates.append(date.text)
-        meta["dates"] = dates
+        meta["dates"] = dates[0]
+        if len(dates) > 1:
+            raise ValueError("More than one date found in MODS file")
 
         # Type of work, MSC or bachelor thesis
         genre = [] # MODS allows multiple abstract
@@ -70,6 +90,8 @@ def extract_mods_metadata(mods_file: str) -> dict:
         for right in record.rights:
             rights.append(right.text)
         meta["rights"] = rights
+        if len(rights) > 1:
+            raise ValueError("More than one right found in MODS file")
 
         # Language
         languages = [] # MODS allows multiple languages
@@ -95,9 +117,18 @@ def extract_mods_metadata(mods_file: str) -> dict:
         meta["physical_description"] = record.physical_description_note
         meta["physical_location"] = record.physical_location
         meta["pid"] = record.pid
-        meta["pyblication_place"] = record.publication_place
+        meta["publication_place"] = record.publication_place
         meta["publisher"] = record.publisher
         meta["purl"] = record.purl
         meta["type_resource"] = record.type_of_resource
     
     return meta
+
+
+
+
+
+if __name__ == '__main__':
+    mods_file = "data-pipelines/data/4Manuel_MODS.xml"
+    meta = extract_mods_metadata(mods_file)
+    print(meta)
