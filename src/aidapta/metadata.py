@@ -41,9 +41,16 @@ class Faculty:
     name: str
     departments: List(Department)
 
+dataclass
+class Document:
+    """
+    Represents a document
+    """
+    location: str
+    
 
 dataclass
-class RepositoryEntry:
+class Metadata:
     """
     Represents metadata of an entry in a repository
     """
@@ -78,7 +85,7 @@ class RepositoryEntry:
     pid: str = field(init=False) # persistent identifier
     publication_place: List = field(init=False) # publication place
     publisher: List = field(init=False) # publisher
-    purl: str = field(init=False) # persistent URL
+    purl: List = field(init=False) # persistent URL
     type_resource: str = field(init=False) # type of resource
 
     def set_metadata(metadata:dict, self) -> None:
@@ -91,29 +98,27 @@ class RepositoryEntry:
         self.subjects = metadata.get('subjects')
         self.copyright = metadata.get('rights') 
         self.languages = metadata.get('language')
-        uuid: str = field(init=False)  # unique identifier
-        identifiers: List = field(init=False) #
-        iid: str = field(init=False) # internal identifier
-        media_type: List = field(init=False) # internet media type
-        issuance: List = field(init=False) # type of issuance
-        digital_origin: str = field(init=False) # digital origin
-        doi: str = field(init=False) # digital object identifier
-        edition: str = field(init=False) # edition
-        extent: List = field(init=False) # extent
-        form: List = field(init=False) # form
-        classification: List = field(init=False) # classification
-        collection: str = field(init=False) # collection
-        geo_code: List = field(init=False) # geographic code
-        corp_names: List = field(init=False) # corporate names
-        creators: List = field(init=False) # creators
-        physical_description: List = field(init=False) # physical description
-        physical_location: List = field(init=False) # physical location
-        pid: str = field(init=False) # persistent identifier
-        publication_place: List = field(init=False) # publication place
-        publisher: List = field(init=False) # publisher
-        purl: str = field(init=False) # persistent URL
-        type_resource: str = field(init=False) # type of resource
-
+        self.identifiers = metadata.get('identifiers')
+        self.iid = metadata.get('iid')
+        self.media_type = metadata.get('internet_media_type')
+        self.issuance = metadata.get('issuance')
+        self.digital_origin = metadata.get('digital_origin')
+        self.doi = metadata.get('doi')
+        self.edition = metadata.get('edition')
+        self.extent = metadata.get('extent')
+        self.form = metadata.get('form')
+        self.classification = metadata.get('classification')
+        self.collection = metadata.get('collection')
+        self.geo_code = metadata.get('geo_code')
+        self.corp_names = metadata.get('corp_names')
+        self.creators = metadata.get('creators')
+        self.physical_description = metadata.get('physical_description')
+        self.physical_location = metadata.get('physical_location')
+        self.pid = metadata.get('pid')
+        self.publication_place = metadata.get('publication_place')
+        self.publisher = metadata.get('publisher')
+        self.purl = metadata.get('purl')
+        self.type_resource = metadata.get('type_resource')
 
 
 
