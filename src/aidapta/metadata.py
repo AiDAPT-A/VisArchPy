@@ -46,8 +46,24 @@ class Document:
     """
     Represents a document
     """
-    location: str
+    location: str # location where the document is stored
+
+
+@dataclass
+class Visual:
+    """A class for handling metadata for architectural visuals
+    extracted from PDF files"""
+
+
+    location: str # location where the visual is stored
+    document_page: int # page number in the document index
+    caption: Optional[str] # caption of the visual    
+    document: Optional[Document] # document where the visual is located
+    visual_type: str = field(init=False) # one of: photo, drawing, map, etc
     
+    def set_visual_type(self, visual_type: str):
+        """Sets the visual type. One of photo, drawing, map, etc."""
+        self.visual_type = visual_type
 
 dataclass
 class Metadata:
@@ -56,7 +72,9 @@ class Metadata:
     """
 
     persons: List[Person]
-    faculty: Faculty 
+    faculty: Faculty
+    documents: List[Document]
+    visuals: Optional[List[Visual]] = field(init=False)
 
     title: str = field(init=False)
     abstract: str = field(init=False)
@@ -122,31 +140,6 @@ class Metadata:
 
 
 
-@dataclass
-class Visual:
-    """A class for handling metadata for architectural visuals
-    extracted from PDF files"""
-
-    document_title: str
-    document_author: str
-    document_date: str # when document was created
-    document_page: str # page number in the document index
-    document_contributors: List
-    document_type: str # master or bachelor thesis
-    
-    institution: str # degree granting insitution
-    program: str 
-    coordinates: Optional[Tuple] # latitude and longitud
-    collection: str # part of collection
-    reference: str # URI to repository
-    copyright: str # rights
-    repository_date:  datetime # date reported by TU Delft repository
-    subjects: List # list of subjects defined in repository
-
-    visual_location: str = field(init=False) # path to file containing visual
-    visual_caption: str = field(init=False)
-    pdf_page: int = field(init=False) # page number in the PDF layout
-    visual_type: str = field(init=False) # one of: photo, drawing, map, etc
 
 
 def extract_metadata_from_html(reference_url: str) -> dict:
