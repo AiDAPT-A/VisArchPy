@@ -31,19 +31,20 @@ def find_caption_by_text(pdf_file:str) -> List:
     
     return  captions
 
+
 def find_caption_by_bbox(image:LTImage, text_element:LTTextContainer, offset:int=0, direction:str=None) -> LTTextContainer:
     """
     Finds if the boudning box of a text element is withing certain distance (offset) 
     from the bounding box of an Image element.
     
     Params:
-    offset: distance from image to be compared with
-    direction: the directions the offeset will be applied to. Posibile values: right, left, down, up, 
-    None (apply in all directions)
+    -------
+    - offset: distance from image to be compared with, Unit: 1/72 inch or about 0.3528 mm
+    - direction: the directions the offeset will be applied to. Posibile values: right, left, down, up, 
+      None (apply in all directions)
 
-    Returs: text elemenet withing offset distance
+    Returs: text elemenet within offset distance
     """
-
 
     image_coords = image.bbox
     text_coords = text_element.bbox
@@ -153,3 +154,4 @@ if __name__ == '__main__':
             if match is not False:
                 print(img, match)
                 print("===========================")
+
