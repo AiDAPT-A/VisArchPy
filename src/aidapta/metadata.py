@@ -3,10 +3,9 @@ Dataclasses for managing metadata for architectural visuals
 Author: M.G. Garcia
 """
 
-from dataclasses import dataclass, field
+import pandas as pd
+from dataclasses import dataclass, field, asdict
 from typing import Optional, List
-from datetime import date
-from dataclass_csv import  DataclassWriter
 
 
 @dataclass
@@ -73,7 +72,7 @@ class Metadata:
 
     title: str = field(init=False)
     abstract: str = field(init=False)
-    submission_date: date = field(init=False) # year, month, day
+    submission_date: str = field(init=False) # year, month, day
     thesis_type: str = field(init=False) # master or bachelor thesis
     subjects: List = field(init=False) # list of subjects defined in repository
     copyright: str = field(init=False) 
@@ -106,7 +105,7 @@ class Metadata:
         
         self.title = metadata.get('title')
         self.abstract = metadata.get('abstract')
-        self.submission_date = date.fromisoformat(metadata.get('date'))
+        self.submission_date = metadata.get('date')
         self.thesis_type = metadata.get('genre') 
         self.subjects = metadata.get('subjects')
         self.copyright = metadata.get('rights') 
@@ -132,14 +131,22 @@ class Metadata:
         self.publisher = metadata.get('publisher')
         self.purl = metadata.get('purl')
         self.type_resource = metadata.get('type_resource')
-    
-    def write_csv(self, filename: str) -> None:
-        """ Writes metadata to a CSV file """
-        with open(filename, 'w') as f:
-            writer = DataclassWriter(f, [self], Metadata)
-            # writer.writeheader()
-            writer.write()
 
+    def as_dict(self) -> dict:
+        """ Returns metadata as a dictionary """
+        # self.submission_date = self.submission_date.strftime('%Y-%m-%d')
+        return asdict(self)
+
+    def as_dataframe(self) -> pd.DataFrame:
+        """ Returns metadata as a Pandas DataFrame """
+
+        return pd.DataFrame([self.as_dict()])
+    
+    def write_to_csv(self, filename: str) -> None:
+        """ Writes metadata to a CSV file """
+
+        self.as_dataframe().to_csv(filename, index=False)
+    
 
 def main() -> None:
     from aidapta.utils import extract_mods_metadata
@@ -158,8 +165,10 @@ def main() -> None:
     meta_data = Metadata(persons=[person1, person2], faculty=faculty1, documents=[document1])
     meta_data.set_metadata(meta_blob)
 
-    print(meta_data)
-    meta_data.write_csv('data-pipelines/data/metadata.csv')
+    # print(meta_data.as_dict())
+    meta_data.write_to_csv('data-pipelines/data/metadata.csv')
+
+    # print(meta_data.as_dataframe())
     
 if __name__ == "__main__":
     main()
