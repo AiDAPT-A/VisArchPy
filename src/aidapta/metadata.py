@@ -3,6 +3,7 @@ Dataclasses for managing metadata for architectural visuals
 Author: M.G. Garcia
 """
 
+import uuid
 import pandas as pd
 from dataclasses import dataclass, field, asdict
 from typing import Optional, List
@@ -47,12 +48,13 @@ class Visual:
     """A class for handling metadata for architectural visuals
     extracted from PDF files"""
 
-
+    id = uuid.uuid4()
     location: str # location where the visual is stored
     document_page: int # page number in the document index
-    caption: Optional[str] # caption of the visual    
-    document: Optional[Document] # document where the visual is located
-    visual_type: str = field(init=False) # one of: photo, drawing, map, etc
+    document: Document # document where the visual is located
+    bbox: List[int] # bounding box of the visual in the document page
+    caption: Optional[str] = field(init=False, default=None) # caption of the visual    
+    visual_type: Optional[str] = field(init=False) # one of: photo, drawing, map, etc
     
     def set_visual_type(self, visual_type: str):
         """Sets the visual type. One of photo, drawing, map, etc."""
@@ -69,6 +71,7 @@ class Metadata:
     faculty: Faculty
     documents: List[Document]
     visuals: Optional[List[Visual]] = field(init=False, default=None)
+    pdf_location: Optional[str] = field(init=False, default=None) # location of the PDF file
 
     title: str = field(init=False)
     abstract: str = field(init=False)
@@ -99,6 +102,8 @@ class Metadata:
     publisher: List = field(init=False) # publisher
     purl: List = field(init=False) # persistent URL
     type_resource: str = field(init=False) # type of resource
+    web_url: str = field(init=False) # URL at Educational Repository
+    
 
     def set_metadata(self, metadata: dict) -> None:
         """ Sets metadata for a repository entry """
@@ -132,17 +137,36 @@ class Metadata:
         self.purl = metadata.get('purl')
         self.type_resource = metadata.get('type_resource')
 
+    def add_pdf_location(self, path_pdf: str, overwrite: bool = False) -> None:
+        """ Sets location of the PDF file """
+
+        if self.pdf_location and overwrite:
+            raise ValueError('PDF location already set. User overwrite=True to overwrite it.')
+        else:
+            self.pdf_location = path_pdf
+
+    def add_web_url(self, web_url: str) -> None:
+        """ Adds a URL to the metadata """
+
+        if self.web_url:
+            raise ValueError('Web URL already set.')
+        else:
+            self.repository_url = web_url
+    
+    def add_visual(self, visual: Visual) -> None:
+        """ Adds a visual to the metadata """
+        if not self.visuals:
+            self.visuals = []
+        self.visuals.append(visual)
 
     def as_dict(self) -> dict:
         """ Returns metadata as a dictionary """
         return asdict(self)
-
-
+    
     def as_dataframe(self) -> pd.DataFrame:
         """ Returns metadata as a Pandas DataFrame """
         return pd.DataFrame([self.as_dict()])
     
-
     def write_to_csv(self, filename: str) -> None:
         """ Writes metadata to a CSV file """
 
@@ -166,8 +190,8 @@ def main() -> None:
     meta_data = Metadata(persons=[person1, person2], faculty=faculty1, documents=[document1])
     meta_data.set_metadata(meta_blob)
 
-    # print(meta_data.as_dict())
-    meta_data.write_to_csv('data-pipelines/data/metadata.csv')
+    print(meta_data.as_dict())
+    # meta_data.write_to_csv('data-pipelines/data/metadata.csv')
 
     # print(meta_data.as_dataframe())
     
