@@ -5,10 +5,13 @@ Author: M.G. Garcia
 
 import pathlib
 import concurrent.futures
+import time
 from PyPDF2 import PdfReader
 from pdfminer.high_level import extract_pages
 from pdfminer.image import ImageWriter
 from pdfminer.layout import LTTextContainer, LTPage, LTTextBoxHorizontal, LTImage, LTFigure
+
+from aidapta.captions import find_caption_by_text, find_caption_by_bbox
 
 # From https://pypdf2.readthedocs.io/en/latest/user/extract-images.html
 
@@ -17,6 +20,7 @@ def create_output_dir(base_path: str, name="") -> bool:
     creates a directory in the root path if it doesn't exists.
 
     params:
+    ----------
         base_path: path to destination directory
         name: name for the directory. If left empty, no directory will be created, 
         and the base_path will be returned 
@@ -35,6 +39,7 @@ def extract_images(pdf_file: str, output_dir: str) -> None:
     extracts image from a PDF file
     
     params:
+    ----------
         pdf_file: path to the PDF file
         output_dir: path to directory to extract images. Outputs
         are organized in folder based on the name of the input PDF
@@ -67,27 +72,72 @@ def extract_images(pdf_file: str, output_dir: str) -> None:
     return None
 
 
-
-def generate_figure_from_page(page: LTPage) -> LTFigure:
+def sort_layout_element(page:LTPage, img_width = None, img_height = None)-> dict:
     """
-    a generator to look over LTFigure elements in a page
+    sorts LTTexContainer and LTImage elements from a PDF file using PDFMiner
 
-    Params:
-    page: pdf page
+    params:
+    ----------
+        pdf_file: path to the PDF file
+        img_width: minimum width of an image to be extracted
+        img_height: minimum height of an image to be extracted. If
+            None, img_width will be used
+
+    returns:    
+        dictionary with LTTextContainer and LTImage elements
     """
+    if img_width is None:
+        img_width = 0
+    if img_height is None:
+        img_height = img_width
+    
+    text_elements = []
+    image_elements = []
+
+    for element in page:
+        if isinstance(element, LTTextContainer):
+            text_elements.append(element)
+        if isinstance(element, LTFigure):
+            for img in element:
+                if isinstance(img, LTImage):
+                    x, y = img.srcsize[0], img.srcsize[1]
+                    if x < img_width or y < img_height:
+                        continue
+                    else:
+                        image_elements.append(img)
+
+    return {"text": text_elements, "image": image_elements}
+
+
+
+
+def write_image_from_page(page:LTPage, output_directory, min_x = 0, min_y = 0) -> None:
+    """
+    writes images from a LTPage to a directory
+    """
+
+    iw = ImageWriter(output_directory)
+
+    element_count = 0
     for element in page:
         if isinstance(element, LTFigure):
             for fig in element:
                 if isinstance(fig, LTImage):
-                    yield fig
+                    print("image", fig)
+
+                    x, y = fig.srcsize[0], fig.srcsize[1]
+                    if x < min_x or y < min_y:
+                        continue
+                    else:
+                        iw.export_image(fig)
+        element_count += 1
+
+    print(f"Processed {element_count} elements in page")
+
+    return None
 
 
-
-
-
-
-
-def extract_images_miner(pdf_file: str, output_dir: str, min_width: int = None, min_height: int = None) -> None:
+def extract_images_miner(pdf_file: str, output_dir: str, img_width: int = None, img_height: int = None) -> None:
     """
     extracts image from a PDF file using PDFMiner
     
@@ -97,53 +147,40 @@ def extract_images_miner(pdf_file: str, output_dir: str, min_width: int = None, 
         - pdf_file: path to the PDF file
         - output_dir: path to directory to extract images. Outputs
             are organized in folder based on the name of the input PDF
-        - min_width: minimum width of the image to be extracted
-        - min_height: minimum height of the image to be extracted. If
-            None, min_width will be used
+        - img_width: minimum width of the image to be extracted
+        - img_height: minimum height of the image to be extracted. If
+            None, img_width will be used
     """
 
     # minimum resolution. Images smaller than this won't be saved
-    if min_width is None:
-        min_x = 0
-    if min_height is None:
-        min_y = min_x
-
+    if img_width is None:
+        img_width = 0
+    if img_height is None:
+        img_height = img_width
 
     # prepare output directory
     pdf_file_name = pathlib.Path(pdf_file).stem
     output_directory = create_output_dir(output_dir, pdf_file_name)
 
 
+    st = time.time()
 
     pdf_pages = extract_pages(pdf_file)
 
+    page_count = 0
+    for page in pdf_pages:
+        write_image_from_page(page, output_directory, img_width, img_height)
+        page_count += 1
 
-    def write_image_from_page(page:LTPage, outpu_directory) -> None:
-        """
-        writes images from a LTPage to a directory
-        """
+        print("pages", page_count)
 
-        iw = ImageWriter(output_directory)
+    et = time.time()
 
-        for element in page:
-            if isinstance(element, LTFigure):
-                for fig in element:
-                    if isinstance(fig, LTImage):
+    print("time, milliseconds", (et-st)*1000)
 
-                        x, y = fig.srcsize[0], fig.srcsize[1]
-                        if x < min_x or y < min_y:
-                            continue
-                        else:
-                            iw.export_image(fig)
 
-    with concurrent.futures.ProcessPoolExecutor(max_workers=5) as executor:
-        page_count = 0
-        for page in pdf_pages:
-            executor.submit(write_image_from_page, page, output_directory)
-            page_count += 1
-            print("page", page_count)
     return None
-
+                    
                     
 if __name__ == "__main__":
 
@@ -153,6 +190,18 @@ if __name__ == "__main__":
 
     out_dir = "data-pipelines/img/pdfminer/"
 
-    extract_images_miner(pdf_2, out_dir)
+    pages = extract_pages(pdf_2)
+
+    # [Continue here]
+    # TODO: complete data pipeline for extracting images and captions
+    for page in pages:
+        elements=sort_layout_element(page, img_width=100, img_height=100)
+        for img in elements["image"]:
+            for _text in elements["text"]:
+                match = find_caption_by_bbox(img, _text, offset=10, direction="down")
+                if match:
+                    print(img, _text)
+
+    # extract_images_miner(pdf_3, out_dir, img_width=100, img_height=100)
 
     pass
