@@ -132,16 +132,17 @@ class Metadata:
         self.purl = metadata.get('purl')
         self.type_resource = metadata.get('type_resource')
 
+
     def as_dict(self) -> dict:
         """ Returns metadata as a dictionary """
-        # self.submission_date = self.submission_date.strftime('%Y-%m-%d')
         return asdict(self)
+
 
     def as_dataframe(self) -> pd.DataFrame:
         """ Returns metadata as a Pandas DataFrame """
-
         return pd.DataFrame([self.as_dict()])
     
+
     def write_to_csv(self, filename: str) -> None:
         """ Writes metadata to a CSV file """
 
