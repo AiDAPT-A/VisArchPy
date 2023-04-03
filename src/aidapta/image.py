@@ -4,10 +4,11 @@ Author: M.G. Garcia
 """
 
 import pathlib
+import concurrent.futures
 from PyPDF2 import PdfReader
 from pdfminer.high_level import extract_pages
 from pdfminer.image import ImageWriter
-from pdfminer.layout import LTTextContainer, LTTextBoxHorizontal, LTImage, LTFigure
+from pdfminer.layout import LTTextContainer, LTPage, LTTextBoxHorizontal, LTImage, LTFigure
 
 # From https://pypdf2.readthedocs.io/en/latest/user/extract-images.html
 
@@ -22,6 +23,7 @@ def create_output_dir(base_path: str, name="") -> bool:
     returns:
         path to the new created directory
     """
+
     full_path = base_path + name
     pathlib.Path(full_path).mkdir(parents=True, exist_ok=True)
 
@@ -65,39 +67,90 @@ def extract_images(pdf_file: str, output_dir: str) -> None:
     return None
 
 
-def extract_images_miner(pdf_file: str, output_dir: str) -> None:
+
+def generate_figure_from_page(page: LTPage) -> LTFigure:
+    """
+    a generator to look over LTFigure elements in a page
+
+    Params:
+    page: pdf page
+    """
+    for element in page:
+        if isinstance(element, LTFigure):
+            for fig in element:
+                if isinstance(fig, LTImage):
+                    yield fig
+
+
+
+
+
+
+
+def extract_images_miner(pdf_file: str, output_dir: str, min_width: int = None, min_height: int = None) -> None:
     """
     extracts image from a PDF file using PDFMiner
     
     params:
-        pdf_file: path to the PDF file
-        output_dir: path to directory to extract images. Outputs
-        are organized in folder based on the name of the input PDF
+    ----------
+
+        - pdf_file: path to the PDF file
+        - output_dir: path to directory to extract images. Outputs
+            are organized in folder based on the name of the input PDF
+        - min_width: minimum width of the image to be extracted
+        - min_height: minimum height of the image to be extracted. If
+            None, min_width will be used
     """
+
+    # minimum resolution. Images smaller than this won't be saved
+    if min_width is None:
+        min_x = 0
+    if min_height is None:
+        min_y = min_x
+
 
     # prepare output directory
     pdf_file_name = pathlib.Path(pdf_file).stem
     output_directory = create_output_dir(output_dir, pdf_file_name)
 
-    iw = ImageWriter(output_directory)
 
-    for page_layout in extract_pages(pdf_file):
 
-        for element in page_layout:
+    pdf_pages = extract_pages(pdf_file)
+
+
+    def write_image_from_page(page:LTPage, outpu_directory) -> None:
+        """
+        writes images from a LTPage to a directory
+        """
+
+        iw = ImageWriter(output_directory)
+
+        for element in page:
             if isinstance(element, LTFigure):
-                for img in element:
-                    if isinstance(img, LTImage):
-                        print(img)
-                        saved_img = iw.export_image(img)
-                        print(saved_img)
-    
+                for fig in element:
+                    if isinstance(fig, LTImage):
+
+                        x, y = fig.srcsize[0], fig.srcsize[1]
+                        if x < min_x or y < min_y:
+                            continue
+                        else:
+                            iw.export_image(fig)
+
+    with concurrent.futures.ProcessPoolExecutor(max_workers=5) as executor:
+        page_count = 0
+        for page in pdf_pages:
+            executor.submit(write_image_from_page, page, output_directory)
+            page_count += 1
+            print("page", page_count)
     return None
 
                     
-
 if __name__ == "__main__":
 
     pdf_2 ="data-pipelines/data/4563050_AmberLuesink_P5Report_TheRevivaloftheJustCity.pdf"
+    # has 158283 figure elements
+    pdf_3 = "data-pipelines/data/caption-tests/multi-image-caption.pdf"
+
     out_dir = "data-pipelines/img/pdfminer/"
 
     extract_images_miner(pdf_2, out_dir)
