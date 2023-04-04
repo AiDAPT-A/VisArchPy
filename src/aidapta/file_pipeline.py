@@ -12,14 +12,13 @@ from aidapta.captions import find_caption_by_text, find_caption_by_bbox
 from aidapta.image import sort_layout_elements, create_output_dir
 from aidapta.metadata import Document, Metadata, Visual
 
-pdf_2 ="data-pipelines/data/4563050_AmberLuesink_P5Report_TheRevivaloftheJustCity.pdf"
-    # has 158283 figure elements
-
-
 # SELECT MODS FILE
 MODS_FILE = "data-pipelines/data/4Manuel_MODS.xml"
 # SELECT PDF FILE
-PDF_FILE = "data-pipelines/data/caption-tests/multi-image-caption.pdf"
+# PDF_FILE = "data-pipelines/data/caption-tests/multi-image-caption.pdf"
+# PDF_FILE = "data-pipelines/data/TheRevivaloftheJustCity-11pages.pdf"
+PDF_FILE = "data-pipelines/data/TheRevivaloftheJustCity-pages-131.pdf"
+
 # SELECT OUTPUT DIRECTORY
 OUTPUT_DIR ="data-pipelines/img/pdfminer/"
 
@@ -43,7 +42,6 @@ entry = Metadata(pdf_document)
 # add metadata from MODS file
 entry.set_metadata(meta_blob)
 
-
 # PREPARE OUTPUT DIRECTORY
 pdf_file_name = pathlib.Path(PDF_FILE).stem
 image_directory = create_output_dir(OUTPUT_DIR, pdf_file_name)
@@ -56,11 +54,14 @@ for page in pdf_pages:
     elements = sort_layout_elements(page, img_height=IMG_SETTINGS["width"], img_width=IMG_SETTINGS["height"])
     pages.append(elements)
 
+print("total pages", len(pages))
+
 for page in pages:
 
     iw = ImageWriter(image_directory)
-
+    print(f'images in page {page["page_number"]}, {len(page["images"])}')
     for img in page["images"]:
+       
         visual = Visual(document_page=page["page_number"], document=pdf_document, bbox=img.bbox)
         
         for _text in page["texts"]:
@@ -83,18 +84,13 @@ for page in pages:
         # set location of image
         visual.set_location(os.path.join(image_directory, image_file_name))
 
+        # add visual to entry
+        entry.add_visual(visual)
 
-
-# print(elements)
-
-# FOR EACH PAGE IN PDF FILE
-    ## EXTRACT  AND SORT TEXT AND IMAGE ELEMENTS FROM PDF FILE
-    
-    ## for each image SEARCH FOR CAPTIONS IN TEXT ELEMENTS
-        ## ADD CAPTIONS TO METADATA
-        ## SAVE IMAGE TO FILE
-    
 # SAVE METADATA TO JSON FILE
+entry.save_to_json(os.path.join(image_directory,"metadata.json"))
+
+
 
 
 
