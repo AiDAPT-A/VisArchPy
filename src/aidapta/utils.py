@@ -3,7 +3,9 @@ import re
 import os
 from pymods import MODSReader
 from bs4 import BeautifulSoup
-from .image import create_output_dir
+from aidapta.image import create_output_dir
+
+from aidapta.metadata import Document, Person, Faculty, Department
 
 
 def extract_mods_metadata(mods_file: str) -> dict:
@@ -47,18 +49,18 @@ def extract_mods_metadata(mods_file: str) -> dict:
             genre.append(g.text)
         meta["genre"] = genre
 
-        # Faculty
-        faculties =[] # MODS allows multiple faculties
-        for faculty in record.get_notes(type='faculty'):
-            faculties.append(faculty.text)
-        meta["faculty"] = faculties
-
         # Departments
         departments =[] # MODS allows multiple departments
         for department in record.get_notes(type='department'):
-            departments.append(department.text)
+            departments.append(Department(name=department.text))
         meta["department"] = departments
-        
+
+        # Faculty
+        faculties =[] # MODS allows multiple faculties
+        for faculty in record.get_notes(type='faculty'):
+            faculties.append(Faculty(name=faculty.text, departments=departments))   
+        meta["faculty"] = faculties
+
         # subjects
         subjects = [] # MODS allows multiple subjects (keywords)
         for subject in record.subjects:
@@ -70,7 +72,8 @@ def extract_mods_metadata(mods_file: str) -> dict:
         persons = [] 
         for name in record.names:
             # dictionary with fullname and role
-            person ={"name": name.text, "role": name.role.text} 
+            
+            person = Person(name=name.text, role=name.role.text)
             persons.append(person)
         meta["names"] = persons
 
