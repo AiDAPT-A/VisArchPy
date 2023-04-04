@@ -23,6 +23,7 @@ def extract_mods_metadata(mods_file: str) -> dict:
     mods = MODSReader(mods_file)
 
     meta = {}
+    meta["modsfile"] = mods_file
 
     for record in mods:
 
@@ -75,7 +76,7 @@ def extract_mods_metadata(mods_file: str) -> dict:
             
             person = Person(name=name.text, role=name.role.text)
             persons.append(person)
-        meta["names"] = persons
+        meta["persons"] = persons
 
         # Copyright statement
         rights =[] # MODS allows multiple copyright statements
