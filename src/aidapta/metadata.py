@@ -67,11 +67,14 @@ class Metadata:
     Represents metadata of an entry in a repository
     """
 
-    persons: List[Person]
-    faculty: Faculty
+   
     documents: List[Document]
+
     visuals: Optional[List[Visual]] = field(init=False, default=None)
-    pdf_location: Optional[str] = field(init=False, default=None) # location of the PDF file
+    # pdf_location: Optional[str] = field(init=False, default=None) # location of the PDF file
+    
+    persons: List[Person] = field(init=False, default=None)
+    faculty: Faculty = field(init=False, default=None)
 
     title: str = field(init=False)
     abstract: str = field(init=False)
@@ -102,12 +105,15 @@ class Metadata:
     publisher: List = field(init=False) # publisher
     purl: List = field(init=False) # persistent URL
     type_resource: str = field(init=False) # type of resource
-    web_url: str = field(init=False) # URL at Educational Repository
+    web_url: str = field(init=False, default=None) # URL at Educational Repository
     
 
     def set_metadata(self, metadata: dict) -> None:
         """ Sets metadata for a repository entry """
         
+        self.persons = metadata.get('persons')
+        self.faculty = metadata.get('faculty')
+
         self.title = metadata.get('title')
         self.abstract = metadata.get('abstract')
         self.submission_date = metadata.get('date')
@@ -187,7 +193,7 @@ def main() -> None:
 
     document1 = Document(location='data-pipelines/data/4563050_AmberLuesink_P5Report_TheRevivaloftheJustCity.pdf')
 
-    meta_data = Metadata(persons=[person1, person2], faculty=faculty1, documents=[document1])
+    meta_data = Metadata(documents=[document1])
     meta_data.set_metadata(meta_blob)
 
     print(meta_data.as_dict())
