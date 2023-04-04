@@ -5,6 +5,7 @@ Author: M.G. Garcia
 
 import uuid
 import pandas as pd
+import json
 from dataclasses import dataclass, field, asdict
 from typing import Optional, List
 
@@ -48,17 +49,35 @@ class Visual:
     """A class for handling metadata for architectural visuals
     extracted from PDF files"""
 
-    id = uuid.uuid4()
-    location: str # location where the visual is stored
+    id = uuid.uuid4() # unique identifier
     document_page: int # page number in the document index
     document: Document # document where the visual is located
     bbox: List[int] # bounding box of the visual in the document page
+
     caption: Optional[str] = field(init=False, default=None) # caption of the visual    
-    visual_type: Optional[str] = field(init=False) # one of: photo, drawing, map, etc
-    
-    def set_visual_type(self, visual_type: str):
+    visual_type: Optional[str] = field(init=False, default=None) # one of: photo, drawing, map, etc
+    location: str = field(init=False, default=None) # location where the visual is stored
+
+    def set_visual_type(self, visual_type: str) -> None:
         """Sets the visual type. One of photo, drawing, map, etc."""
         self.visual_type = visual_type
+
+    def set_caption(self, caption: str) -> None:
+        """Sets the caption of the visual"""
+
+        if self.caption:
+            print(f"Caption already set. caption: {self.caption}")
+        else:
+            self.caption = caption
+
+    def set_location(self, location: str) -> None:
+        """Sets the location where the visual is stored"""
+
+        if self.location:
+            raise ValueError("Location already set.")
+        else:
+            self.location = location
+
 
 
 @dataclass
@@ -75,6 +94,7 @@ class Metadata:
     
     persons: List[Person] = field(init=False, default=None)
     faculty: Faculty = field(init=False, default=None)
+    mods_file: str = field(init=False) # location of the MODS file
 
     title: str = field(init=False)
     abstract: str = field(init=False)
@@ -113,6 +133,7 @@ class Metadata:
         
         self.persons = metadata.get('persons')
         self.faculty = metadata.get('faculty')
+        self.mods_file = metadata.get('modsfile')
 
         self.title = metadata.get('title')
         self.abstract = metadata.get('abstract')
@@ -173,10 +194,16 @@ class Metadata:
         """ Returns metadata as a Pandas DataFrame """
         return pd.DataFrame([self.as_dict()])
     
-    def write_to_csv(self, filename: str) -> None:
+    def save_to_csv(self, filename: str) -> None:
         """ Writes metadata to a CSV file """
 
         self.as_dataframe().to_csv(filename, index=False)
+    
+    def save_to_json(self, filename: str) -> None:
+        """ Writes metadata to a JSON file """
+
+        with open(filename, 'w') as f:
+            json.dump(self.as_dict(), f, indent=4)
     
 
 def main() -> None:
