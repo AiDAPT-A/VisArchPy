@@ -6,7 +6,7 @@ venv2/
 
 # Data directories
 data/*.pdf
-data/*.xml
+data/4Manuel_MODS.xml
 
 img/
 data/student-data/
