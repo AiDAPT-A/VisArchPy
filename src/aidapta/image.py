@@ -157,49 +157,6 @@ def write_image_from_page(page:LTPage, output_directory, min_x = 0, min_y = 0) -
     return None
 
 
-def extract_images_miner(pdf_file: str, output_dir: str, img_width: int = None, img_height: int = None) -> None:
-    """
-    extracts image from a PDF file using PDFMiner
-    
-    params:
-    ----------
-
-        - pdf_file: path to the PDF file
-        - output_dir: path to directory to extract images. Outputs
-            are organized in folder based on the name of the input PDF
-        - img_width: minimum width of the image to be extracted
-        - img_height: minimum height of the image to be extracted. If
-            None, img_width will be used
-    """
-
-    # minimum resolution. Images smaller than this won't be saved
-    if img_width is None:
-        img_width = 0
-    if img_height is None:
-        img_height = img_width
-
-    # prepare output directory
-    pdf_file_name = pathlib.Path(pdf_file).stem
-    output_directory = create_output_dir(output_dir, pdf_file_name)
-
-
-    st = time.time()
-
-    pdf_pages = extract_pages(pdf_file)
-
-    page_count = 0
-    for page in pdf_pages:
-        write_image_from_page(page, output_directory, img_width, img_height)
-        page_count += 1
-
-        print("pages", page_count)
-
-    et = time.time()
-
-    print("time, milliseconds", (et-st)*1000)
-
-
-    return None
                     
                     
 if __name__ == "__main__":
