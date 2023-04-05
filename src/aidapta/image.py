@@ -4,24 +4,16 @@ Author: M.G. Garcia
 """
 
 import pathlib
-import concurrent.futures
-import time
 from PyPDF2 import PdfReader
 from pdfminer.high_level import extract_pages
-from pdfminer.image import ImageWriter
 from pdfminer.layout import (
-    LTTextContainer, 
     LTPage, 
     LTItem, 
     LTTextBox,
     LTText,
     LTContainer, 
-    LTTextBoxHorizontal, 
     LTImage, 
-    LTFigure
 )
-
-from aidapta.captions import find_caption_by_text, find_caption_by_bbox
 
 # From https://pypdf2.readthedocs.io/en/latest/user/extract-images.html
 
@@ -130,6 +122,7 @@ def sort_layout_elements(page:LTPage, img_width = None, img_height = None)-> dic
 
                     
 if __name__ == "__main__":
+    from aidapta.captions import find_caption_by_text, find_caption_by_bbox
 
     pdf_2 ="data-pipelines/data/4563050_AmberLuesink_P5Report_TheRevivaloftheJustCity.pdf"
     # has 158283 figure elements
