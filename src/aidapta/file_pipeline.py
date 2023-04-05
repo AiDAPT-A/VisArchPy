@@ -16,8 +16,8 @@ from aidapta.metadata import Document, Metadata, Visual
 MODS_FILE = "data-pipelines/data/4Manuel_MODS.xml"
 # SELECT PDF FILE
 # PDF_FILE = "data-pipelines/data/caption-tests/multi-image-caption.pdf"
-# PDF_FILE = "data-pipelines/data/TheRevivaloftheJustCity-11pages.pdf"
-PDF_FILE = "data-pipelines/data/TheRevivaloftheJustCity-pages-131.pdf"
+PDF_FILE = "data-pipelines/data/TheRevivaloftheJustCity-11pages.pdf"
+# PDF_FILE = "data-pipelines/data/TheRevivaloftheJustCity-pages-131.pdf"
 
 # SELECT OUTPUT DIRECTORY
 OUTPUT_DIR ="data-pipelines/img/pdfminer/"
@@ -31,6 +31,7 @@ CAP_SETTINGS ={"method": "bbox",
            "direction": "down"
            }
 
+# TODO: captions by bbox have issues for images that overlap many text boxes
 
 # EXTRACT METADATA FROM MODS FILE
 meta_blob = extract_mods_metadata(MODS_FILE)
