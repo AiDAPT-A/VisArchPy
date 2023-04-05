@@ -128,36 +128,6 @@ def sort_layout_elements(page:LTPage, img_width = None, img_height = None)-> dic
 
     return {"page_number": page_number, "texts": text_elements, "images": image_elements}
 
-
-
-
-def write_image_from_page(page:LTPage, output_directory, min_x = 0, min_y = 0) -> None:
-    """
-    writes images from a LTPage to a directory
-    """
-
-    iw = ImageWriter(output_directory)
-
-    element_count = 0
-    for element in page:
-        if isinstance(element, LTFigure):
-            for fig in element:
-                if isinstance(fig, LTImage):
-                    print("image", fig)
-
-                    x, y = fig.srcsize[0], fig.srcsize[1]
-                    if x < min_x or y < min_y:
-                        continue
-                    else:
-                        iw.export_image(fig)
-        element_count += 1
-
-    print(f"Processed {element_count} elements in page")
-
-    return None
-
-
-                    
                     
 if __name__ == "__main__":
 
@@ -177,7 +147,3 @@ if __name__ == "__main__":
                 match = find_caption_by_bbox(img, _text, offset=10, direction="down")
                 if match:
                     print(img, _text)
-
-    # extract_images_miner(pdf_3, out_dir, img_width=100, img_height=100)
-
-    
