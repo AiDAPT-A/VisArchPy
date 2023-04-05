@@ -50,7 +50,8 @@ def extract_images(pdf_file: str, output_dir: str) -> None:
         # Check if page contains images
         this_page = pdf_doc[page]
         images = this_page.get_images()
-        # print(images)
+        # print(pdf_doc[0])
+        
 
         if images:
             print(f'found {len(images)} images on page {page}')
@@ -60,27 +61,31 @@ def extract_images(pdf_file: str, output_dir: str) -> None:
         # Extract images
         for image_index, img in enumerate(images, start=1):
             xref = img[0] # the count
-
+            # this is how to extract bbox for images
+            #print(this_page.get_image_rects(xref))
+            
             ext_image = pdf_doc.extract_image(xref) # returns dictionary
+            
             # keys: ['ext', 'smask', 'width', 'height', 'colorspace', 'bpc', 'xres', 'yres', 'cs-name', 'image']
-            # print(type(ext_image))
+            ext_image['image'] = 'empty'.encode("utf-8")
+            # print(ext_image)
             image_bytes = ext_image["image"]
             image_extension = ext_image["ext"]
 
             # Save images using PIL
-            image_out = Image.open(io.BytesIO(image_bytes))
-            image_out.save(open(f"{output_directory}/image{ page }-{image_index}.{image_extension}", "wb"))
+            # image_out = Image.open(io.BytesIO(image_bytes))
+            # image_out.save(open(f"{output_directory}/image{ page }-{image_index}.{image_extension}", "wb"))
 
 
 if __name__ == "__main__":
 
-    pdf_classic = "data/RethinkWaste_research_paper_LisaUbbens_4397436.pdf"
-    pdf2 = "data/4563050_AmberLuesink_P5Report_TheRevivaloftheJustCity.pdf"
+    pdf_classic = "data-pipelines/data/caption-tests/multi-image-caption.pdf"
+    # pdf2 = "data/4563050_AmberLuesink_P5Report_TheRevivaloftheJustCity.pdf"
     img_dir = "./img/pymuPDF/"
 
 
     # extract_images(pdf_classic, img_dir)
-    extract_images(pdf2, img_dir)
+    extract_images(pdf_classic, img_dir)
 
 
 
