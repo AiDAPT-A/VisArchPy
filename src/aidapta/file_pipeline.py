@@ -1,11 +1,12 @@
-import time
+"""A pipeline for extracting metadata from MODS files and imges from PDF files.
+Author: Manuel Garcia
+"""
+
 import os
 import pathlib
 
-
 from pdfminer.high_level import extract_pages
 from pdfminer.image import ImageWriter
-from pdfminer.layout import LTTextContainer, LTPage, LTTextBoxHorizontal, LTImage, LTFigure
 
 from aidapta.utils import extract_mods_metadata
 from aidapta.captions import find_caption_by_text, find_caption_by_bbox
@@ -20,6 +21,8 @@ PDF_FILE = "data-pipelines/data/TheRevivaloftheJustCity-11pages.pdf"
 # PDF_FILE = "data-pipelines/data/TheRevivaloftheJustCity-pages-131.pdf"
 
 # SELECT OUTPUT DIRECTORY
+# if run multiple times to the same output directory, the images will be duplicated and 
+# metadata will be overwritten
 OUTPUT_DIR ="data-pipelines/img/pdfminer/"
 
 # SETTINGS FOR THE IMAGE EXTRACTION
@@ -30,8 +33,6 @@ CAP_SETTINGS ={"method": "bbox",
            "offset": 10,
            "direction": "down"
            }
-
-# TODO: captions by bbox have issues for images that overlap many text boxes
 
 # EXTRACT METADATA FROM MODS FILE
 meta_blob = extract_mods_metadata(MODS_FILE)
@@ -66,7 +67,10 @@ for page in pages:
         visual = Visual(document_page=page["page_number"], document=pdf_document, bbox=img.bbox)
         
         for _text in page["texts"]:
-            match = find_caption_by_bbox(img, _text, offset=CAP_SETTINGS["offset"], direction=CAP_SETTINGS["direction"])
+            # caption matching by bbox use the first match. This might be an issue 
+            # for images that overlap many text boxes
+            match = find_caption_by_bbox(img, _text, offset=CAP_SETTINGS["offset"], 
+                                         direction=CAP_SETTINGS["direction"])
             if match:
                 # the following is necessary to remove break line `\n` from captions
                 # that spans multiple lines
@@ -90,13 +94,3 @@ for page in pages:
 
 # SAVE METADATA TO JSON FILE
 entry.save_to_json(os.path.join(image_directory,"metadata.json"))
-
-
-
-
-
-
-
-
-
-
