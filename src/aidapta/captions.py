@@ -2,11 +2,7 @@
 Extracts captions from PDF pages 
 """
 
-# pdfminer.six
-
-from pdfminer.high_level import extract_text
-from pdfminer.layout import LTTextContainer, LTTextBoxHorizontal, LTImage, LTFigure, LAParams
-import os
+from pdfminer.layout import LTTextContainer, LTImage, LTFigure
 import re
 from typing import List
 from shapely.geometry import Polygon
