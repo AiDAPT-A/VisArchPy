@@ -4,9 +4,9 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "aidapta"
-version = "0.0.1"
+version = "0.0.2"
 authors = [
-    {name = "Manuel Garcia", email = "manu@own.edu"},
+    {name = "Manuel Garcia", email = "m.g.garciaalvarez@tudelft.nl"},
 ]
 description = "data pipelines for extraction of architectural visuals"
 readme = "README.md"
@@ -26,6 +26,9 @@ dependencies = [
     "pdfminer.six",
     "PyMuPDF",
     "beautifulsoup4",
+    "shapely",
+    "pandas",
+    "pymods",
 ]
 
 [tool.pytest.ini_options]

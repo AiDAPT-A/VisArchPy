@@ -5,7 +5,7 @@ from pymods import MODSReader
 from bs4 import BeautifulSoup
 from aidapta.image import create_output_dir
 
-from aidapta.metadata import Document, Person, Faculty, Department
+from aidapta.metadata import Person, Faculty, Department
 
 
 def extract_mods_metadata(mods_file: str) -> dict:
