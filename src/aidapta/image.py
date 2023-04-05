@@ -9,7 +9,17 @@ import time
 from PyPDF2 import PdfReader
 from pdfminer.high_level import extract_pages
 from pdfminer.image import ImageWriter
-from pdfminer.layout import LTTextContainer, LTPage, LTTextBoxHorizontal, LTImage, LTFigure
+from pdfminer.layout import (
+    LTTextContainer, 
+    LTPage, 
+    LTItem, 
+    LTTextBox,
+    LTText,
+    LTContainer, 
+    LTTextBoxHorizontal, 
+    LTImage, 
+    LTFigure
+)
 
 from aidapta.captions import find_caption_by_text, find_caption_by_bbox
 
@@ -97,17 +107,24 @@ def sort_layout_elements(page:LTPage, img_width = None, img_height = None)-> dic
     text_elements = []
     image_elements = []
 
-    for element in page:
-        if isinstance(element, LTTextContainer):
-            text_elements.append(element)
-        if isinstance(element, LTFigure):
-            for img in element:
-                if isinstance(img, LTImage):
-                    x, y = img.srcsize[0], img.srcsize[1]
-                    if x < img_width or y < img_height:
-                        continue
-                    else:
-                        image_elements.append(img)
+    # From pdfminer six#
+    def render(item: LTItem) -> None:
+        if isinstance(item, LTContainer):
+            for child in item:
+                render(child)
+        elif isinstance(item, LTText):
+            pass
+        if isinstance(item, LTTextBox):
+            # TODO: check how using text boxes affects the results of caption extraction
+            text_elements.append(item)
+        elif isinstance(item, LTImage):
+            x, y = item.srcsize[0], item.srcsize[1]
+            if x < img_width or y < img_height:
+                pass
+            else:
+                image_elements.append(item)
+
+    render(page)
 
     return {"page_number": page_number, "texts": text_elements, "images": image_elements}
 
@@ -193,18 +210,17 @@ if __name__ == "__main__":
 
     out_dir = "data-pipelines/img/pdfminer/"
 
-    pages = extract_pages(pdf_2)
+    pages = extract_pages(pdf_3)
 
-    # [Continue here]
-    # TODO: complete data pipeline for extracting images and captions
     for page in pages:
-        elements=sort_layout_element(page, img_width=100, img_height=100)
-        for img in elements["image"]:
-            for _text in elements["text"]:
+        elements=sort_layout_elements(page, img_width=100, img_height=100)
+        # print(elements)
+        for img in elements["images"]:
+            for _text in elements["texts"]:
                 match = find_caption_by_bbox(img, _text, offset=10, direction="down")
                 if match:
                     print(img, _text)
 
     # extract_images_miner(pdf_3, out_dir, img_width=100, img_height=100)
 
-    pass
+    
