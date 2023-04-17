@@ -2,7 +2,7 @@
 This script extract images from a PDF file using PyPDF2
 Author: M.G. Garcia
 """
-
+import os
 import pathlib
 from PyPDF2 import PdfReader
 from pdfminer.high_level import extract_pages
@@ -30,7 +30,9 @@ def create_output_dir(base_path: str, name="") -> bool:
         path to the new created directory
     """
 
-    full_path = base_path + name
+    if isinstance(base_path, pathlib.Path):
+        base_path = str(base_path)
+    full_path = os.path.join(base_path, name)
     pathlib.Path(full_path).mkdir(parents=True, exist_ok=True)
 
     return pathlib.Path(full_path)
