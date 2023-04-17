@@ -7,26 +7,33 @@ import pathlib
 
 from pdfminer.high_level import extract_pages
 from pdfminer.image import ImageWriter
-
+import time
 from aidapta.utils import extract_mods_metadata
 from aidapta.captions import find_caption_by_text, find_caption_by_bbox
 from aidapta.image import sort_layout_elements, create_output_dir
 from aidapta.metadata import Document, Metadata, Visual
 
+
+start_time = time.time()
+
 # SELECT MODS FILE
 MODS_FILE = "data-pipelines/data/4Manuel_MODS.xml"
+MODS_FILE = "data-pipelines/data/actual-data/00001_mods.xml"
+
 # SELECT PDF FILE
 # PDF_FILE = "data-pipelines/data/caption-tests/multi-image-caption.pdf"
-PDF_FILE = "data-pipelines/data/TheRevivaloftheJustCity-11pages.pdf"
+# PDF_FILE = "data-pipelines/data/TheRevivaloftheJustCity-11pages.pdf"
+PDF_FILE = "data-pipelines/data/actual-data/00001_P5_Yilin_Zhou.pdf"
+
 # PDF_FILE = "data-pipelines/data/TheRevivaloftheJustCity-pages-131.pdf"
 
 # SELECT OUTPUT DIRECTORY
 # if run multiple times to the same output directory, the images will be duplicated and 
 # metadata will be overwritten
-OUTPUT_DIR ="data-pipelines/img/pdfminer/"
+OUTPUT_DIR ="data-pipelines/data/actual-data/"
 
 # SETTINGS FOR THE IMAGE EXTRACTION
-IMG_SETTINGS = {"width": 100, "height": 100}
+IMG_SETTINGS = {"width": 100, "height": 100} # recommended values: 
 
 # CAPTION MATCH SETTINGS
 CAP_SETTINGS ={"method": "bbox",
@@ -43,6 +50,12 @@ pdf_document = Document(PDF_FILE)
 entry = Metadata(pdf_document)
 # add metadata from MODS file
 entry.set_metadata(meta_blob)
+# set web url. This is not part of the MODS file
+web_url = "http://resolver.tudelft.nl/" + entry.uuid
+entry.add_web_url(web_url)
+
+print(entry.as_dict()["web_url"])
+
 
 # PREPARE OUTPUT DIRECTORY
 pdf_file_name = pathlib.Path(PDF_FILE).stem
@@ -91,6 +104,11 @@ for page in pages:
 
         # add visual to entry
         entry.add_visual(visual)
+
+end_time = time.time()
+print("total time", end_time - start_time)
+
+
 
 # SAVE METADATA TO JSON FILE
 entry.save_to_json(os.path.join(image_directory,"metadata.json"))
