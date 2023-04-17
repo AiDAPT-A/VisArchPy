@@ -43,20 +43,14 @@ meta_blob = extract_mods_metadata(MODS_FILE)
 # get entry number from MODS file
 entry_number = get_entry_number_from_mods(MODS_FILE)
 
+# Create output directory for the entry
+entry_directory = create_output_dir(OUTPUT_DIR, entry_number)
+
 # FIND PDF FILES FOR A GIVEN ENTRY
 PDF_FILES = []
 for f in tqdm(os.listdir(INPUT_DIR), desc="Searching PDF files", unit="files"):
     if f.startswith(entry_number) and f.endswith(".pdf"):
         PDF_FILES.append(INPUT_DIR+f)
-
-# ORGANIZE ENTRY FILES
-# Create output directory for the entry
-entry_directory = create_output_dir(OUTPUT_DIR, entry_number)
-
-# Copy MODS file and PDF files to output directory
-shutil.copy(MODS_FILE, entry_directory)
-for pdf in PDF_FILES:
-    shutil.copy(pdf, entry_directory)
 
 # INITIALIZE METADATA OBJECT
 entry = Metadata()
@@ -81,11 +75,11 @@ for pdf in PDF_FILES:
     pdf_pages = extract_pages(pdf_document.location)
 
     pages = []
-    for page in pdf_pages:
+    for page in tqdm(pdf_pages, desc="Processing pages", unit="pages"):
         elements = sort_layout_elements(page, img_height=IMG_SETTINGS["width"], img_width=IMG_SETTINGS["height"])
         pages.append(elements)
 
-    for page in tqdm(pages, desc="Processing pages", total=len(pages), unit="pages"):
+    for page in tqdm(pages, desc="Extracting images", total=len(pages), unit="pages"):
 
         iw = ImageWriter(image_directory)
        
@@ -118,6 +112,17 @@ for pdf in PDF_FILES:
 
             # add visual to entry
             entry.add_visual(visual)
+
+# ORGANIZE ENTRY FILES 
+# for data management purposes, the files are organized in the following way:
+# PDF and MODS files are copied to the entry_directory, 
+# and images are saved to subdirectories in the entry direct, subdirectory name is the pdf file name
+# e.g.: 00001/00001_mods.xml, 00001/00001.pdf, 00001/00001/page1-00001.png, 00001/00001/page2-00001.png
+
+# Copy MODS file and PDF files to output directory
+shutil.copy(MODS_FILE, entry_directory)
+for pdf in PDF_FILES:
+    shutil.copy(pdf, entry_directory)
 
 end_time = time.time()
 print("total time", end_time - start_time)
