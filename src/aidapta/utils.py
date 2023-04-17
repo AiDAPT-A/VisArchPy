@@ -185,6 +185,18 @@ def download_PDF(download_url: str, destination: str) -> None:
     
     return None
 
+def get_entry_number_from_mods(mods_file_path: str) -> str:
+    """
+    Extracts the entry number from a MODS file name. 
+    The number is the firts 5 characteris of the file name.
+    
+    param:
+    ------
+        mods_file_path: path to a MODS file
+    """
+
+    return mods_file_path.split("/")[-1][:5]
+
 
 if __name__ == '__main__':
     mods_file = "data-pipelines/data/actual-data/00001_mods.xml"
