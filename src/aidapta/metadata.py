@@ -49,11 +49,11 @@ class Visual:
     """A class for handling metadata for architectural visuals
     extracted from PDF files"""
 
-    id = uuid.uuid4() # unique identifier
-    document_page: int # page number in the document index
+   
     document: Document # document where the visual is located
+    document_page: int # page number in the document index
     bbox: List[int] # bounding box of the visual in the document page
-
+    id : Optional[str] = field(init=True, default=str(uuid.uuid4())) # unique identifier
     caption: Optional[str] = field(init=False, default=None) # caption of the visual    
     visual_type: Optional[str] = field(init=False, default=None) # one of: photo, drawing, map, etc
     location: str = field(init=False, default=None) # location where the visual is stored
@@ -87,11 +87,8 @@ class Metadata:
     """
 
    
-    documents: List[Document]
+    documents: List[Document] = field(init=False, default=None)
 
-    visuals: Optional[List[Visual]] = field(init=False, default=None)
-    # pdf_location: Optional[str] = field(init=False, default=None) # location of the PDF file
-    
     persons: List[Person] = field(init=False, default=None)
     faculty: Faculty = field(init=False, default=None)
     mods_file: str = field(init=False) # location of the MODS file
@@ -104,7 +101,7 @@ class Metadata:
     copyright: str = field(init=False) 
     languages: List[dict] = field(init=False) # list of languages
     uuid: Optional[str] = field(init=False, default=None)  # unique identifier
-    identifiers: List = field(init=False) #
+    # identifiers: List = field(init=False) #
     iid: str = field(init=False) # internal identifier
     media_type: List = field(init=False) # internet media type
     issuance: List = field(init=False) # type of issuance
@@ -127,6 +124,8 @@ class Metadata:
     type_resource: str = field(init=False) # type of resource
     web_url: str = field(init=False, default=None) # URL at Educational Repository
     
+    visuals: Optional[List[Visual]] = field(init=False, default=None)
+    # pdf_location: Optional[str] = field(init=False, default=None) # location of the PDF file
 
     def set_metadata(self, metadata: dict) -> None:
         """ Sets metadata for a repository entry """
@@ -142,7 +141,8 @@ class Metadata:
         self.subjects = metadata.get('subjects')
         self.copyright = metadata.get('rights') 
         self.languages = metadata.get('language')
-        self.identifiers = metadata.get('identifiers')
+        self.uuid = metadata.get('identifiers')
+        # self.identifiers = metadata.get('identifiers')
         self.iid = metadata.get('iid')
         self.media_type = metadata.get('internet_media_type')
         self.issuance = metadata.get('issuance')
@@ -164,6 +164,12 @@ class Metadata:
         self.purl = metadata.get('purl')
         self.type_resource = metadata.get('type_resource')
 
+    def add_document(self, document: Document) -> None:
+        """ Adds a document object to the metadata """
+        if not self.documents:
+            self.documents = []
+        self.documents.append(document)
+    
     def add_pdf_location(self, path_pdf: str, overwrite: bool = False) -> None:
         """ Sets location of the PDF file """
 
@@ -172,13 +178,13 @@ class Metadata:
         else:
             self.pdf_location = path_pdf
 
-    def add_web_url(self, web_url: str) -> None:
+    def add_web_url(self, web_url: str, overwrite: bool = False) -> None:
         """ Adds a URL to the metadata """
 
-        if self.web_url:
-            raise ValueError('Web URL already set.')
+        if self.web_url and overwrite == False:
+            raise ValueError('Web URL already set. User overwrite=True to overwrite it.')
         else:
-            self.repository_url = web_url
+            self.web_url = web_url
     
     def add_visual(self, visual: Visual) -> None:
         """ Adds a visual to the metadata """

@@ -4,29 +4,32 @@ Author: Manuel Garcia
 
 import os
 import pathlib
+import shutil
 
 from pdfminer.high_level import extract_pages
 from pdfminer.image import ImageWriter
-
-from aidapta.utils import extract_mods_metadata
-from aidapta.captions import find_caption_by_text, find_caption_by_bbox
+import time
+from tqdm import tqdm
+from aidapta.utils import extract_mods_metadata, get_entry_number_from_mods
+from aidapta.captions import find_caption_by_bbox
 from aidapta.image import sort_layout_elements, create_output_dir
 from aidapta.metadata import Document, Metadata, Visual
 
+start_time = time.time()
+
 # SELECT MODS FILE
-MODS_FILE = "data-pipelines/data/4Manuel_MODS.xml"
-# SELECT PDF FILE
-# PDF_FILE = "data-pipelines/data/caption-tests/multi-image-caption.pdf"
-PDF_FILE = "data-pipelines/data/TheRevivaloftheJustCity-11pages.pdf"
-# PDF_FILE = "data-pipelines/data/TheRevivaloftheJustCity-pages-131.pdf"
+MODS_FILE = "data-pipelines/data/actual-data/00001_mods.xml"
+
+# SELECT INPUT DIRECTORY
+INPUT_DIR = "data-pipelines/data/actual-data/"
 
 # SELECT OUTPUT DIRECTORY
 # if run multiple times to the same output directory, the images will be duplicated and 
 # metadata will be overwritten
-OUTPUT_DIR ="data-pipelines/img/pdfminer/"
+OUTPUT_DIR ="data-pipelines/data/actual-data/"
 
 # SETTINGS FOR THE IMAGE EXTRACTION
-IMG_SETTINGS = {"width": 100, "height": 100}
+IMG_SETTINGS = {"width": 0, "height": 0} # recommended values: 0, 0
 
 # CAPTION MATCH SETTINGS
 CAP_SETTINGS ={"method": "bbox",
@@ -37,60 +40,87 @@ CAP_SETTINGS ={"method": "bbox",
 # EXTRACT METADATA FROM MODS FILE
 meta_blob = extract_mods_metadata(MODS_FILE)
 
-# create document object
-pdf_document = Document(PDF_FILE)
-# initialize metadata object
-entry = Metadata(pdf_document)
+# get entry number from MODS file
+entry_number = get_entry_number_from_mods(MODS_FILE)
+
+# FIND PDF FILES FOR A GIVEN ENTRY
+PDF_FILES = []
+for f in tqdm(os.listdir(INPUT_DIR), desc="Searching PDF files", unit="files"):
+    if f.startswith(entry_number) and f.endswith(".pdf"):
+        PDF_FILES.append(INPUT_DIR+f)
+
+# ORGANIZE ENTRY FILES
+# Create output directory for the entry
+entry_directory = create_output_dir(OUTPUT_DIR, entry_number)
+
+# Copy MODS file and PDF files to output directory
+shutil.copy(MODS_FILE, entry_directory)
+for pdf in PDF_FILES:
+    shutil.copy(pdf, entry_directory)
+
+# INITIALIZE METADATA OBJECT
+entry = Metadata()
 # add metadata from MODS file
 entry.set_metadata(meta_blob)
+# set web url. This is not part of the MODS file
+web_url = "http://resolver.tudelft.nl/" + entry.uuid
+entry.add_web_url(web_url)
 
-# PREPARE OUTPUT DIRECTORY
-pdf_file_name = pathlib.Path(PDF_FILE).stem
-image_directory = create_output_dir(OUTPUT_DIR, pdf_file_name)
+# PROCESS PDF FILES
+for pdf in PDF_FILES:
+    print("--> Processing file:", pdf)
+    # create document object
+    pdf_document = Document(pdf)
+    entry.add_document(pdf_document)
 
-# PROCESS PDF FILE
-pdf_pages = extract_pages(PDF_FILE)
+    # PREPARE OUTPUT DIRECTORY
+    pdf_file_name = pathlib.Path(pdf_document.location).stem
+    image_directory = create_output_dir(entry_directory, pdf_file_name)
 
-pages = []
-for page in pdf_pages:
-    elements = sort_layout_elements(page, img_height=IMG_SETTINGS["width"], img_width=IMG_SETTINGS["height"])
-    pages.append(elements)
+    # PROCESS SINGLE PDF 
+    pdf_pages = extract_pages(pdf_document.location)
 
-print("total pages", len(pages))
+    pages = []
+    for page in pdf_pages:
+        elements = sort_layout_elements(page, img_height=IMG_SETTINGS["width"], img_width=IMG_SETTINGS["height"])
+        pages.append(elements)
 
-for page in pages:
+    for page in tqdm(pages, desc="Processing pages", total=len(pages), unit="pages"):
 
-    iw = ImageWriter(image_directory)
-    print(f'images in page {page["page_number"]}, {len(page["images"])}')
-    for img in page["images"]:
+        iw = ImageWriter(image_directory)
        
-        visual = Visual(document_page=page["page_number"], document=pdf_document, bbox=img.bbox)
+        for img in page["images"]:
         
-        for _text in page["texts"]:
-            # caption matching by bbox use the first match. This might be an issue 
-            # for images that overlap many text boxes
-            match = find_caption_by_bbox(img, _text, offset=CAP_SETTINGS["offset"], 
-                                         direction=CAP_SETTINGS["direction"])
-            if match:
-                # the following is necessary to remove break line `\n` from captions
-                # that spans multiple lines
-                caption = ""
-                for text_line in match:
-                    caption += text_line.get_text().strip() 
-                # add caption to visual metadata
-                visual.set_caption(caption)
+            visual = Visual(document_page=page["page_number"], document=pdf_document, bbox=img.bbox)
+            
+            for _text in page["texts"]:
+                # caption matching by bbox use the first match. This might be an issue 
+                # for images that overlap many text boxes
+                match = find_caption_by_bbox(img, _text, offset=CAP_SETTINGS["offset"], 
+                                            direction=CAP_SETTINGS["direction"])
+                if match:
+                    # the following is necessary to remove break line `\n` from captions
+                    # that spans multiple lines
+                    caption = ""
+                    for text_line in match:
+                        caption += text_line.get_text().strip() 
+                    # add caption to visual metadata
+                    visual.set_caption(caption)
 
-        # rename image name to include page number
-        img.name = "page" + str(page["page_number"]) + "-" + img.name
-        # save image to file
-        image_file_name =iw.export_image(img) # returns image file name, 
-        # which last part is automatically generated by pdfminer to guarantee uniqueness
-        
-        # set location of image
-        visual.set_location(os.path.join(image_directory, image_file_name))
+            # rename image name to include page number
+            img.name = "page" + str(page["page_number"]) + "-" + img.name
+            # save image to file
+            image_file_name =iw.export_image(img) # returns image file name, 
+            # which last part is automatically generated by pdfminer to guarantee uniqueness
+            
+            # set location of image
+            visual.set_location(os.path.join(image_directory, image_file_name))
 
-        # add visual to entry
-        entry.add_visual(visual)
+            # add visual to entry
+            entry.add_visual(visual)
+
+end_time = time.time()
+print("total time", end_time - start_time)
 
 # SAVE METADATA TO JSON FILE
-entry.save_to_json(os.path.join(image_directory,"metadata.json"))
+entry.save_to_json(os.path.join(entry_directory,"metadata.json"))
