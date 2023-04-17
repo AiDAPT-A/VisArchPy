@@ -8,11 +8,11 @@ import pathlib
 from pdfminer.high_level import extract_pages
 from pdfminer.image import ImageWriter
 import time
+from tqdm import tqdm
 from aidapta.utils import extract_mods_metadata
 from aidapta.captions import find_caption_by_text, find_caption_by_bbox
 from aidapta.image import sort_layout_elements, create_output_dir
 from aidapta.metadata import Document, Metadata, Visual
-
 
 start_time = time.time()
 
@@ -47,15 +47,13 @@ meta_blob = extract_mods_metadata(MODS_FILE)
 # create document object
 pdf_document = Document(PDF_FILE)
 # initialize metadata object
-entry = Metadata(pdf_document)
+entry = Metadata()
+entry.add_document(pdf_document)
 # add metadata from MODS file
 entry.set_metadata(meta_blob)
 # set web url. This is not part of the MODS file
 web_url = "http://resolver.tudelft.nl/" + entry.uuid
 entry.add_web_url(web_url)
-
-print(entry.as_dict()["web_url"])
-
 
 # PREPARE OUTPUT DIRECTORY
 pdf_file_name = pathlib.Path(PDF_FILE).stem
@@ -69,12 +67,10 @@ for page in pdf_pages:
     elements = sort_layout_elements(page, img_height=IMG_SETTINGS["width"], img_width=IMG_SETTINGS["height"])
     pages.append(elements)
 
-print("total pages", len(pages))
-
-for page in pages:
+for page in tqdm(pages, desc="Processing pages", total=len(pages), unit="pages"):
 
     iw = ImageWriter(image_directory)
-    print(f'images in page {page["page_number"]}, {len(page["images"])}')
+    # print(f'images in page {page["page_number"]}, {len(page["images"])}')
     for img in page["images"]:
        
         visual = Visual(document_page=page["page_number"], document=pdf_document, bbox=img.bbox)
@@ -107,8 +103,6 @@ for page in pages:
 
 end_time = time.time()
 print("total time", end_time - start_time)
-
-
 
 # SAVE METADATA TO JSON FILE
 entry.save_to_json(os.path.join(image_directory,"metadata.json"))
