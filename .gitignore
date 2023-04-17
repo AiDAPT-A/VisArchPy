@@ -7,6 +7,8 @@ venv2/
 # Data directories
 data/*.pdf
 data/4Manuel_MODS.xml
+data/actual-data/
+data/results-artifacts/
 
 img/
 data/student-data/
