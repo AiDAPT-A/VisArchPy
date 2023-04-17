@@ -93,7 +93,8 @@ def extract_mods_metadata(mods_file: str) -> dict:
             languages.append(l)
         meta["language"] = languages
 
-        meta["identifiers"] = record.identifiers
+        meta["identifiers"] = record.identifiers[0].text # MODS allows multiple identifiers, 
+        # only the first one is used. Uuid is used as identifier
         meta["iid"] = record.iid
         meta["internet_media_type"] = record.internet_media_type
         meta["issuance"] = record.issuance
@@ -186,6 +187,6 @@ def download_PDF(download_url: str, destination: str) -> None:
 
 
 if __name__ == '__main__':
-    mods_file = "data-pipelines/data/4Manuel_MODS.xml"
+    mods_file = "data-pipelines/data/actual-data/00001_mods.xml"
     meta = extract_mods_metadata(mods_file)
     print(meta)
