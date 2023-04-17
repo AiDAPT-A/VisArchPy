@@ -104,7 +104,7 @@ class Metadata:
     copyright: str = field(init=False) 
     languages: List[dict] = field(init=False) # list of languages
     uuid: Optional[str] = field(init=False, default=None)  # unique identifier
-    identifiers: List = field(init=False) #
+    # identifiers: List = field(init=False) #
     iid: str = field(init=False) # internal identifier
     media_type: List = field(init=False) # internet media type
     issuance: List = field(init=False) # type of issuance
@@ -142,7 +142,8 @@ class Metadata:
         self.subjects = metadata.get('subjects')
         self.copyright = metadata.get('rights') 
         self.languages = metadata.get('language')
-        self.identifiers = metadata.get('identifiers')
+        self.uuid = metadata.get('identifiers')
+        # self.identifiers = metadata.get('identifiers')
         self.iid = metadata.get('iid')
         self.media_type = metadata.get('internet_media_type')
         self.issuance = metadata.get('issuance')
@@ -172,13 +173,13 @@ class Metadata:
         else:
             self.pdf_location = path_pdf
 
-    def add_web_url(self, web_url: str) -> None:
+    def add_web_url(self, web_url: str, overwrite: bool = False) -> None:
         """ Adds a URL to the metadata """
 
-        if self.web_url:
-            raise ValueError('Web URL already set.')
+        if self.web_url and overwrite == False:
+            raise ValueError('Web URL already set. User overwrite=True to overwrite it.')
         else:
-            self.repository_url = web_url
+            self.web_url = web_url
     
     def add_visual(self, visual: Visual) -> None:
         """ Adds a visual to the metadata """
