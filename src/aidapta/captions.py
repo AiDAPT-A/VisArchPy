@@ -114,25 +114,6 @@ if __name__ == '__main__':
             if isinstance(element, LTTextContainer):
                 text_elements.append(element)
 
-    # image_elements =[]
-
-    # for page_layout in extract_pages(pdf_3):
-
-    #     for element in page_layout:
-    #         if isinstance(element, LTFigure):
-                
-    #             for img in element:
-    #                 if isinstance(img, LTImage):
-    #                     image_elements.append(img)
-
-    # for img in image_elements:
-    #     for e in text_elements:
-    #         match = find_caption_by_bbox(img, e, offset=10, direction="right" )
-    #         if match is not False:
-    #             print(img, match)
-    #             print("===========================")
-
- 
     for e in text_elements:
         # print(e.get_text())
         match = find_caption_by_text(e, keywords=["Figure", "caption", "figuur" ])
