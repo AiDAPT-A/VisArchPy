@@ -5,20 +5,21 @@ Author: Manuel Garcia
 import os
 import pathlib
 import shutil
+import time
+import logging
 
 from pdfminer.high_level import extract_pages
 from pdfminer.image import ImageWriter
-import time
 from tqdm import tqdm
 from aidapta.utils import extract_mods_metadata, get_entry_number_from_mods
-from aidapta.captions import find_caption_by_bbox
+from aidapta.captions import find_caption_by_bbox, find_caption_by_text
 from aidapta.image import sort_layout_elements, create_output_dir
 from aidapta.metadata import Document, Metadata, Visual
 
 start_time = time.time()
 
 # SELECT MODS FILE
-MODS_FILE = "data-pipelines/data/actual-data/00001_mods.xml"
+MODS_FILE = "data-pipelines/data/actual-data/00006_mods.xml"
 
 # SELECT INPUT DIRECTORY
 INPUT_DIR = "data-pipelines/data/actual-data/"
@@ -26,15 +27,16 @@ INPUT_DIR = "data-pipelines/data/actual-data/"
 # SELECT OUTPUT DIRECTORY
 # if run multiple times to the same output directory, the images will be duplicated and 
 # metadata will be overwritten
-OUTPUT_DIR ="data-pipelines/data/actual-data/"
+OUTPUT_DIR = INPUT_DIR
 
 # SETTINGS FOR THE IMAGE EXTRACTION
 IMG_SETTINGS = {"width": 0, "height": 0} # recommended values: 0, 0
 
 # CAPTION MATCH SETTINGS
 CAP_SETTINGS ={"method": "bbox",
-           "offset": 10,
-           "direction": "down"
+           "offset": 14, # one unit equals 1/72 inch or 0.3528 mm
+           "direction": "down", # all directions
+           "keywords": ['figure', 'caption', 'figuur'] # no case sentitive
            }
 
 # EXTRACT METADATA FROM MODS FILE
@@ -52,7 +54,7 @@ for f in tqdm(os.listdir(INPUT_DIR), desc="Searching PDF files", unit="files"):
     if f.startswith(entry_number) and f.endswith(".pdf"):
         PDF_FILES.append(INPUT_DIR+f)
 
-# INITIALIZE METADATA OBJECT
+# INITIALISE METADATA OBJECT
 entry = Metadata()
 # add metadata from MODS file
 entry.set_metadata(meta_blob)
@@ -87,20 +89,38 @@ for pdf in PDF_FILES:
         
             visual = Visual(document_page=page["page_number"], document=pdf_document, bbox=img.bbox)
             
+            # Search for captions using proximity to image Bboxes
+            # This might generate multiple matches
+            bbox_matches =[]
             for _text in page["texts"]:
-                # caption matching by bbox use the first match. This might be an issue 
-                # for images that overlap many text boxes
                 match = find_caption_by_bbox(img, _text, offset=CAP_SETTINGS["offset"], 
                                             direction=CAP_SETTINGS["direction"])
                 if match:
-                    # the following is necessary to remove break line `\n` from captions
-                    # that spans multiple lines
+                   bbox_matches.append(match)
+            # Search for captions using text analysis (keywords)
+            # if more than one bbox matches are found
+            if len(bbox_matches) == 0:
+                pass # don't set any caption
+            elif len(bbox_matches) == 1:
+                caption = ""
+                for text_line in bbox_matches[0]:
+                    caption += text_line.get_text().strip() 
+                visual.set_caption(caption)
+            else: # more than one matches in bbox_matches
+                for _text in bbox_matches:
+                    text_match = find_caption_by_text(_text, keywords=CAP_SETTINGS["keywords"])
+                if text_match:
                     caption = ""
-                    for text_line in match:
+                    for text_line in bbox_matches[0]:
                         caption += text_line.get_text().strip() 
-                    # add caption to visual metadata
-                    visual.set_caption(caption)
-
+                # Set the caption to the firt text match.
+                # All other matches will be ignored. 
+                # This may introduce mistakes
+                    try:
+                        visual.set_caption(caption)
+                    except Warning: # ignore warnings when caption is already set.
+                        pass
+                    
             # rename image name to include page number
             img.name = "page" + str(page["page_number"]) + "-" + img.name
             # save image to file
@@ -114,10 +134,10 @@ for pdf in PDF_FILES:
             entry.add_visual(visual)
 
 # ORGANIZE ENTRY FILES 
-# for data management purposes, the files are organized in the following way:
-# PDF and MODS files are copied to the entry_directory, 
-# and images are saved to subdirectories in the entry direct, subdirectory name is the pdf file name
-# e.g.: 00001/00001_mods.xml, 00001/00001.pdf, 00001/00001/page1-00001.png, 00001/00001/page2-00001.png
+# for data management purposes, the files are organized in the following way, after processing:
+    # PDF and MODS files are copied to the entry_directory, 
+    # and images are saved to subdirectories in the entry direct, subdirectory name is the pdf file name
+    # e.g.: 00001/00001_mods.xml, 00001/00001.pdf, 00001/00001/page1-00001.png, 00001/00001/page2-00001.png
 
 # Copy MODS file and PDF files to output directory
 shutil.copy(MODS_FILE, entry_directory)
