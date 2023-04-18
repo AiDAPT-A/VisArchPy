@@ -66,7 +66,7 @@ class Visual:
         """Sets the caption of the visual"""
 
         if self.caption:
-            print(f"Caption already set. caption: {self.caption}")
+            raise Warning(f"Caption already set. caption: {self.caption}")
         else:
             self.caption = caption
 
