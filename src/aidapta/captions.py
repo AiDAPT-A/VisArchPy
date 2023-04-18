@@ -2,33 +2,42 @@
 Extracts captions from PDF pages 
 """
 
-from pdfminer.layout import LTTextContainer, LTImage, LTFigure
 import re
+from pdfminer.layout import LTTextContainer, LTImage, LTFigure
 from typing import List
 from shapely.geometry import Polygon
 
-def find_caption_by_text(pdf_file:str) -> List:
+def find_caption_by_text(text_element:LTTextContainer, keywords: List = ['figure', 'caption', 'figuur']) -> LTTextContainer|bool:
     """do text analysis by matching caption keywords (e.g, figure, caption, Figure)
-    in a PDF document, using regular expressions
+    in a PDF document element of type text using regular expressions. Matches are not case sentive.
+
+    Params:
+    -------
+    - text_element: LTTextContainer object
+    - keywords: list of keywords to match in the text element
     """
-
-    captions = []
-    for page_layout in extract_pages(pdf_file):
-        for element in page_layout:
-            # identify if the text is part of a caption using keyworks, e.g., Figure
-            if isinstance(element, LTTextContainer) and re.search('^figure|^caption|^figuur', element.get_text().lower()):
-                # the following is necessary to remove break line `\n` from captions
-                # that spans multiple lines
-                caption_line = ''
-                for text_line in element:
-                    caption_line += text_line.get_text().strip()
-                
-                captions.append(caption_line)
     
-    return  captions
+
+    if len(keywords) == 0:
+        raise ValueError("List of keywords cannot be empty. Try adding adding at least one keyword")
+    else:
+        # constructs regular expression to match
+        # textboxes that start with 
+        words = []
+        separator = '|'
+        for word in keywords:
+            if not isinstance(word, str):
+                raise TypeError (f"Keyword must be of type string. {word} has type {type(word)}")
+            words.append('^'+word.lower())
+        regex = separator.join(words)
+
+    if isinstance(text_element, LTTextContainer) and re.search(regex, text_element.get_text().lower()):
+        return text_element
+    else:
+        return False
 
 
-def find_caption_by_bbox(image:LTImage, text_element:LTTextContainer, offset:int=0, direction:str=None) -> LTTextContainer:
+def find_caption_by_bbox(image:LTImage, text_element:LTTextContainer, offset:int=0, direction:str=None) -> LTTextContainer|bool:
     """
     Finds if the boudning box of a text element is withing certain distance (offset) 
     from the bounding box of an Image element.
@@ -36,8 +45,8 @@ def find_caption_by_bbox(image:LTImage, text_element:LTTextContainer, offset:int
     Params:
     -------
     - offset: distance from image to be compared with, Unit: 1/72 inch or about 0.3528 mm
-    - direction: the directions the offeset will be applied to. Posibile values: right, left, down, up, 
-      None (apply in all directions)
+    - direction: the directions the offeset will be applied to. Posibile values: right, left, down, up.  
+      Default None (apply in all directions)
 
     Returs: text elemenet within offset distance
     """
@@ -45,7 +54,7 @@ def find_caption_by_bbox(image:LTImage, text_element:LTTextContainer, offset:int
     image_coords = image.bbox
     text_coords = text_element.bbox
 
-    if direction == None:
+    if direction == None or direction == "all":
 
         image_bbox = Polygon([
                               # bottom
@@ -90,64 +99,45 @@ def find_caption_by_bbox(image:LTImage, text_element:LTTextContainer, offset:int
 if __name__ == '__main__':
     
     from pdfminer.high_level import extract_pages
-    from pdfminer.layout import LTTextContainer, LTTextBoxHorizontal, LTImage, LTFigure, LAParams
+    from pdfminer.layout import LTTextContainer,  LTImage, LTFigure
     # are LAParams only for text?
     
-
-    # # single image, single caption
-    # pdf_1 ="data-pipelines/data/caption-tests/single-image-caption.pdf"
-    # found = find_image_caption_by_text(pdf_1)
-    
-    # # multiple images and captionsclea
     pdf_2 ="data-pipelines/data/caption-tests/multi-image-caption.pdf"
-    # found = find_caption_by_text(pdf_2)
-    # print(found)
 
     pdf_3 ="data-pipelines/data/caption-tests/multi-image-no-keyword.pdf"
 
-
-
     text_elements = []
 
-    # for page_layout in extract_pages(pdf_2):
-    for page_layout in extract_pages(pdf_3):
+    for page_layout in extract_pages(pdf_2):
 
         for element in page_layout:
             if isinstance(element, LTTextContainer):
                 text_elements.append(element)
-                # _text = element.get_text()
-                # print(type(_text))
-                # laparams = LAParams()
-                # print(element.analyze(laparams))
-            
-    # print(text_elements)
 
-    image_elements =[]
-    # for page_layout in extract_pages(pdf_2):
-    for page_layout in extract_pages(pdf_3):
+    # image_elements =[]
 
-        for element in page_layout:
-            if isinstance(element, LTFigure):
+    # for page_layout in extract_pages(pdf_3):
+
+    #     for element in page_layout:
+    #         if isinstance(element, LTFigure):
                 
-                # _text = element.get_text()
-                # print(type(_text))
-                # laparams = LAParams()
-                # print(element.analyze(laparams))
-                for img in element:
-                    if isinstance(img, LTImage):
-                        image_elements.append(img)
+    #             for img in element:
+    #                 if isinstance(img, LTImage):
+    #                     image_elements.append(img)
 
     # for img in image_elements:
     #     for e in text_elements:
-    #         match = find_caption_by_bbox(img, e, offset=10, direction=None )
+    #         match = find_caption_by_bbox(img, e, offset=10, direction="right" )
     #         if match is not False:
     #             print(img, match)
     #             print("===========================")
 
-    for img in image_elements:
-        for e in text_elements:
-            match = find_caption_by_bbox(img, e, offset=10, direction="right" )
-            if match is not False:
-                print(img, match)
-                print("===========================")
+ 
+    for e in text_elements:
+        # print(e.get_text())
+        match = find_caption_by_text(e, keywords=["Figure", "caption", "figuur" ])
+        # print(match)
+        if match is not False:
+            print( match)
+            print("===========================")
 
