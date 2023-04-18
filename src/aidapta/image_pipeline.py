@@ -6,7 +6,6 @@ import os
 import pathlib
 import shutil
 import time
-import logging
 
 from pdfminer.high_level import extract_pages
 from pdfminer.image import ImageWriter
@@ -146,6 +145,8 @@ for pdf in PDF_FILES:
 
 end_time = time.time()
 print("total time", end_time - start_time)
+
+print(entry.as_dict())
 
 # SAVE METADATA TO JSON FILE
 entry.save_to_json(os.path.join(entry_directory,"metadata.json"))
