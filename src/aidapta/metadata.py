@@ -154,6 +154,7 @@ class Metadata:
         self.classification = metadata.get('classification')
         self.collection = metadata.get('collection')
         self.geo_code = metadata.get('geo_code')
+         # TODO: CORP NAMES retun MODS element, and it cannot be parse to JSON
         self.corp_names = metadata.get('corp_names')
         self.creators = metadata.get('creators')
         self.physical_description = metadata.get('physical_description')
@@ -181,6 +182,8 @@ class Metadata:
     def add_web_url(self, web_url: str, overwrite: bool = False) -> None:
         """ Adds a URL to the metadata """
 
+        # TODO: identifies for PURE do not start with uuid: This must be add
+        # to the web_url
         if self.web_url and overwrite == False:
             raise ValueError('Web URL already set. User overwrite=True to overwrite it.')
         else:
