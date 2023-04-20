@@ -154,7 +154,6 @@ class Metadata:
         self.classification = metadata.get('classification')
         self.collection = metadata.get('collection')
         self.geo_code = metadata.get('geo_code')
-         # TODO: CORP NAMES retun MODS element, and it cannot be parse to JSON
         self.corp_names = metadata.get('corp_names')
         self.creators = metadata.get('creators')
         self.physical_description = metadata.get('physical_description')
