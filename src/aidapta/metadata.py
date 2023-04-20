@@ -141,6 +141,7 @@ class Metadata:
         self.subjects = metadata.get('subjects')
         self.copyright = metadata.get('rights') 
         self.languages = metadata.get('language')
+
         self.uuid = metadata.get('identifiers')
         # self.identifiers = metadata.get('identifiers')
         self.iid = metadata.get('iid')
@@ -179,7 +180,7 @@ class Metadata:
         else:
             self.pdf_location = path_pdf
 
-    def add_web_url(self, web_url: str, overwrite: bool = False) -> None:
+    def add_web_url(self, base_url: str, overwrite: bool = False) -> None:
         """ Adds a URL to the metadata """
 
         # TODO: identifies for PURE do not start with uuid: This must be add
@@ -187,7 +188,10 @@ class Metadata:
         if self.web_url and overwrite == False:
             raise ValueError('Web URL already set. User overwrite=True to overwrite it.')
         else:
-            self.web_url = web_url
+            if self.uuid[:5] == 'uuid:': # some uuids start with uuid:
+                self.web_url = f'{base_url}{self.uuid}' 
+            else: # pure uuids do not start with uuid:
+                self.web_url = f'{base_url}uuid:{self.uuid}'
     
     def add_visual(self, visual: Visual) -> None:
         """ Adds a visual to the metadata """
@@ -218,7 +222,7 @@ class Metadata:
 def main() -> None:
     from aidapta.utils import extract_mods_metadata
 
-    meta_blob = extract_mods_metadata('data-pipelines/data/4Manuel_MODS.xml')
+    meta_blob = extract_mods_metadata('data-pipelines/data/00001.mods.xml')
     
     person1 = Person(name='John Doe', role='author')
     person2 = Person(name='Jane Doe', role='mentor')
