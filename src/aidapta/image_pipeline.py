@@ -58,8 +58,8 @@ entry = Metadata()
 # add metadata from MODS file
 entry.set_metadata(meta_blob)
 # set web url. This is not part of the MODS file
-web_url = "http://resolver.tudelft.nl/" + entry.uuid
-entry.add_web_url(web_url)
+base_url = "http://resolver.tudelft.nl/" 
+entry.add_web_url(base_url)
 
 # PROCESS PDF FILES
 for pdf in PDF_FILES:
