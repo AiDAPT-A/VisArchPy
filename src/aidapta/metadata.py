@@ -143,7 +143,6 @@ class Metadata:
         self.languages = metadata.get('language')
 
         self.uuid = metadata.get('identifiers')
-        # self.identifiers = metadata.get('identifiers')
         self.iid = metadata.get('iid')
         self.media_type = metadata.get('internet_media_type')
         self.issuance = metadata.get('issuance')
@@ -183,8 +182,6 @@ class Metadata:
     def add_web_url(self, base_url: str, overwrite: bool = False) -> None:
         """ Adds a URL to the metadata """
 
-        # TODO: identifies for PURE do not start with uuid: This must be add
-        # to the web_url
         if self.web_url and overwrite == False:
             raise ValueError('Web URL already set. User overwrite=True to overwrite it.')
         else:
