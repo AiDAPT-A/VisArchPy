@@ -18,10 +18,10 @@ from aidapta.metadata import Document, Metadata, Visual
 start_time = time.time()
 
 # SELECT MODS FILE
-MODS_FILE = "data-pipelines/data/actual-data/00006_mods.xml"
+MODS_FILE = "data-pipelines/data/design-data100/00007_mods.xml"
 
 # SELECT INPUT DIRECTORY
-INPUT_DIR = "data-pipelines/data/actual-data/"
+INPUT_DIR = "data-pipelines/data/design-data100/"
 
 # SELECT OUTPUT DIRECTORY
 # if run multiple times to the same output directory, the images will be duplicated and 
@@ -76,7 +76,7 @@ for pdf in PDF_FILES:
     pdf_pages = extract_pages(pdf_document.location)
 
     pages = []
-    for page in tqdm(pdf_pages, desc="Processing pages", unit="pages"):
+    for page in tqdm(pdf_pages, desc="Reading pages", unit="pages"):
         elements = sort_layout_elements(page, img_height=IMG_SETTINGS["width"], img_width=IMG_SETTINGS["height"])
         pages.append(elements)
 
@@ -145,8 +145,6 @@ for pdf in PDF_FILES:
 
 end_time = time.time()
 print("total time", end_time - start_time)
-
-print(entry.as_dict())
 
 # SAVE METADATA TO JSON FILE
 entry.save_to_json(os.path.join(entry_directory,"metadata.json"))
