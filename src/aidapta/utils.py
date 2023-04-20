@@ -82,9 +82,10 @@ def extract_mods_metadata(mods_file: str) -> dict:
         rights =[] # MODS allows multiple copyright statements
         for right in record.rights:
             rights.append(right.text)
-        meta["rights"] = rights
         if len(rights) > 1:
-            raise ValueError("More than one right found in MODS file")
+            raise ValueError("More than one copyright found in MODS file")
+        else:
+            meta["rights"] = rights
 
         # Language
         languages = [] # MODS allows multiple languages
@@ -106,7 +107,16 @@ def extract_mods_metadata(mods_file: str) -> dict:
         meta["classification"] = record.classification
         meta["collection"] = record.collection
         meta["geographic_code"] = record.geographic_code
-        meta["corp_names"] = record.get_corp_names
+
+        corp_names = [] # MODS allows multiple corporate names
+        # we collect the name and the role of each corporate name
+        for corp_name in record.get_corp_names:
+            corporate= {"name": corp_name.text, "role": corp_name.role.text}
+            corp_names.append(corporate) 
+        meta["corp_names"] = corp_names
+
+        meta["rights"] = rights
+
         meta["creators"] = record.get_creators
         meta["physical_description"] = record.physical_description_note
         meta["physical_location"] = record.physical_location
