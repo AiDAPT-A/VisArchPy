@@ -30,6 +30,10 @@ def main(entry_id: str,):
     # metadata will be overwritten
     OUTPUT_DIR = INPUT_DIR
 
+    # TEMPORARY DIRECTORY
+    # this directory is used to store temporary files. PDF files are copied to this directory
+    TMP_DIR = "data-pipelines/data/tmp/"
+
     # SETTINGS FOR THE IMAGE EXTRACTION
     IMG_SETTINGS = {"width": 100, "height": 100} # recommended values: 0, 0
 
@@ -124,7 +128,7 @@ def main(entry_id: str,):
                         
                 # TODO: https://github.com/pdfminer/pdfminer.six/pull/854
                 # rename image name to include page number
-                img.name = "page" + str(page["page_number"]) + "-" + img.name
+                img.name =  str(entry_id) + "-page" + str(page["page_number"]) + "-" + img.name
                 # save image to file
             
                 try:
@@ -145,23 +149,24 @@ def main(entry_id: str,):
 
     # ORGANIZE ENTRY FILES 
     # for data management purposes, the files are organized in the following way, after processing:
-        # PDF and MODS files are copied to the entry_directory, 
+        # PDF and MODS files are copied to the TMP_DIR, 
         # and images are saved to subdirectories in the entry direct, subdirectory name is the pdf file name
-        # e.g.: 00001/00001_mods.xml, 00001/00001.pdf, 00001/00001/page1-00001.png, 00001/00001/page2-00001.png
+        # e.g.:  00001/00001/page1-00001.png, 00001/00001/page2-00001.png
 
     # Copy MODS file and PDF files to output directory
-    shutil.copy(MODS_FILE, entry_directory)
+    shutil.copy(MODS_FILE, TMP_DIR)
     for pdf in PDF_FILES:
-        shutil.copy(pdf, entry_directory)
+        shutil.copy(pdf, TMP_DIR)
 
     end_time = time.time()
     print("total time", end_time - start_time)
 
     # SAVE METADATA TO JSON FILE
     entry.save_to_json(os.path.join(entry_directory,"metadata.json"))
+    entry.save_to_csv(os.path.join(entry_directory,"metadata.csv"))
 
 if __name__ == "__main__":
     
-    for id in range(11,12):
-        str_id = str(id).zfill(5)
-        main(str_id)
+    # for id in range(11,12):
+    str_id = str("11").zfill(5)
+    main(str_id)
