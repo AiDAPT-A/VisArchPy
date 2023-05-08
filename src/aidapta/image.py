@@ -13,29 +13,30 @@ from pdfminer.layout import (
     LTText,
     LTContainer, 
     LTImage, 
+    LTFigure,
+    LTCurve
 )
 
 # From https://pypdf2.readthedocs.io/en/latest/user/extract-images.html
 
-def create_output_dir(base_path: str, name="") -> bool:
+def create_output_dir(base_path: str, path="") -> bool:
     """
     creates a directory in the root path if it doesn't exists.
 
     params:
     ----------
         base_path: path to destination directory
-        name: name for the directory. If left empty, no directory will be created, 
-        and the base_path will be returned 
+        name: name  or path for the new directory, parent directories are created if they don't exists
     returns:
-        path to the new created directory
+        relative path to the new created directory
     """
 
     if isinstance(base_path, pathlib.Path):
         base_path = str(base_path)
-    full_path = os.path.join(base_path, name)
+    full_path = os.path.join(base_path, path)
     pathlib.Path(full_path).mkdir(parents=True, exist_ok=True)
 
-    return pathlib.Path(full_path)
+    return pathlib.Path(path)
 
 
 def extract_images(pdf_file: str, output_dir: str) -> None:
@@ -78,7 +79,7 @@ def extract_images(pdf_file: str, output_dir: str) -> None:
 
 def sort_layout_elements(page:LTPage, img_width = None, img_height = None)-> dict:
     """
-    sorts LTTexContainer and LTImage elements from a PDF file using PDFMiner
+    sorts LTTextContainer and LTImage elements from a PDF file using PDFMiner
 
     params:
     ----------
@@ -100,6 +101,8 @@ def sort_layout_elements(page:LTPage, img_width = None, img_height = None)-> dic
 
     text_elements = []
     image_elements = []
+    vector_elements = []
+
 
     # From pdfminer six#
     def render(item: LTItem) -> None:
@@ -111,6 +114,8 @@ def sort_layout_elements(page:LTPage, img_width = None, img_height = None)-> dic
         if isinstance(item, LTTextBox):
             # TODO: check how using text boxes affects the results of caption extraction
             text_elements.append(item)
+        elif isinstance(item, LTFigure) or isinstance(item, LTCurve):
+            vector_elements.append(item)
         elif isinstance(item, LTImage):
             x, y = item.srcsize[0], item.srcsize[1]
             if x < img_width or y < img_height:
@@ -120,7 +125,7 @@ def sort_layout_elements(page:LTPage, img_width = None, img_height = None)-> dic
 
     render(page)
 
-    return {"page_number": page_number, "texts": text_elements, "images": image_elements}
+    return {"page_number": page_number, "texts": text_elements, "images": image_elements, "vectors": vertor_elements}
 
                     
 if __name__ == "__main__":
