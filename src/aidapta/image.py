@@ -125,7 +125,7 @@ def sort_layout_elements(page:LTPage, img_width = None, img_height = None)-> dic
 
     render(page)
 
-    return {"page_number": page_number, "texts": text_elements, "images": image_elements, "vectors": vertor_elements}
+    return {"page_number": page_number, "texts": text_elements, "images": image_elements, "vectors": vector_elements}
 
                     
 if __name__ == "__main__":
