@@ -177,8 +177,8 @@ def main(entry_id: str,):
             shutil.copy2(pdf, os.path.join(TMP_DIR, temp_entry_directory, entry_id))
     
     # SAVE METADATA TO files
-    entry.save_to_json(os.path.join(OUTPUT_DIR, entry_directory, image_directory,entry_id + "-metadata.json"))
-    entry.save_to_csv(os.path.join(OUTPUT_DIR, entry_directory, image_directory,entry_id + "-metadata.csv"))
+    entry.save_to_json(os.path.join(OUTPUT_DIR, entry_directory, entry_id + "-metadata.json"))
+    entry.save_to_csv(os.path.join(OUTPUT_DIR, entry_directory, entry_id + "-metadata.csv"))
 
     end_time = time.time()
     total_time = end_time - start_time
@@ -188,5 +188,5 @@ def main(entry_id: str,):
 if __name__ == "__main__":
     
     # for id in range(11,12):
-    str_id = str(5).zfill(5)
+    str_id = str(1).zfill(5)
     main(str_id)
