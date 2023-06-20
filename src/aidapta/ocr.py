@@ -34,7 +34,7 @@ def convert_pdf_to_images(pdf_file: str, dpi:int = 200)-> list[Image]:
     return convert_from_path(pdf_file, dpi=dpi)
 
 
-def extract_bbox_from_horc(images: list[Image], config: str ='--oem 1 --psm 1') -> dict:
+def extract_bboxes_from_horc(images: list[Image], config: str ='--oem 1 --psm 1') -> dict:
     """
     Extract bounding boxes for non-text regions from hOCR document.
     params:
@@ -67,9 +67,39 @@ def extract_bbox_from_horc(images: list[Image], config: str ='--oem 1 --psm 1') 
                 bounding_box = [int(value) for value in bounding_box]
                 paragraphs_bounding_boxes.append(bounding_box)
                 paragraphs_ids.append(id)
-                
+
     return {'bboxes': paragraphs_bounding_boxes, 'ids': paragraphs_ids}
 
+
+def crop_images_to_bbox(images:list[Image], bbox: list[list[int]], 
+                       ids:list, output_dir:str ) -> None:
+    """
+    Crop images based on bounding boxes. Croped images are saved to output 
+    directory as JPG files.
+    params:
+    '''''''''''
+    image: Pillow Image or list of Pillow Image objects
+    bbox: bounding box as list [x, y, width, height] or list of bounding boxes
+    output_dir: path to output directory for cropped images
+    ids: id or list of ids for cropped images
+    returs:
+    '''''''''''
+    None
+    """
+
+    if isinstance(images, list) and isinstance(bbox, list) and isinstance(ids, list):
+        if len(images) == len(bbox) == len(ids):
+            for img, bounding_box, id in zip(images, bbox, ids):
+                x, y, w, h = bounding_box
+                cropped_image = img.crop((x, y, w, h))
+                cropped_image.save(f'{output_dir}/image-{id}.jpg')
+        else:
+            raise ValueError('images, bbox, and ids must be of same length')
+
+    else:
+        raise TypeError('images, bbox, and ids must be of type list')
+
+    return None
 
 # Convert PDF to image
 IMAGES = convert_from_path('data-pipelines/data/caption-tests/multi-image-caption.pdf', dpi=300)
