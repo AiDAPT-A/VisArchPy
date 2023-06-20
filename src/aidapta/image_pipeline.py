@@ -20,6 +20,10 @@ def main(entry_id: str,):
 
     start_time = time.time()
 
+    ###########################################
+    ## SETTINGS                              ##
+    ###########################################
+
     # SELECT INPUT DIRECTORY
     INPUT_DIR = "data-pipelines/data/design-data100/" # an absolute path is recommended,
 
@@ -51,6 +55,8 @@ def main(entry_id: str,):
 
     # SETTINGS FOR THE IMAGE EXTRACTION
     IMG_SETTINGS = {"width": 100, "height": 100} # recommended values: 0, 0
+
+    ###########################################
 
     logging.info("Image settings: " + str(IMG_SETTINGS))
 
