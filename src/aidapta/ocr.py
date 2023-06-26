@@ -10,6 +10,8 @@ The pipeline is based on the following steps:
 5. Save cropped images to output directory
 '''
 
+
+
 import pytesseract
 from bs4 import BeautifulSoup
 from pdf2image import convert_from_path
@@ -113,7 +115,7 @@ def crop_images_to_bbox(images:list[Image], bbox: list[list[int]],
     return None
 
 
-def marked_bounding_boxes(images: list[Image], bbox:list[list[int]], output_dir:str, ids:list=None) -> None:
+def marked_bounding_boxes(hocr_results: dict, output_dir:str, ids:list=None) -> None:
     """
     Draw bounding boxes of on input images and save a copy to output directory.
 
@@ -131,21 +133,18 @@ def marked_bounding_boxes(images: list[Image], bbox:list[list[int]], output_dir:
     # if len(images) != len(bbox):
     #     raise ValueError('images and bbox must be of same length')
 
-    if ids is None:
-        ids = [''] * len(bbox)
 
-    image_counter = 1
-    for img in images:
+    for page, result  in hocr_results.items():
 
         fig, ax = plt.subplots(1)
 
         plt.axis('off')
         # Display the image
-        ax.imshow(img)
+        ax.imshow(result['img'])
 
         # Create a Rectangle patch
   
-        for bounding_box, label in zip(bbox, ids):
+        for bounding_box, label in zip(result['bboxes'] , result['ids']):
             x, y, w, h = bounding_box
             rect = patches.Rectangle((x, y), w - x, h - y, linewidth=1.5, edgecolor='r', facecolor='none')
             ax.add_patch(rect)
@@ -154,9 +153,8 @@ def marked_bounding_boxes(images: list[Image], bbox:list[list[int]], output_dir:
             tag_y = y
             plt.text(tag_x, tag_y, tag_text, fontsize=9, color='blue', ha='left', va='center')
 
-        plt.savefig(f'{output_dir}/page-{image_counter}.png', dpi=200, bbox_inches='tight')    
-        image_counter += 1
-
+        plt.savefig(f'{output_dir}/{page}.png', dpi=200, bbox_inches='tight')    
+    
         plt.close()
     
     return None
@@ -165,11 +163,11 @@ def marked_bounding_boxes(images: list[Image], bbox:list[list[int]], output_dir:
 if __name__ == '__main__':
 
     # PDF_FILE = 'data-pipelines/data/caption-tests/multi-image-caption.pdf'
-    PDF_FILE = 'data-pipelines/data/design-data100/00003/00003_Report_Giorgio_Larcher_vol.2.pdf'
-    OUTPUT_DIR = 'data-pipelines/data/ocr-test/ocr-pipeline'
-    images = convert_pdf_to_images(PDF_FILE, dpi=200)
+    # PDF_FILE = 'data-pipelines/data/design-data100/00003/00003_Report_Giorgio_Larcher_vol.2.pdf'
+    PDF_FILE = 'data-pipelines/data/design-data100/00003/00003_Report_Giorgio_Larcher_vol.3.pdf'    
+    OUTPUT_DIR = 'data-pipelines/data/ocr-test/00003_vol3'
+    images = convert_pdf_to_images(PDF_FILE, dpi=300)
 
-    bboxes = extract_bboxes_from_horc(images)
-    print('image_ boxes',bboxes['bboxes'])
-
-    marked_bounding_boxes(images, bboxes['bboxes'], OUTPUT_DIR, bboxes['ids'])
+    results = extract_bboxes_from_horc(images)
+ 
+    marked_bounding_boxes(results, OUTPUT_DIR)
