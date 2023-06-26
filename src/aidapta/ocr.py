@@ -46,14 +46,18 @@ def extract_bboxes_from_horc(images: list[Image], config: str ='--oem 1 --psm 1'
     returns:
     ----------
     Dictionary with bounding boxes and ids for non-text regions
+    Example:
+    {'page': {'img': None, 'bboxes': [], 'ids': []} }
     """
     _config = config + ' hocr'
 
+    results = {}
+    page_counter = 1
     for img in images:
         horc_data = pytesseract.image_to_pdf_or_hocr(img, extension='hocr', config=_config)
         soup = BeautifulSoup(horc_data, 'html.parser')
         paragraphs = soup.find_all('p', class_='ocr_par')
-        non_text_bboxes = []
+        non_text_bboxes = [] 
         paragraphs_ids = []
         # paragraph_confidence_scores = []
         # boxed_paragraphs = []
@@ -70,7 +74,9 @@ def extract_bboxes_from_horc(images: list[Image], config: str ='--oem 1 --psm 1'
                 non_text_bboxes.append(bounding_box)
                 paragraphs_ids.append(id)
 
-    return {'bboxes': non_text_bboxes, 'ids': paragraphs_ids}
+        results[f'page-{page_counter}'] = {'img': img, 'bboxes': non_text_bboxes, 'ids': paragraphs_ids}
+        page_counter += 1
+    return results
 
 
 def crop_images_to_bbox(images:list[Image], bbox: list[list[int]], 
@@ -93,7 +99,7 @@ def crop_images_to_bbox(images:list[Image], bbox: list[list[int]],
     """
 
     if isinstance(images, list) and isinstance(bbox, list) and isinstance(ids, list):
-        if len(images) == len(bbox) == len(ids):
+        if len(images) == len(bbox) == len(ids): # TODO: check if all variables must be the same length
             for img, bounding_box, id in zip(images, bbox, ids):
                 x, y, w, h = bounding_box
                 cropped_image = img.crop((x, y, w, h))
@@ -122,6 +128,9 @@ def marked_bounding_boxes(images: list[Image], bbox:list[list[int]], output_dir:
     --------
     None
     """
+    # if len(images) != len(bbox):
+    #     raise ValueError('images and bbox must be of same length')
+
     if ids is None:
         ids = [''] * len(bbox)
 
@@ -153,40 +162,14 @@ def marked_bounding_boxes(images: list[Image], bbox:list[list[int]], output_dir:
     return None
 
 
-# Convert PDF to image
-IMAGES = convert_from_path('data-pipelines/data/caption-tests/multi-image-caption.pdf', dpi=300)
-OUTPUT_DIR = 'data-pipelines/data/ocr-test'
+if __name__ == '__main__':
 
-# tessaeract options
-config = r'--oem 1 --psm 1 hocr' # Engine Neural nets LSTM only. Auto page segmentation with OSD
+    # PDF_FILE = 'data-pipelines/data/caption-tests/multi-image-caption.pdf'
+    PDF_FILE = 'data-pipelines/data/design-data100/00003/00003_Report_Giorgio_Larcher_vol.2.pdf'
+    OUTPUT_DIR = 'data-pipelines/data/ocr-test/ocr-pipeline'
+    images = convert_pdf_to_images(PDF_FILE, dpi=200)
 
-page_counter = 1
-# Extract OCR data as hOCR document
-print('total pages', len(IMAGES))
-for img in IMAGES:
-    horc_data = pytesseract.image_to_pdf_or_hocr(img, extension='hocr', config=config)
-    soup = BeautifulSoup(horc_data, 'html.parser')
-    paragraphs = soup.find_all('p', class_='ocr_par')
-    print('working_image', page_counter)
-    non_text_bboxes = []
-    paragraphs_ids = []
-    # paragraph_confidence_scores = []
-    # boxed_paragraphs = []
-    for paragraph in paragraphs:
-        title = paragraph.get('title')
-        id = paragraph.get('id')
-        # used to if paragraph contains text
-        text_element = paragraph.find('span', {'class': 'ocrx_word'})
-        text =text_element.get_text()
+    bboxes = extract_bboxes_from_horc(images)
+    print('image_ boxes',bboxes['bboxes'])
 
-        if title and text.strip() == "":
-            bounding_box = title.split(';')[0].split(' ')[1:]
-            bounding_box = [int(value) for value in bounding_box]
-            non_text_bboxes.append(bounding_box)
-            paragraphs_ids.append(id) 
-        
-    # for bounding_box, id in zip(paragraphs_bounding_boxes, paragraphs_ids):
-    #     x, y, w, h = bounding_box
-    #     cropped_image = img.crop((x, y, w, h))
-        # cropped_image.save(f'data-pipelines/data/ocr-test/image-{id}.jpg')
-
+    marked_bounding_boxes(images, bboxes['bboxes'], OUTPUT_DIR, bboxes['ids'])
