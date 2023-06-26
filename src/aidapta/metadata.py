@@ -2,7 +2,7 @@
 Dataclasses for managing metadata for architectural visuals
 Author: M.G. Garcia
 """
-
+import os
 import uuid
 import pandas as pd
 import json
@@ -43,6 +43,22 @@ class Document:
     """
     location: str # location where the document is stored
 
+@dataclass
+class FilePath:
+    """
+    Represents a file path
+    """
+    root_path: str
+    file_path: str
+
+
+    def update_root_path(self, root_path: str) -> None:
+        """Updates the root path"""
+        self.root_path = root_path
+    
+    def __str__(self) -> str:
+        return os.path.join(self.root_path, self.file_path)
+
 
 @dataclass
 class Visual:
@@ -56,7 +72,7 @@ class Visual:
     id : Optional[str] = field(init=True, default=str(uuid.uuid4())) # unique identifier
     caption: Optional[str] = field(init=False, default=None) # caption of the visual    
     visual_type: Optional[str] = field(init=False, default=None) # one of: photo, drawing, map, etc
-    location: str = field(init=False, default=None) # location where the visual is stored
+    location: FilePath = field(init=False, default=None) # location where the visual is stored
 
     def set_visual_type(self, visual_type: str) -> None:
         """Sets the visual type. One of photo, drawing, map, etc."""
@@ -70,14 +86,21 @@ class Visual:
         else:
             self.caption = caption
 
-    def set_location(self, location: str) -> None:
-        """Sets the location where the visual is stored"""
+    def set_location(self, location: FilePath, update: bool = False) -> None:
+        """Sets the location where the visual is stored
+        
+        params:
+        ----------
+            location: location where the visual is stored
+            update: if True, the root_path of location will be updated. If False, an error will be raised
+        """
 
-        if self.location:
+        if self.location and not update:
             raise ValueError("Location already set.")
+        elif self.location and update:
+            self.location.update_root_path(location.root_path)
         else:
             self.location = location
-
 
 
 @dataclass
