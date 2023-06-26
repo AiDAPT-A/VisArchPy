@@ -18,17 +18,17 @@ import matplotlib.patches as patches
 from PIL.Image import Image
 
 
-
-
 def convert_pdf_to_images(pdf_file: str, dpi:int = 200)-> list[Image]:
     """
     Convert PDF file to image, one page at a time.
+
     params:
-    '''''''''''
+    --------
     pdf_file: path to PDF file
     dpi: resolution of the output image
+
     returns:
-    '''''''''''
+    --------
     List of images as Pillow Image
     """
     return convert_from_path(pdf_file, dpi=dpi)
@@ -37,12 +37,14 @@ def convert_pdf_to_images(pdf_file: str, dpi:int = 200)-> list[Image]:
 def extract_bboxes_from_horc(images: list[Image], config: str ='--oem 1 --psm 1') -> dict:
     """
     Extract bounding boxes for non-text regions from hOCR document.
+
     params:
-    '''''''''''
+    --------
     images: list of images as Pillow Image
-    config: tesseract config options
+    config: tesseract config options. Default: --oem 1 --psm 1. Engine Neural nets LSTM only. Auto page segmentation with OSD
+    
     returns:
-    '''''''''''
+    ----------
     Dictionary with bounding boxes and ids for non-text regions
     """
     _config = config + ' hocr'
@@ -51,24 +53,24 @@ def extract_bboxes_from_horc(images: list[Image], config: str ='--oem 1 --psm 1'
         horc_data = pytesseract.image_to_pdf_or_hocr(img, extension='hocr', config=_config)
         soup = BeautifulSoup(horc_data, 'html.parser')
         paragraphs = soup.find_all('p', class_='ocr_par')
-        paragraphs_bounding_boxes = []
+        non_text_bboxes = []
         paragraphs_ids = []
         # paragraph_confidence_scores = []
         # boxed_paragraphs = []
         for paragraph in paragraphs:
             title = paragraph.get('title')
             id = paragraph.get('id')
-            # used to if paragraph contains text
+            # use to check if paragraph contains text
             text_element = paragraph.find('span', {'class': 'ocrx_word'})
             text =text_element.get_text()
 
             if title and text.strip() == "":
                 bounding_box = title.split(';')[0].split(' ')[1:]
                 bounding_box = [int(value) for value in bounding_box]
-                paragraphs_bounding_boxes.append(bounding_box)
+                non_text_bboxes.append(bounding_box)
                 paragraphs_ids.append(id)
 
-    return {'bboxes': paragraphs_bounding_boxes, 'ids': paragraphs_ids}
+    return {'bboxes': non_text_bboxes, 'ids': paragraphs_ids}
 
 
 def crop_images_to_bbox(images:list[Image], bbox: list[list[int]], 
@@ -76,14 +78,17 @@ def crop_images_to_bbox(images:list[Image], bbox: list[list[int]],
     """
     Crop images based on bounding boxes. Croped images are saved to output 
     directory as JPG files.
+
     params:
-    '''''''''''
+    --------
+
     image: Pillow Image or list of Pillow Image objects
     bbox: bounding box as list [x, y, width, height] or list of bounding boxes
     output_dir: path to output directory for cropped images
     ids: id or list of ids for cropped images
+
     returs:
-    '''''''''''
+    --------
     None
     """
 
@@ -101,6 +106,53 @@ def crop_images_to_bbox(images:list[Image], bbox: list[list[int]],
 
     return None
 
+
+def marked_bounding_boxes(images: list[Image], bbox:list[list[int]], output_dir:str, ids:list=None) -> None:
+    """
+    Draw bounding boxes of on input images and save a copy to output directory.
+
+    params:
+    --------
+    imges: lis of Pillow Image
+    bbox: list of bounding boxes
+    output_idr: path to output directory
+    ids: labels for bounding boxes. Optional.
+    
+    returns:
+    --------
+    None
+    """
+    if ids is None:
+        ids = [''] * len(bbox)
+
+    image_counter = 1
+    for img in images:
+
+        fig, ax = plt.subplots(1)
+
+        plt.axis('off')
+        # Display the image
+        ax.imshow(img)
+
+        # Create a Rectangle patch
+  
+        for bounding_box, label in zip(bbox, ids):
+            x, y, w, h = bounding_box
+            rect = patches.Rectangle((x, y), w - x, h - y, linewidth=1.5, edgecolor='r', facecolor='none')
+            ax.add_patch(rect)
+            tag_text = label
+            tag_x = x
+            tag_y = y
+            plt.text(tag_x, tag_y, tag_text, fontsize=9, color='blue', ha='left', va='center')
+
+        plt.savefig(f'{output_dir}/page-{image_counter}.png', dpi=200, bbox_inches='tight')    
+        image_counter += 1
+
+        plt.close()
+    
+    return None
+
+
 # Convert PDF to image
 IMAGES = convert_from_path('data-pipelines/data/caption-tests/multi-image-caption.pdf', dpi=300)
 OUTPUT_DIR = 'data-pipelines/data/ocr-test'
@@ -116,7 +168,7 @@ for img in IMAGES:
     soup = BeautifulSoup(horc_data, 'html.parser')
     paragraphs = soup.find_all('p', class_='ocr_par')
     print('working_image', page_counter)
-    paragraphs_bounding_boxes = []
+    non_text_bboxes = []
     paragraphs_ids = []
     # paragraph_confidence_scores = []
     # boxed_paragraphs = []
@@ -130,7 +182,7 @@ for img in IMAGES:
         if title and text.strip() == "":
             bounding_box = title.split(';')[0].split(' ')[1:]
             bounding_box = [int(value) for value in bounding_box]
-            paragraphs_bounding_boxes.append(bounding_box)
+            non_text_bboxes.append(bounding_box)
             paragraphs_ids.append(id) 
         
     # for bounding_box, id in zip(paragraphs_bounding_boxes, paragraphs_ids):
@@ -138,28 +190,3 @@ for img in IMAGES:
     #     cropped_image = img.crop((x, y, w, h))
         # cropped_image.save(f'data-pipelines/data/ocr-test/image-{id}.jpg')
 
-##########################################
-# Plotting bounding boxes
-
-    fig, ax = plt.subplots(1)
-
-    plt.axis('off')
-    # Display the image
-    ax.imshow(img)
-
-    # Create a Rectangle patch
-    for bounding_box, id in zip(paragraphs_bounding_boxes, paragraphs_ids):
-        x, y, w, h = bounding_box
-        rect = patches.Rectangle((x, y), w - x, h - y, linewidth=2, edgecolor='r', facecolor='none')
-        ax.add_patch(rect)
-        tag_text = id
-        tag_x = x
-        tag_y = y
-        plt.text(tag_x, tag_y, tag_text, fontsize=10, color='blue', ha='left', va='center')
-
-    plt.savefig(f'{OUTPUT_DIR}/page-{page_counter}.png', dpi=200, bbox_inches='tight')
-    
-    page_counter += 1
-    plt.close()
-    # plt.show()
-print('finished')
