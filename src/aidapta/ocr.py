@@ -18,6 +18,7 @@ from pdf2image import convert_from_path
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from PIL.Image import Image
+from tqdm import tqdm
 
 
 def convert_pdf_to_images(pdf_file: str, dpi:int = 200)-> list[Image]:
@@ -55,7 +56,7 @@ def extract_bboxes_from_horc(images: list[Image], config: str ='--oem 1 --psm 1'
 
     results = {}
     page_counter = 1
-    for img in images:
+    for img in tqdm(images,desc="Extracting bounding boxes", unit="pages"):
         horc_data = pytesseract.image_to_pdf_or_hocr(img, extension='hocr', config=_config)
         soup = BeautifulSoup(horc_data, 'html.parser')
         paragraphs = soup.find_all('p', class_='ocr_par')
@@ -81,8 +82,7 @@ def extract_bboxes_from_horc(images: list[Image], config: str ='--oem 1 --psm 1'
     return results
 
 
-def crop_images_to_bbox(images:list[Image], bbox: list[list[int]], 
-                       ids:list, output_dir:str ) -> None:
+def crop_images_to_bbox(hocr_results: dict, output_dir:str, filter_size:int=50) -> None:
     """
     Crop images based on bounding boxes. Croped images are saved to output 
     directory as JPG files.
@@ -94,28 +94,27 @@ def crop_images_to_bbox(images:list[Image], bbox: list[list[int]],
     bbox: bounding box as list [x, y, width, height] or list of bounding boxes
     output_dir: path to output directory for cropped images
     ids: id or list of ids for cropped images
+    filter_size: minimum size (width or height) of bounding box used to crop image. Default: 50 pixels
 
     returs:
     --------
     None
     """
 
-    if isinstance(images, list) and isinstance(bbox, list) and isinstance(ids, list):
-        if len(images) == len(bbox) == len(ids): # TODO: check if all variables must be the same length
-            for img, bounding_box, id in zip(images, bbox, ids):
-                x, y, w, h = bounding_box
-                cropped_image = img.crop((x, y, w, h))
-                cropped_image.save(f'{output_dir}/image-{id}.jpg')
-        else:
-            raise ValueError('images, bbox, and ids must be of same length')
-
-    else:
-        raise TypeError('images, bbox, and ids must be of type list')
+    
+    for page, results in tqdm(hocr_results.items(), desc="Cropping images", unit="pages"):
+        for bounding_box, id in zip(results['bboxes'], results['ids']):
+            x1, y1, x2, y2 = bounding_box # coordinates from top left corner
+            width = x2 - x1
+            height = y2 - y1
+            if min(width, height) >= filter_size:
+                cropped_image = results['img'].crop((x1, y1, x2, y2))
+                cropped_image.save(f'{output_dir}/{page}-id-{id}.png')
 
     return None
 
 
-def marked_bounding_boxes(hocr_results: dict, output_dir:str, ids:list=None) -> None:
+def marked_bounding_boxes(hocr_results: dict, output_dir:str, ids:list=None, filter_size:int=50) -> None:
     """
     Draw bounding boxes of on input images and save a copy to output directory.
 
@@ -125,6 +124,7 @@ def marked_bounding_boxes(hocr_results: dict, output_dir:str, ids:list=None) -> 
     bbox: list of bounding boxes
     output_idr: path to output directory
     ids: labels for bounding boxes. Optional.
+    filter_size: minimum size (width or height) of bounding box to be drawn. Default: 50 pixels
     
     returns:
     --------
@@ -134,40 +134,46 @@ def marked_bounding_boxes(hocr_results: dict, output_dir:str, ids:list=None) -> 
     #     raise ValueError('images and bbox must be of same length')
 
 
-    for page, result  in hocr_results.items():
+    for page, result  in tqdm(hocr_results.items(), desc="Drawing bounding boxes", unit="pages"):
 
-        fig, ax = plt.subplots(1)
+        if len( result['bboxes']) != 0: # skip creating images for pages with no bounding boxes
+            
+            fig, ax = plt.subplots(1)
 
-        plt.axis('off')
-        # Display the image
-        ax.imshow(result['img'])
+            plt.axis('off')
+            # Display the image
+            ax.imshow(result['img'])
 
-        # Create a Rectangle patch
-  
-        for bounding_box, label in zip(result['bboxes'] , result['ids']):
-            x, y, w, h = bounding_box
-            rect = patches.Rectangle((x, y), w - x, h - y, linewidth=1.5, edgecolor='r', facecolor='none')
-            ax.add_patch(rect)
-            tag_text = label
-            tag_x = x
-            tag_y = y
-            plt.text(tag_x, tag_y, tag_text, fontsize=9, color='blue', ha='left', va='center')
-
-        plt.savefig(f'{output_dir}/{page}.png', dpi=200, bbox_inches='tight')    
+            # Create a Rectangle patch
     
-        plt.close()
+            for bounding_box, label in zip(result['bboxes'] , result['ids']):
+                x1, y1, x2, y2 = bounding_box # coordinates from top left corner
+                width = x2 - x1
+                height = y2 - y1
+                if min(width, height) >= filter_size:
+                    rect = patches.Rectangle((x1, y1), width, height, linewidth=1.5, edgecolor='r', facecolor='none')
+                    ax.add_patch(rect)
+                    tag_text = label
+                    tag_x = x1
+                    tag_y = y1
+                    plt.text(tag_x, tag_y, tag_text, fontsize=9, color='blue', ha='left', va='center')
+
+            plt.savefig(f'{output_dir}/{page}.png', dpi=200, bbox_inches='tight')    
+        
+            plt.close()
     
     return None
 
-
 if __name__ == '__main__':
 
-    # PDF_FILE = 'data-pipelines/data/caption-tests/multi-image-caption.pdf'
+    PDF_FILE = 'data-pipelines/data/caption-tests/multi-image-caption.pdf'
+    # PDF_FILE = 'data-pipelines/data/design-data100/00003/00003_Report_Giorgio_Larcher_vol.1.pdf'
     # PDF_FILE = 'data-pipelines/data/design-data100/00003/00003_Report_Giorgio_Larcher_vol.2.pdf'
-    PDF_FILE = 'data-pipelines/data/design-data100/00003/00003_Report_Giorgio_Larcher_vol.3.pdf'    
-    OUTPUT_DIR = 'data-pipelines/data/ocr-test/00003_vol3'
-    images = convert_pdf_to_images(PDF_FILE, dpi=300)
+    # PDF_FILE = 'data-pipelines/data/design-data100/00003/00003_Report_Giorgio_Larcher_vol.3.pdf'    
+    OUTPUT_DIR = 'data-pipelines/data/ocr-test/00003/vol3'
+    images = convert_pdf_to_images(PDF_FILE, dpi=200)
 
     results = extract_bboxes_from_horc(images)
  
-    marked_bounding_boxes(results, OUTPUT_DIR)
+    marked_bounding_boxes(results, OUTPUT_DIR, filter_size=100)
+    crop_images_to_bbox(results, OUTPUT_DIR, filter_size=100)
