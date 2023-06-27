@@ -166,14 +166,14 @@ def marked_bounding_boxes(hocr_results: dict, output_dir:str, ids:list=None, fil
 
 if __name__ == '__main__':
 
-    PDF_FILE = 'data-pipelines/data/caption-tests/multi-image-caption.pdf'
+    # PDF_FILE = 'data-pipelines/data/caption-tests/multi-image-caption.pdf'
     # PDF_FILE = 'data-pipelines/data/design-data100/00003/00003_Report_Giorgio_Larcher_vol.1.pdf'
-    # PDF_FILE = 'data-pipelines/data/design-data100/00003/00003_Report_Giorgio_Larcher_vol.2.pdf'
-    # PDF_FILE = 'data-pipelines/data/design-data100/00003/00003_Report_Giorgio_Larcher_vol.3.pdf'    
-    OUTPUT_DIR = 'data-pipelines/data/ocr-test/00003/vol3'
+    PDF_FILE = 'data-pipelines/data/design-data100/00003/00003_Report_Giorgio_Larcher_vol.2.pdf'
+    # PDF_FILE = 'data-pipelines/data/design-data100/00003/00003_Report_Giorgio_Larcher_vol.3.pdf'   
+    OUTPUT_DIR = 'data-pipelines/data/ocr-test/00003/vol2'
     images = convert_pdf_to_images(PDF_FILE, dpi=200)
 
     results = extract_bboxes_from_horc(images)
  
-    marked_bounding_boxes(results, OUTPUT_DIR, filter_size=100)
+    # marked_bounding_boxes(results, OUTPUT_DIR, filter_size=100)
     crop_images_to_bbox(results, OUTPUT_DIR, filter_size=100)
