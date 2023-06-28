@@ -10,6 +10,7 @@ Welcome to OpenDesign Handbook's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+   data-extraction
 
 
 Indices and tables
