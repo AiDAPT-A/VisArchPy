@@ -166,14 +166,20 @@ def marked_bounding_boxes(hocr_results: dict, output_dir:str, ids:list=None, fil
 
 if __name__ == '__main__':
 
-    PDF_FILE = 'data-pipelines/data/caption-tests/multi-image-caption.pdf'
+    # PDF_FILE = 'data-pipelines/data/caption-tests/multi-image-caption.pdf'
+    # registry 1
+    # PDF_FILE='data-pipelines/data/design-data100/00001_P5_Yilin_Zhou.pdf'
+    # regisry 2
+    # PDF_FILE='data-pipelines/data/design-data100/00002_P5PresentatieEricdeRidder_28jun.pdf' 
+    PDF_FILE= 'data-pipelines/data/design-data100/00002_RESEARCHBOOKEricdeRidder_P5Repository.pdf'
+    # registry 3
     # PDF_FILE = 'data-pipelines/data/design-data100/00003/00003_Report_Giorgio_Larcher_vol.1.pdf'
     # PDF_FILE = 'data-pipelines/data/design-data100/00003/00003_Report_Giorgio_Larcher_vol.2.pdf'
     # PDF_FILE = 'data-pipelines/data/design-data100/00003/00003_Report_Giorgio_Larcher_vol.3.pdf'    
-    OUTPUT_DIR = 'data-pipelines/data/ocr-test/00003/vol3'
+    OUTPUT_DIR = 'data-pipelines/data/ocr-test/00002/vol2-psm3-oem1'
     images = convert_pdf_to_images(PDF_FILE, dpi=200)
 
-    results = extract_bboxes_from_horc(images)
+    results = extract_bboxes_from_horc(images, config='--psm 3 --oem 1')
  
     marked_bounding_boxes(results, OUTPUT_DIR, filter_size=100)
     crop_images_to_bbox(results, OUTPUT_DIR, filter_size=100)
