@@ -21,7 +21,7 @@ from PIL.Image import Image
 from tqdm import tqdm
 
 
-def convert_pdf_to_images(pdf_file: str, dpi:int = 200)-> list[Image]:
+def convert_pdf_to_image(pdf_file: str, dpi:int = 200, **kargs)-> list[Image]:
     """
     Convert PDF file to image, one page at a time.
 
@@ -29,15 +29,25 @@ def convert_pdf_to_images(pdf_file: str, dpi:int = 200)-> list[Image]:
     --------
     pdf_file: path to PDF file
     dpi: resolution of the output image
+    **kargs: additional arguments for convert_from_path function from pdf2image package
 
     returns:
     --------
     List of images as Pillow Image
+
     """
-    return convert_from_path(pdf_file, dpi=dpi)
+
+    if 'first_page' in kargs and 'last_page' in kargs:
+
+        first_page = kargs['first_page']
+        last_page = kargs['last_page']
+        return convert_from_path(pdf_file, dpi=dpi, first_page=first_page, last_page=last_page)
+    else:
+        return convert_from_path(pdf_file, dpi=dpi)
 
 
-def extract_bboxes_from_horc(images: list[Image], config: str ='--oem 1 --psm 1') -> dict:
+
+def extract_bboxes_from_horc(images: list[Image], config: str ='--oem 1 --psm 1', page_number=None) -> dict:
     """
     Extract bounding boxes for non-text regions from hOCR document.
 
@@ -55,7 +65,13 @@ def extract_bboxes_from_horc(images: list[Image], config: str ='--oem 1 --psm 1'
     _config = config + ' hocr'
 
     results = {}
-    page_counter = 1
+
+    if isinstance(page_number, int):
+        page_counter = None 
+    else: 
+        page_counter = 1
+        # use a counter to keep track of page number
+    
     for img in tqdm(images,desc="Extracting bounding boxes", unit="pages"):
         horc_data = pytesseract.image_to_pdf_or_hocr(img, extension='hocr', config=_config)
         soup = BeautifulSoup(horc_data, 'html.parser')
@@ -77,15 +93,21 @@ def extract_bboxes_from_horc(images: list[Image], config: str ='--oem 1 --psm 1'
                 non_text_bboxes.append(bounding_box)
                 paragraphs_ids.append(id)
 
-        results[f'page-{page_counter}'] = {'img': img, 'bboxes': non_text_bboxes, 'ids': paragraphs_ids}
-        page_counter += 1
+            if page_counter is not None: 
+                page_number = page_counter
+                page_counter += 1
+            else:
+                page_number = page_number
+            
+            results[f'page-{page_number}'] = {'img': img, 'bboxes': non_text_bboxes, 'ids': paragraphs_ids}
+        
     return results
 
 
 def crop_images_to_bbox(hocr_results: dict, output_dir:str, filter_size:int=50) -> None:
     """
     Crop images based on bounding boxes. Croped images are saved to output 
-    directory as JPG files.
+    directory as PNG files.
 
     params:
     --------
@@ -114,7 +136,7 @@ def crop_images_to_bbox(hocr_results: dict, output_dir:str, filter_size:int=50) 
     return None
 
 
-def marked_bounding_boxes(hocr_results: dict, output_dir:str, ids:list=None, filter_size:int=50) -> None:
+def marked_bounding_boxes(hocr_results: dict, output_dir:str, ids:list=None, filter_size:int=50, page_number=None) -> None:
     """
     Draw bounding boxes of on input images and save a copy to output directory.
 
@@ -125,6 +147,7 @@ def marked_bounding_boxes(hocr_results: dict, output_dir:str, ids:list=None, fil
     output_idr: path to output directory
     ids: labels for bounding boxes. Optional.
     filter_size: minimum size (width or height) of bounding box to be drawn. Default: 50 pixels
+    page_number: page number to be drawn. Optional. If None, the HOCR page number is used.
     
     returns:
     --------
@@ -158,6 +181,9 @@ def marked_bounding_boxes(hocr_results: dict, output_dir:str, ids:list=None, fil
                     tag_y = y1
                     plt.text(tag_x, tag_y, tag_text, fontsize=9, color='blue', ha='left', va='center')
 
+            if page_number is not None:
+                page = page_number
+           
             plt.savefig(f'{output_dir}/{page}.png', dpi=200, bbox_inches='tight')    
         
             plt.close()
@@ -177,7 +203,7 @@ if __name__ == '__main__':
     # PDF_FILE = 'data-pipelines/data/design-data100/00003/00003_Report_Giorgio_Larcher_vol.2.pdf'
     # PDF_FILE = 'data-pipelines/data/design-data100/00003/00003_Report_Giorgio_Larcher_vol.3.pdf'    
     OUTPUT_DIR = 'data-pipelines/data/ocr-test/00002/vol2-psm3-oem1'
-    images = convert_pdf_to_images(PDF_FILE, dpi=200)
+    images = convert_pdf_to_image(PDF_FILE, dpi=200)
 
     results = extract_bboxes_from_horc(images, config='--psm 3 --oem 1')
  
