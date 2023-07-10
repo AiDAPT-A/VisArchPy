@@ -79,7 +79,7 @@ def extract_images(pdf_file: str, output_dir: str) -> None:
 
 def sort_layout_elements(page:LTPage, img_width = None, img_height = None)-> dict:
     """
-    sorts LTTextContainer and LTImage elements from a PDF file using PDFMiner
+    sorts LTTextContainer, LTImage, LTFigure, and LTCurve elements from a single PDF page using PDFMiner.six
 
     params:
     ----------
@@ -89,7 +89,7 @@ def sort_layout_elements(page:LTPage, img_width = None, img_height = None)-> dic
             None, img_width will be used
 
     returns:    
-        dictionary with LTTextContainer and LTImage elements
+        dictionary with LTTextContainer, LTImage, and LTCurve elements
     """
     if img_width is None:
         img_width = 0
@@ -97,7 +97,7 @@ def sort_layout_elements(page:LTPage, img_width = None, img_height = None)-> dic
         img_height = img_width
     
     page_number = page.pageid  # page number on the PDF file, starts at 1
-    # This is not the same as the index of the page in the list of pages
+    # This is not the same as the index in the document
 
     text_elements = []
     image_elements = []
