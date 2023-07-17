@@ -89,7 +89,7 @@ def main(entry_id: str,):
 
         # PREPARE OUTPUT DIRECTORY
         pdf_file_name = pathlib.Path(pdf_document.location).stem
-        image_directory = create_output_dir(entry_directory, pdf_file_name) 
+        image_directory = create_output_dir(entry_directory, pdf_file_name) # returns a pathlib object
         
         ocr_directory = create_output_dir(image_directory, "ocr")
 
@@ -156,7 +156,7 @@ def main(entry_id: str,):
                     pass
                     
                 visual.set_location( FilePath(
-                                         image_directory, image_file_name
+                                         str(image_directory), image_file_name
                                         ) 
                                     ) 
             
@@ -164,7 +164,7 @@ def main(entry_id: str,):
                 entry.add_visual(visual)
 
         # PROCESS PAGE USING OCR ANALYSIS
-        for page in tqdm(pages, desc="OCR analysis", total=len(pages), unit="sorted pages"):
+        for page in pages:
 
             if page["images"] == []: # apply to pages where no images were found by layout analysis
                 page_image = ocr.convert_pdf_to_image(pdf_document.location, dpi=200, first_page=page["page_number"], last_page=page["page_number"])
@@ -193,8 +193,19 @@ def main(entry_id: str,):
             shutil.copy2(pdf, temp_entry_directory)
     
     # SAVE METADATA TO files
-    entry.save_to_json(os.path.join(entry_directory, entry_id + "-metadata.json"))
-    entry.save_to_csv(os.path.join(entry_directory, entry_id + "-metadata.csv"))
+    # json_file = str(os.path.join(entry_directory, entry_id) + "-metadata.json")
+    csv_file = str(os.path.join(entry_directory, entry_id) + "-metadata.csv")
+    json_file = str(os.path.join(entry_directory, entry_id) + "-metadata.json")
+
+
+    fname = open("test-metadata.json", "w")
+
+    # entry.save_to_json(fname)
+    import json
+    json.dump(entry.as_dict(), fname)
+
+
+    # entry.save_to_csv(csv_file)
 
     end_time = time.time()
     total_time = end_time - start_time
@@ -204,5 +215,5 @@ def main(entry_id: str,):
 if __name__ == "__main__":
     
     # for id in range(11,12):
-    str_id = str(0).zfill(5)
+    str_id = str(1).zfill(5)
     main(str_id)
