@@ -47,7 +47,7 @@ def convert_pdf_to_image(pdf_file: str, dpi:int = 200, **kargs)-> list[Image]:
 
 
 
-def extract_bboxes_from_horc(images: list[Image], config: str ='--oem 1 --psm 1', page_number=None) -> dict:
+def extract_bboxes_from_horc(images: list[Image], config: str ='--oem 1 --psm 1', page_number=None, entry_id=None) -> dict:
     """
     Extract bounding boxes for non-text regions from hOCR document.
 
@@ -55,6 +55,7 @@ def extract_bboxes_from_horc(images: list[Image], config: str ='--oem 1 --psm 1'
     --------
     images: list of images as Pillow Image
     config: tesseract config options. Default: --oem 1 --psm 1. Engine Neural nets LSTM only. Auto page segmentation with OSD
+    entry_id: id for entry (an entry identifies a group of files somehow related). Optional.
     
     returns:
     ----------
@@ -72,7 +73,7 @@ def extract_bboxes_from_horc(images: list[Image], config: str ='--oem 1 --psm 1'
         page_counter = 1
         # use a counter to keep track of page number
     
-    for img in tqdm(images,desc="Extracting bounding boxes", unit="pages"):
+    for img in images:
         horc_data = pytesseract.image_to_pdf_or_hocr(img, extension='hocr', config=_config)
         soup = BeautifulSoup(horc_data, 'html.parser')
         paragraphs = soup.find_all('p', class_='ocr_par')
@@ -98,8 +99,11 @@ def extract_bboxes_from_horc(images: list[Image], config: str ='--oem 1 --psm 1'
                 page_counter += 1
             else:
                 page_number = page_number
-            
-            results[f'page-{page_number}'] = {'img': img, 'bboxes': non_text_bboxes, 'ids': paragraphs_ids}
+
+            if entry_id is not None:
+                results[f'{entry_id}-page-{page_number}'] = {'img': img, 'bboxes': non_text_bboxes, 'ids': paragraphs_ids}
+            else:
+                results[f'page-{page_number}'] = {'img': img, 'bboxes': non_text_bboxes, 'ids': paragraphs_ids}
         
     return results
 
@@ -157,7 +161,7 @@ def marked_bounding_boxes(hocr_results: dict, output_dir:str, ids:list=None, fil
     #     raise ValueError('images and bbox must be of same length')
 
 
-    for page, result  in tqdm(hocr_results.items(), desc="Drawing bounding boxes", unit="pages"):
+    for page, result in hocr_results.items():
 
         if len( result['bboxes']) != 0: # skip creating images for pages with no bounding boxes
             
