@@ -51,6 +51,12 @@ class FilePath:
     root_path: str
     file_path: str
 
+    def __post_init__(self):
+        if not isinstance(self.root_path, str):
+            raise TypeError("root_path must be a string")
+        if not isinstance(self.file_path, str):
+            raise TypeError("file_path must be a string")
+
 
     def update_root_path(self, root_path: str) -> None:
         """Updates the root path"""
