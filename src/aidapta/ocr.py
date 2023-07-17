@@ -211,5 +211,5 @@ if __name__ == '__main__':
 
     results = extract_bboxes_from_horc(images, config='--psm 3 --oem 1')
  
-    marked_bounding_boxes(results, OUTPUT_DIR, filter_size=100)
+    # marked_bounding_boxes(results, OUTPUT_DIR, filter_size=100)
     crop_images_to_bbox(results, OUTPUT_DIR, filter_size=100)
