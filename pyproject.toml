@@ -4,13 +4,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "aidapta"
-version = "0.0.2"
+version = "0.1.0"
 authors = [
     {name = "Manuel Garcia", email = "m.g.garciaalvarez@tudelft.nl"},
 ]
 description = "data pipelines for extraction of architectural visuals"
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 keywords = ["one", "two"]
 license = {text = "BSD-3-Clause"}
 classifiers = ["Development Status :: 3 - Alpha",
@@ -21,14 +21,18 @@ classifiers = ["Development Status :: 3 - Alpha",
 ]
 dependencies = [
     "Pillow",
-    "PyPDF2", 
     "requests",
+    "PyPDF2",
     "pdfminer.six",
     "PyMuPDF",
     "beautifulsoup4",
     "shapely",
     "pandas",
     "pymods",
+    "tqdm",
+    "pdf2image",
+    "pytesseract",
+    "matplotlib",
 ]
 
 [tool.pytest.ini_options]

@@ -2,12 +2,11 @@
 
 Pipelines for the extraction and processing of visuals from PDFs.
 
-## Dependencies
+## Requirements
 
 - Python 3.10 or newer 
 - PIL
-- [pymuPDF](https://pymupdf.readthedocs.io/en/latest/intro.html)
-- [pyPDF2](https://pypdf2.readthedocs.io/en/3.0.0/)
+- [Tesseract v.4.0](https://tesseract-ocr.github.io/)
 
 ## Installing the AiDAT-A library
 
@@ -15,11 +14,23 @@ Pipelines for the extraction and processing of visuals from PDFs.
     ```shell
     python3 -m venv .venv/
     ```
-2. Install required aidapta package. From the repository root run:
+2. Clone the repository.
+3. Install required aidapta package. From the repository root run:
 
     ```shell
     pip install -e .
     ```
 
-## Examples
-Check the [examples directory](examples) to learn how to use the library.
+## Pipelines
+
+The pakcage implements two case-specific pipelines for the extraction visuals from PDF files.
+
+1. The `image_pipeline.py`, uses `PDFMiner.six` to analyse the elements in a PDF file and extract visual and captions. We called this approache **layout analysis**.
+2. The `image_ocr_pipeline.py`, uses *layout analysis* and **OCR analysis** to extract visual. The OCR analysis uses **Tesseract** to improve the extraction of drawing and floorplans.
+
+## Running the Pipelines
+
+1. Open the pipeline of your choice using Python
+2. Configure the settings
+3. Run
+

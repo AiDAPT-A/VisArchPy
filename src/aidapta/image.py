@@ -19,24 +19,25 @@ from pdfminer.layout import (
 
 # From https://pypdf2.readthedocs.io/en/latest/user/extract-images.html
 
-def create_output_dir(base_path: str, path="") -> bool:
+def create_output_dir(base_path: str, path="") -> str:
     """
-    creates a directory in the root path if it doesn't exists.
+    creates a directory in the base path if it doesn't exists.
 
     params:
     ----------
         base_path: path to destination directory
         name: name  or path for the new directory, parent directories are created if they don't exists
     returns:
-        relative path to the new created directory
+        relative path (comibining base_path and path) to the new created directory
     """
 
     if isinstance(base_path, pathlib.Path):
         base_path = str(base_path)
+
     full_path = os.path.join(base_path, path)
     pathlib.Path(full_path).mkdir(parents=True, exist_ok=True)
 
-    return pathlib.Path(path)
+    return pathlib.Path(full_path)
 
 
 def extract_images(pdf_file: str, output_dir: str) -> None:
@@ -79,7 +80,7 @@ def extract_images(pdf_file: str, output_dir: str) -> None:
 
 def sort_layout_elements(page:LTPage, img_width = None, img_height = None)-> dict:
     """
-    sorts LTTextContainer and LTImage elements from a PDF file using PDFMiner
+    sorts LTTextContainer, LTImage, LTFigure, and LTCurve elements from a single PDF page using PDFMiner.six
 
     params:
     ----------
@@ -89,7 +90,7 @@ def sort_layout_elements(page:LTPage, img_width = None, img_height = None)-> dic
             None, img_width will be used
 
     returns:    
-        dictionary with LTTextContainer and LTImage elements
+        dictionary with LTTextContainer, LTImage, and LTCurve elements
     """
     if img_width is None:
         img_width = 0
@@ -97,7 +98,7 @@ def sort_layout_elements(page:LTPage, img_width = None, img_height = None)-> dic
         img_height = img_width
     
     page_number = page.pageid  # page number on the PDF file, starts at 1
-    # This is not the same as the index of the page in the list of pages
+    # This is not the same as the index in the document
 
     text_elements = []
     image_elements = []
