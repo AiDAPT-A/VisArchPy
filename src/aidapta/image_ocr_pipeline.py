@@ -16,13 +16,12 @@ from aidapta.image import sort_layout_elements, create_output_dir
 from aidapta.metadata import Document, Metadata, Visual, FilePath
 import aidapta.ocr as ocr
 
+
 def main(entry_id: str,):
 
     start_time = time.time()
 
-    ###########################################
-    ## SETTINGS                              ##
-    ###########################################
+    #SETTINGS                              
 
     # SELECT INPUT DIRECTORY
     INPUT_DIR = "data-pipelines/data/design-data100/" # an absolute path is recommended,
@@ -39,25 +38,23 @@ def main(entry_id: str,):
     # this directory is used to store temporary files. PDF files are copied to this directory
     TMP_DIR = "data-pipelines/data/tmp/" 
 
-    # CAPTION MATCH SETTINGS
+    #CAPTION MATCH SETTINGS
     CAP_SETTINGS ={"method": "bbox",
             "offset": 14, # one unit equals 1/72 inch or 0.3528 mm
             "direction": "down", # all directions
             "keywords": ['figure', 'caption', 'figuur'] # case insentitive
             }
+    
+    # SETTINGS FOR THE IMAGE EXTRACTION
+    IMG_SETTINGS = {"width": 100, "height": 100} # recommended values: 0, 0
+
 
     # Create output directory for the entry
     entry_directory = create_output_dir(OUTPUT_DIR, entry_id)
     
-
     # start logging
     logging.basicConfig(filename=os.path.join(OUTPUT_DIR, entry_id, entry_id + '.log'), encoding='utf-8', level=logging.INFO)
     logging.info("Starting pipeline for entry: " + entry_id)
-
-    # SETTINGS FOR THE IMAGE EXTRACTION
-    IMG_SETTINGS = {"width": 100, "height": 100} # recommended values: 0, 0
-
-    ###########################################
 
     logging.info("Image settings: " + str(IMG_SETTINGS))
 
@@ -89,7 +86,8 @@ def main(entry_id: str,):
 
         # PREPARE OUTPUT DIRECTORY
         pdf_file_name = pathlib.Path(pdf_document.location).stem
-        image_directory = create_output_dir(entry_directory, pdf_file_name) # returns a pathlib object
+        image_directory = create_output_dir(entry_directory, 
+                                            pdf_file_name) # returns a pathlib object
         
         ocr_directory = create_output_dir(image_directory, "ocr")
 
@@ -98,27 +96,34 @@ def main(entry_id: str,):
 
         pages = []
         for page in tqdm(pdf_pages, desc="Reading pages", unit="pages"):
-            elements = sort_layout_elements(page, img_height=IMG_SETTINGS["width"], img_width=IMG_SETTINGS["height"])
+            elements = sort_layout_elements(page, img_height=IMG_SETTINGS["width"], 
+                                            img_width=IMG_SETTINGS["height"])
             pages.append(elements)
 
+        ocr_pages = []
         # PROCESS PAGE USING LAYOUT ANALYSIS
-        for page in tqdm(pages, desc="layout analysis", total=len(pages), unit="sorted pages"):
+        for page in tqdm(pages, desc="layout analysis", total=len(pages), 
+                         unit="sorted pages"):
 
             iw = ImageWriter(image_directory)
+
+            if page["images"] == []:
+                ocr_pages.append(page)
         
             for img in page["images"]:
             
-                visual = Visual(document_page=page["page_number"], document=pdf_document, bbox=img.bbox)
+                visual = Visual(document_page=page["page_number"], 
+                                document=pdf_document, bbox=img.bbox)
                 
-                # Search for captions using proximity to image Bboxes
-                # This might generate multiple matches
+                # Search for captions using proximity to image
+                # This may generate multiple matches
                 bbox_matches =[]
                 for _text in page["texts"]:
                     match = find_caption_by_bbox(img, _text, offset=CAP_SETTINGS["offset"], 
                                                 direction=CAP_SETTINGS["direction"])
                     if match:
                         bbox_matches.append(match)
-                # Search for captions using  proximity (offset) and text analyses (keywords)
+                # Search for captions using proximity (offset) and text analyses (keywords)
                 if len(bbox_matches) == 0: # if more than one bbox matches, move to text analysis
                     pass # don't set any caption
                 elif len(bbox_matches) == 1:
@@ -133,7 +138,8 @@ def main(entry_id: str,):
                         caption = ""
                         for text_line in bbox_matches[0]:
                             caption += text_line.get_text().strip() 
-                    # Set the caption to the firt text match.
+                    # Set the caption to the first text match.
+                    # TODO: implement recording multiple matches when no single match can be ruled out
                     # All other matches will be ignored. 
                     # This may introduce errors, but it is better than having multiple captions
                         try:
@@ -142,11 +148,11 @@ def main(entry_id: str,):
                             logging.warning("Caption already set for image: " + img.name)
                             pass
                         
-                # TODO: https://github.com/pdfminer/pdfminer.six/pull/854
                 # rename image name to include page number
                 img.name =  str(entry_id) + "-page" + str(page["page_number"]) + "-" + img.name
                 # save image to file
             
+                # TODO: https://github.com/pdfminer/pdfminer.six/pull/854
                 try:
                     image_file_name =iw.export_image(img) # returns image file name, 
                     # which last part is automatically generated by pdfminer to guarantee uniqueness
@@ -164,14 +170,13 @@ def main(entry_id: str,):
                 entry.add_visual(visual)
 
         # PROCESS PAGE USING OCR ANALYSIS
-        for page in pages:
+        for ocr_page in tqdm(ocr_pages, desc="OCR analysis", total=len(ocr_pages), unit="OCR pages"):
 
-            if page["images"] == []: # apply to pages where no images were found by layout analysis
-                page_image = ocr.convert_pdf_to_image(pdf_document.location, dpi=200, first_page=page["page_number"], last_page=page["page_number"])
-                ocr_results = ocr.extract_bboxes_from_horc(page_image, config='--psm 3 --oem 1', page_number=page["page_number"])
+            # if page["images"] == []: # apply to pages where no images were found by layout analysis
+                page_image = ocr.convert_pdf_to_image(pdf_document.location, dpi=200, first_page=ocr_page["page_number"], last_page=ocr_page["page_number"])
+                ocr_results = ocr.extract_bboxes_from_horc(page_image, config='--psm 3 --oem 1', entry_id=entry_id, page_number=ocr_page["page_number"])
                 ocr.marked_bounding_boxes(ocr_results, ocr_directory, filter_size=100)      
     
-
     end_processing_time = time.time()
     processing_time = end_processing_time - start_processing_time
     logging.info("PDF processing time: " + str(processing_time))
@@ -196,16 +201,6 @@ def main(entry_id: str,):
     # json_file = str(os.path.join(entry_directory, entry_id) + "-metadata.json")
     csv_file = str(os.path.join(entry_directory, entry_id) + "-metadata.csv")
     json_file = str(os.path.join(entry_directory, entry_id) + "-metadata.json")
-
-
-    fname = open("test-metadata.json", "w")
-
-    # entry.save_to_json(fname)
-    import json
-    json.dump(entry.as_dict(), fname)
-
-
-    # entry.save_to_csv(csv_file)
 
     end_time = time.time()
     total_time = end_time - start_time
