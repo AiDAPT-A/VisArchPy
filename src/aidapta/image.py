@@ -19,24 +19,25 @@ from pdfminer.layout import (
 
 # From https://pypdf2.readthedocs.io/en/latest/user/extract-images.html
 
-def create_output_dir(base_path: str, path="") -> bool:
+def create_output_dir(base_path: str, path="") -> str:
     """
-    creates a directory in the root path if it doesn't exists.
+    creates a directory in the base path if it doesn't exists.
 
     params:
     ----------
         base_path: path to destination directory
         name: name  or path for the new directory, parent directories are created if they don't exists
     returns:
-        relative path to the new created directory
+        relative path (comibining base_path and path) to the new created directory
     """
 
     if isinstance(base_path, pathlib.Path):
         base_path = str(base_path)
+
     full_path = os.path.join(base_path, path)
     pathlib.Path(full_path).mkdir(parents=True, exist_ok=True)
 
-    return pathlib.Path(path)
+    return pathlib.Path(full_path)
 
 
 def extract_images(pdf_file: str, output_dir: str) -> None:
