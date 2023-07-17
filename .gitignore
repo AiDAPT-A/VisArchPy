@@ -7,7 +7,7 @@ venv2/
 docs/build/
 
 # Data directories
-data/*.pdf
+
 data/4Manuel_MODS.xml
 data/actual-data/
 data/design-data100/
