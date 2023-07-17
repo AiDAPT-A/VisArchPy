@@ -89,8 +89,8 @@ def main(entry_id: str,):
 
         # PREPARE OUTPUT DIRECTORY
         pdf_file_name = pathlib.Path(pdf_document.location).stem
-        image_directory = create_output_dir( os.path.join(OUTPUT_DIR, entry_directory), pdf_file_name) 
-        image_directory = create_output_dir( os.path.join(OUTPUT_DIR, entry_directory), pdf_file_name) 
+        image_directory = create_output_dir(entry_directory, pdf_file_name) 
+        
         ocr_directory = create_output_dir(image_directory, "ocr")
 
         # PROCESS SINGLE PDF 
@@ -104,7 +104,7 @@ def main(entry_id: str,):
         # PROCESS PAGE USING LAYOUT ANALYSIS
         for page in tqdm(pages, desc="layout analysis", total=len(pages), unit="sorted pages"):
 
-            iw = ImageWriter( os.path.join(OUTPUT_DIR, entry_directory, image_directory) )
+            iw = ImageWriter(image_directory)
         
             for img in page["images"]:
             
@@ -156,10 +156,9 @@ def main(entry_id: str,):
                     pass
                     
                 visual.set_location( FilePath(
-                                        OUTPUT_DIR, os.path.join(
-                                            entry_directory, image_directory, image_file_name
+                                         image_directory, image_file_name
                                         ) 
-                                    ) )
+                                    ) 
             
                 # add visual to entry
                 entry.add_visual(visual)
@@ -170,8 +169,8 @@ def main(entry_id: str,):
             if page["images"] == []: # apply to pages where no images were found by layout analysis
                 page_image = ocr.convert_pdf_to_image(pdf_document.location, dpi=200, first_page=page["page_number"], last_page=page["page_number"])
                 ocr_results = ocr.extract_bboxes_from_horc(page_image, config='--psm 3 --oem 1', page_number=page["page_number"])
-                ocr.marked_bounding_boxes(ocr_results, ocr_directory, filter_size=100)            
-
+                ocr.marked_bounding_boxes(ocr_results, ocr_directory, filter_size=100)      
+    
 
     end_processing_time = time.time()
     processing_time = end_processing_time - start_processing_time
@@ -186,17 +185,16 @@ def main(entry_id: str,):
     temp_entry_directory = create_output_dir( os.path.join(TMP_DIR, entry_id))
 
     mods_file_name = pathlib.Path(MODS_FILE).stem + ".xml"
-    if not os.path.exists(os.path.join(TMP_DIR, temp_entry_directory, mods_file_name)):
-        shutil.copy2(MODS_FILE, os.path.join(
-            TMP_DIR, temp_entry_directory, entry_id
-            ))
+    if not os.path.exists(os.path.join(temp_entry_directory, mods_file_name)):
+        shutil.copy2(MODS_FILE, temp_entry_directory)
+
     for pdf in PDF_FILES:
-        if not os.path.exists(os.path.join(TMP_DIR, temp_entry_directory, pdf)):
-            shutil.copy2(pdf, os.path.join(TMP_DIR, temp_entry_directory, entry_id))
+        if not os.path.exists(os.path.join(temp_entry_directory, pdf)):
+            shutil.copy2(pdf, temp_entry_directory)
     
     # SAVE METADATA TO files
-    entry.save_to_json(os.path.join(OUTPUT_DIR, entry_directory, entry_id + "-metadata.json"))
-    entry.save_to_csv(os.path.join(OUTPUT_DIR, entry_directory, entry_id + "-metadata.csv"))
+    entry.save_to_json(os.path.join(entry_directory, entry_id + "-metadata.json"))
+    entry.save_to_csv(os.path.join(entry_directory, entry_id + "-metadata.csv"))
 
     end_time = time.time()
     total_time = end_time - start_time
@@ -206,5 +204,5 @@ def main(entry_id: str,):
 if __name__ == "__main__":
     
     # for id in range(11,12):
-    str_id = str(2).zfill(5)
+    str_id = str(0).zfill(5)
     main(str_id)
