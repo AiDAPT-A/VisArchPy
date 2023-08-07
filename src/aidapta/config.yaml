@@ -1,0 +1,16 @@
+dir:
+  input: data-pipelines/data/design-data100/
+  output: data-pipelines/data/layout-ocr-test/
+  temp: data-pipelines/data/tmp/
+entry: '00001'
+layout:
+  caption_settings:
+    offset: 14
+    direction: down
+    keywords: ['figure', 'caption', 'figuur']
+  image_settings:
+    width: 100
+    height: 100
+ocr:
+  resolution: 200
+
