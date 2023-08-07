@@ -46,8 +46,10 @@ def main(entry_id: str,):
             }
     
     # SETTINGS FOR THE IMAGE EXTRACTION
-    IMG_SETTINGS = {"width": 100, "height": 100} # recommended values: 0, 0
-
+    IMG_SETTINGS = {"width": 100, 
+                    "height": 100, # recommended values: 0
+                    "ocr_output_resolution": 200, # dpi
+                    }
 
     # Create output directory for the entry
     entry_directory = create_output_dir(OUTPUT_DIR, entry_id)
@@ -173,7 +175,7 @@ def main(entry_id: str,):
         for ocr_page in tqdm(ocr_pages, desc="OCR analysis", total=len(ocr_pages), unit="OCR pages"):
 
             # if page["images"] == []: # apply to pages where no images were found by layout analysis
-                page_image = ocr.convert_pdf_to_image(pdf_document.location, dpi=200, first_page=ocr_page["page_number"], last_page=ocr_page["page_number"])
+                page_image = ocr.convert_pdf_to_image(pdf_document.location, dpi=IMG_SETTINGS["ocr_output_resolution"], first_page=ocr_page["page_number"], last_page=ocr_page["page_number"])
                 ocr_results = ocr.extract_bboxes_from_horc(page_image, config='--psm 3 --oem 1', entry_id=entry_id, page_number=ocr_page["page_number"])
                 ocr.marked_bounding_boxes(ocr_results, ocr_directory, filter_size=100)      
     
@@ -209,6 +211,6 @@ def main(entry_id: str,):
   
 if __name__ == "__main__":
     
-    # for id in range(11,12):
-    str_id = str(1).zfill(5)
+    for id in range(11,12):
+        str_id = str(1).zfill(5)
     main(str_id)
