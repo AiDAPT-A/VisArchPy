@@ -16,7 +16,7 @@ from aidapta.utils import extract_mods_metadata, get_entry_number_from_mods
 from aidapta.captions import find_caption_by_bbox, find_caption_by_text
 from aidapta.image import sort_layout_elements, create_output_dir
 from aidapta.metadata import Document, Metadata, Visual, FilePath
-from omegaconf import DictConfig, OmegaConf
+from omegaconf import DictConfig
 
 @hydra.main(version_base=None, config_path="", config_name="config")
 def main(cfg: DictConfig) -> None:
