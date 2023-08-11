@@ -140,9 +140,9 @@ def crop_images_to_bbox(hocr_results: dict, output_dir:str, filter_size:int=50) 
     return None
 
 
-def marked_bounding_boxes(hocr_results: dict, output_dir:str, ids:list=None, filter_size:int=50, page_number=None) -> None:
+def mark_bounding_boxes(hocr_results: dict, output_dir:str, ids:list=None, filter_size:int=50, page_number=None) -> None:
     """
-    Draw bounding boxes of on input images and save a copy to output directory.
+    Draw bounding boxes of input images and save a copy to output directory.
 
     params:
     --------

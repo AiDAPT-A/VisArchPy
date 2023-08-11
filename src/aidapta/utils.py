@@ -1,12 +1,32 @@
 import requests
 import re
 import os
+import pathlib
 from pymods import MODSReader
 from bs4 import BeautifulSoup
-from aidapta.image import create_output_dir
+
 
 from aidapta.metadata import Person, Faculty, Department
 
+def create_output_dir(base_path: str, path="") -> str:
+    """
+    creates a directory in the base path if it doesn't exists.
+
+    params:
+    ----------
+        base_path: path to destination directory
+        name: name  or path for the new directory, parent directories are created if they don't exists
+    returns:
+        relative path (comibining base_path and path) to the new created directory
+    """
+
+    if isinstance(base_path, pathlib.Path):
+        base_path = str(base_path)
+
+    full_path = os.path.join(base_path, path)
+    pathlib.Path(full_path).mkdir(parents=True, exist_ok=True)
+
+    return pathlib.Path(full_path)
 
 def extract_mods_metadata(mods_file: str) -> dict:
     """ Extract metadata from MODS files, version 3.6
@@ -127,7 +147,6 @@ def extract_mods_metadata(mods_file: str) -> dict:
         meta["type_resource"] = record.type_of_resource
     
     return meta
-
 
 
 def extract_metadata_from_html(reference_url: str) -> dict:

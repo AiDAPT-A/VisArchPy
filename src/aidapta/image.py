@@ -6,6 +6,7 @@ import os
 import pathlib
 from PyPDF2 import PdfReader
 from pdfminer.high_level import extract_pages
+from aidapta.utils import create_output_dir
 from pdfminer.layout import (
     LTPage, 
     LTItem, 
@@ -18,26 +19,6 @@ from pdfminer.layout import (
 )
 
 # From https://pypdf2.readthedocs.io/en/latest/user/extract-images.html
-
-def create_output_dir(base_path: str, path="") -> str:
-    """
-    creates a directory in the base path if it doesn't exists.
-
-    params:
-    ----------
-        base_path: path to destination directory
-        name: name  or path for the new directory, parent directories are created if they don't exists
-    returns:
-        relative path (comibining base_path and path) to the new created directory
-    """
-
-    if isinstance(base_path, pathlib.Path):
-        base_path = str(base_path)
-
-    full_path = os.path.join(base_path, path)
-    pathlib.Path(full_path).mkdir(parents=True, exist_ok=True)
-
-    return pathlib.Path(full_path)
 
 
 def extract_images(pdf_file: str, output_dir: str) -> None:

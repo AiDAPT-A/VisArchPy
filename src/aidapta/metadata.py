@@ -112,7 +112,7 @@ class Visual:
 @dataclass
 class Metadata:
     """
-    Represents metadata of an entry in a repository
+    Represents metadata of an entry in the library repository
     """
 
    
