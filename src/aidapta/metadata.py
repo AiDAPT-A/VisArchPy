@@ -1,7 +1,8 @@
 """
-Dataclasses for managing metadata for architectural visuals
+Dataclasses for handling metadata for extracted visuals
 Author: M.G. Garcia
 """
+
 import os
 import uuid
 import pandas as pd
@@ -43,6 +44,7 @@ class Document:
     """
     location: str # location where the document is stored
 
+
 @dataclass
 class FilePath:
     """
@@ -57,9 +59,18 @@ class FilePath:
         if not isinstance(self.file_path, str):
             raise TypeError("file_path must be a string")
 
-
     def update_root_path(self, root_path: str) -> None:
-        """Updates the root path"""
+        """Updates the root path of the file path
+        
+        Parameters
+        ----------
+        root_path: str
+            new root path
+        
+        Returns
+        -------
+        None
+        """
         self.root_path = root_path
     
     def __str__(self) -> str:
@@ -81,11 +92,37 @@ class Visual:
     location: FilePath = field(init=False, default=None) # location where the visual is stored
 
     def set_visual_type(self, visual_type: str) -> None:
-        """Sets the visual type. One of photo, drawing, map, etc."""
+        """Sets the visual type. One of photo, drawing, map, etc.
+        
+        Parameters
+        ----------
+        visual_type: str
+            type of visual
+        
+        Returns
+        -------
+        None
+        """
         self.visual_type = visual_type
 
     def set_caption(self, caption: str) -> None:
-        """Sets the caption of the visual"""
+        """Sets the caption for the visual
+        
+        Parameters
+        ----------
+        caption: str
+            caption for the visual
+        
+        Returns
+        -------
+        None
+
+        Raises
+        ------
+        Warning
+            If the caption is already set
+
+        """
 
         if self.caption:
             raise Warning(f"Caption already set. caption: {self.caption}")
@@ -95,10 +132,21 @@ class Visual:
     def set_location(self, location: FilePath, update: bool = False) -> None:
         """Sets the location where the visual is stored
         
-        params:
+        Parameters
         ----------
-            location: location where the visual is stored
-            update: if True, the root_path of location will be updated. If False, an error will be raised
+        location: FilePath
+            location where the visual is stored
+        update: bool
+            if True, the root_path of location will be updated. If False, an error will be raised
+        
+        Returns
+        -------
+        None
+
+        Raises
+        ------
+        ValueError
+            If the location is already set and update is False
         """
 
         if self.location and not update:
@@ -115,7 +163,6 @@ class Metadata:
     Represents metadata of an entry in the library repository
     """
 
-   
     documents: List[Document] = field(init=False, default=None)
 
     persons: List[Person] = field(init=False, default=None)
@@ -157,7 +204,18 @@ class Metadata:
     # pdf_location: Optional[str] = field(init=False, default=None) # location of the PDF file
 
     def set_metadata(self, metadata: dict) -> None:
-        """ Sets metadata for a repository entry """
+        """ Sets metadata for a repository entry 
+        
+        Parameters
+        ----------
+        metadata: dict
+            dictionary with metadata from MODS file
+        
+        Returns
+        -------
+        None
+        
+        """
         
         self.persons = metadata.get('persons')
         self.faculty = metadata.get('faculty')
@@ -194,13 +252,41 @@ class Metadata:
         self.type_resource = metadata.get('type_resource')
 
     def add_document(self, document: Document) -> None:
-        """ Adds a document object to the metadata """
+        """ Adds a document object to the metadata 
+        
+        Parameters
+        ----------
+        document: Document
+            document object
+        
+        Returns
+        -------
+        None
+
+        """
         if not self.documents:
             self.documents = []
         self.documents.append(document)
     
     def add_pdf_location(self, path_pdf: str, overwrite: bool = False) -> None:
-        """ Sets location of the PDF file """
+        """ Sets location of the PDF file 
+        
+        Parameters
+        ----------
+        path_pdf: str
+            path to the PDF file
+        overwrite: bool
+            if True, overwrites the PDF location if it is already set
+        
+        Returns
+        -------
+        None
+        
+        Raises
+        ------
+        ValueError
+            if PDF location is already set and overwrite is False
+        """
 
         if self.pdf_location and overwrite:
             raise ValueError('PDF location already set. User overwrite=True to overwrite it.')
@@ -208,10 +294,28 @@ class Metadata:
             self.pdf_location = path_pdf
 
     def add_web_url(self, base_url: str, overwrite: bool = False) -> None:
-        """ Adds a URL to the metadata """
+        """ Adds a URL to the metadata 
+        
+        Parameters
+        ----------  
+        base_url: str
+            base URL of the repository
+        overwrite: bool
+            if True, overwrites the web URL if it is already set           
+        
+        Returns
+        -------
+        None
+
+        Raises
+        ------
+        ValueError
+            if web URL is already set and overwrite is False
+        
+        """
 
         if self.web_url and overwrite == False:
-            raise ValueError('Web URL already set. User overwrite=True to overwrite it.')
+            raise ValueError('base URL already set. User overwrite=True to overwrite it.')
         else:
             if self.uuid[:5] == 'uuid:': # some uuids start with uuid:
                 self.web_url = f'{base_url}{self.uuid}' 
@@ -219,7 +323,18 @@ class Metadata:
                 self.web_url = f'{base_url}uuid:{self.uuid}'
     
     def add_visual(self, visual: Visual) -> None:
-        """ Adds a visual to the metadata """
+        """ Adds a visual to the metadata 
+        
+        Parameters
+        ----------
+        visual: Visual
+            visual object
+        
+        Returns
+        -------
+        None
+        
+        """
         if not self.visuals:
             self.visuals = []
         self.visuals.append(visual)
@@ -233,12 +348,33 @@ class Metadata:
         return pd.DataFrame([self.as_dict()])
     
     def save_to_csv(self, filename: str) -> None:
-        """ Writes metadata to a CSV file """
+        """ Writes metadata to a CSV file 
+        
+        Parameters
+        ----------
+        filename: str
+            name of the CSV file
+
+        Returns
+        -------
+        None
+        
+        """
 
         self.as_dataframe().to_csv(filename, index=False)
     
     def save_to_json(self, filename: str) -> None:
-        """ Writes metadata to a JSON file """
+        """ Writes metadata to a JSON file 
+        
+        Parameters
+        ----------
+        filename: str
+            name of the JSON file
+        
+        Returns
+        -------
+        None
+        """
 
         with open(filename, 'w') as f:
             json.dump(self.as_dict(), f, indent=4)
