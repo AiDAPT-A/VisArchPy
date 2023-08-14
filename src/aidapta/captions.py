@@ -7,14 +7,30 @@ from pdfminer.layout import LTTextContainer, LTImage, LTFigure
 from typing import List
 from shapely.geometry import Polygon
 
-def find_caption_by_text(text_element:LTTextContainer, keywords: List = ['figure', 'caption', 'figuur']) -> LTTextContainer|bool:
+def find_caption_by_text(text_element:LTTextContainer, keywords: List = ['figure', 'caption', 'figuur']
+                         ) -> LTTextContainer|bool:
     """do text analysis by matching caption keywords (e.g, figure, caption, Figure)
     in a PDF document element of type text using regular expressions. Matches are not case sentive.
 
-    Params:
+    Parameters
+    ----------
+    text_element: LTTextContainer object
+        text element to be analyzed
+    keywords: list
+        list of keywords to match in the text element
+  
+    Returns
     -------
-    - text_element: LTTextContainer object
-    - keywords: list of keywords to match in the text element
+    LTTextContainer object or bool
+        False if no match is found, otherwise the
+        text element that matches any of the keywords
+
+    Raises
+    ------
+    ValueError
+        if list of keywords is empty
+    TypeError
+        if keyword is not a string
     """
     
 
@@ -37,18 +53,29 @@ def find_caption_by_text(text_element:LTTextContainer, keywords: List = ['figure
         return False
 
 
-def find_caption_by_bbox(image:LTImage, text_element:LTTextContainer, offset:int=0, direction:str=None) -> LTTextContainer|bool:
+def find_caption_by_bbox(image:LTImage, text_element:LTTextContainer, offset:int=0, direction:str=None
+                         ) -> LTTextContainer|bool:
     """
     Finds if the boudning box of a text element is withing certain distance (offset) 
     from the bounding box of an Image element.
     
-    Params:
-    -------
-    - offset: distance from image to be compared with, Unit: 1/72 inch or about 0.3528 mm
-    - direction: the directions the offeset will be applied to. Posibile values: right, left, down, up.  
-      Default None (apply in all directions)
+    Parameters
+    -----------
+    image: LTImage object
+        Image whose bounding box will be used as reference
+    text_element: LTTextContainer object
+        text element whose bounding box will be compared with the image bounding box
+    offset: int
+        distance from image to be compared with, Unit: 1/72 inch or about 0.3528 mm
+    direction: str
+        the directions the offeset will be applied around the image bounding box. 
+        Default None, which applies offect in 'all' directions. Posibile values: right, 
+        left, down, up, right-down, left-up, all.
 
-    Returs: text elemenet within offset distance
+    Return
+    LTTextContainer object or bool
+        False if no match is found, otherwise the
+        text elemenet within offset distance
     """
 
     image_coords = image.bbox
