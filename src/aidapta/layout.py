@@ -1,5 +1,5 @@
 """
-This script extract images from a PDF file using PyPDF2
+This script extract images from a PDF file using PDFMiner
 Author: M.G. Garcia
 """
 import os
