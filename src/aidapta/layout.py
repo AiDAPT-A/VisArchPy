@@ -1,5 +1,6 @@
 """
-This script extract images from a PDF file using PDFMiner
+A library for the extraction of images from a PDF file that performs 
+document layout analysis using PDFMiner
 Author: M.G. Garcia
 """
 import os
@@ -25,11 +26,17 @@ def extract_images(pdf_file: str, output_dir: str) -> None:
     """
     extracts image from a PDF file
     
-    params:
+    Parameters
     ----------
-        pdf_file: path to the PDF file
-        output_dir: path to directory to extract images. Outputs
+    pdf_file: str
+        path to the PDF file
+    output_dir: str 
+        path to directory to extract images. Outputs
         are organized in folder based on the name of the input PDF
+    
+    Returns
+    -------
+    None
     """
     
     # open PDF document
@@ -50,7 +57,8 @@ def extract_images(pdf_file: str, output_dir: str) -> None:
             for image_file_object in page.images:
                 print(image_file_object)
                 
-                with open(str(output_directory)+'/' + 'page' +str(page_index) +'-'+str(count) + image_file_object.name, "wb") as fp:
+                with open(str(output_directory)+'/' + 'page' +str(page_index) +'-'+str(count) + 
+                          image_file_object.name, "wb") as fp:
                     fp.write(image_file_object.data)
                     count += 1
         except ValueError:
@@ -59,20 +67,28 @@ def extract_images(pdf_file: str, output_dir: str) -> None:
     return None
 
 
-def sort_layout_elements(page:LTPage, img_width = None, img_height = None)-> dict:
+def sort_layout_elements(page:LTPage, img_width:int = None, img_height:int = None)-> dict:
     """
-    sorts LTTextContainer, LTImage, LTFigure, and LTCurve elements from a single PDF page using PDFMiner.six
+    sorts LTTextContainer, LTImage, LTFigure, and LTCurve elements from a single PDF 
+    page using PDFMiner.six
 
-    params:
+    Parameters
     ----------
-        pdf_file: path to the PDF file
-        img_width: minimum width of an image to be extracted
-        img_height: minimum height of an image to be extracted. If
-            None, img_width will be used
+    pdf_file: LTPage
+        path to the PDF file
+    img_width: int
+        minimum width of image to be extracted. If
+        None,  a value of 0 will be used
+    img_height: int 
+        minimum height of image to be extracted. If
+        None, img_width will be used
 
-    returns:    
+    Returns    
+    -------
+    dict
         dictionary with LTTextContainer, LTImage, and LTCurve elements
     """
+
     if img_width is None:
         img_width = 0
     if img_height is None:
@@ -84,7 +100,6 @@ def sort_layout_elements(page:LTPage, img_width = None, img_height = None)-> dic
     text_elements = []
     image_elements = []
     vector_elements = []
-
 
     # From pdfminer six#
     def render(item: LTItem) -> None:
@@ -107,7 +122,8 @@ def sort_layout_elements(page:LTPage, img_width = None, img_height = None)-> dic
 
     render(page)
 
-    return {"page_number": page_number, "texts": text_elements, "images": image_elements, "vectors": vector_elements}
+    return {"page_number": page_number, "texts": text_elements, "images": image_elements, 
+            "vectors": vector_elements}
 
                     
 if __name__ == "__main__":
