@@ -53,7 +53,7 @@ def find_caption_by_text(text_element:LTTextContainer, keywords: List = ['figure
         return False
 
 
-def find_caption_by_bbox(image:LTImage, text_element:LTTextContainer, offset:int=0, direction:str=None
+def find_caption_by_bbox(image_object:LTImage|tuple, text_object:LTTextContainer|tuple, offset:int=0, direction:str=None
                          ) -> LTTextContainer|bool:
     """
     Finds if the boudning box of a text element is withing certain distance (offset) 
@@ -61,10 +61,16 @@ def find_caption_by_bbox(image:LTImage, text_element:LTTextContainer, offset:int
     
     Parameters
     -----------
-    image: LTImage object
-        Image whose bounding box will be used as reference
-    text_element: LTTextContainer object
-        text element whose bounding box will be compared with the image bounding box
+    image_object: LTImage object or tuple
+        Image whose bounding box will be used as reference.
+        Either a single LTImage object or a list of coordinates
+        of the form (x0, y0, x1, y1), where (x0, y0) is the lower-left
+        corner and (x1, y1) the upper-right corner.
+    text_object: LTTextContainer object
+        text element whose bounding box will be compared with the image bounding box.
+        Either a single LTTextContainer object or a list of coordinates
+        of the form (x0, y0, x1, y1), where (x0, y0) is the lower-left
+        corner and (x1, y1) the upper-right corner.
     offset: int
         distance from image to be compared with, Unit: 1/72 inch or about 0.3528 mm
     direction: str
@@ -72,14 +78,34 @@ def find_caption_by_bbox(image:LTImage, text_element:LTTextContainer, offset:int
         Default None, which applies offect in 'all' directions. Posibile values: right, 
         left, down, up, right-down, left-up, all.
 
-    Return
+    Returns
+    -------
     LTTextContainer object or bool
         False if no match is found, otherwise the
         text elemenet within offset distance
+    
+    Raises
+    ------
+    ValueError
+        if image_object or text_object of type tupple is not of size 4 
+
     """
 
-    image_coords = image.bbox
-    text_coords = text_element.bbox
+    if isinstance(image_object, LTImage):
+        image_coords = image_object.bbox
+    else:
+        if len(image_object) != 4:
+            raise ValueError("image coordinates must be a tupple of 4 elements \
+                             (x0, y0, x1, y1)") 
+        image_coords = image_object
+    
+    if isinstance(text_object, LTTextContainer):
+        text_coords = text_object.bbox
+    else:
+        if len(text_object) != 4:
+            raise ValueError("text coordinates must be a tupple of 4 elements \
+                             (x0, y0, x1, y1)") 
+        text_coords = text_object
 
     if direction == None or direction == "all":
         '''
@@ -238,7 +264,7 @@ def find_caption_by_bbox(image:LTImage, text_element:LTTextContainer, offset:int
                     ])
 
     if image_bbox.intersects(text_bbox):
-        return text_element
+        return text_object
     else:
         return False
 
