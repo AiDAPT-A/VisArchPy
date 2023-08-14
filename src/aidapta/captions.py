@@ -56,18 +56,17 @@ def find_caption_by_bbox(image:LTImage, text_element:LTTextContainer, offset:int
 
     if direction == None or direction == "all":
         '''
-          _____________________
-          |       offset       |
-          |  ++++++++++++++++  |
-          |  +              +  |
-          |  + image bbox   +  |
-          |  +              +  |
-          |  +              +  |
-          |  ++++++++++++++++  | 
-          |____________________|  
+         ____________________
+        |       offset       |
+        |  ++++++++++++++++  |
+        |  +              +  |
+        |  + image bbox   +  |
+        |  +              +  |
+        |  +              +  |
+        |  ++++++++++++++++  | 
+        |____________________|  
         
         '''
-
 
         image_bbox = Polygon([
                               # bottom
@@ -81,17 +80,15 @@ def find_caption_by_bbox(image:LTImage, text_element:LTTextContainer, offset:int
 
 
     if direction == "up":
-
         '''
-          _____________________
-          |       offset       |
-          |  ++++++++++++++++  |
-          |  +              +  |
-          |  + image bbox   +  |
-          |  +              +  |
-          |  +              +  |
-          |  ++++++++++++++++  | 
-          |____________________|  
+         ______________
+        |    offset    | 
+        ++++++++++++++++  
+        +              +  
+        + image bbox   +  
+        +              +  
+        +              +  
+        ++++++++++++++++   
         
         '''
         image_bbox = Polygon([
@@ -106,13 +103,13 @@ def find_caption_by_bbox(image:LTImage, text_element:LTTextContainer, offset:int
 
     if direction == "down":
         '''
-            ++++++++++++++++  
-            +              +  
-            + image bbox   +  
-            +              +  
-            +              +  
-            ++++++++++++++++ 
-            |___ offset____|  
+        ++++++++++++++++  
+        +              +  
+        + image bbox   +  
+        +              +  
+        +              +  
+        ++++++++++++++++ 
+        |___ offset____|  
         
         '''
         image_bbox = Polygon([
@@ -127,12 +124,12 @@ def find_caption_by_bbox(image:LTImage, text_element:LTTextContainer, offset:int
         
     if direction == "right":
         '''
-            ++++++++++++++++ --  
-            +              +  |
-            + image bbox   +  |
-            +              +  |
-            +              +  |
-            ++++++++++++++++ --   
+        ++++++++++++++++ --  
+        +              + o |
+        + image bbox   + f |
+        +              + f |
+        +              + s |
+        ++++++++++++++++ --   
           
         '''
         image_bbox = Polygon([
@@ -146,12 +143,12 @@ def find_caption_by_bbox(image:LTImage, text_element:LTTextContainer, offset:int
         
     if direction == "left":
         '''
-          -- ++++++++++++++++  
-          |  +              +  
-          |  + image bbox   +  
-          |  +              +  
-          |  +              +  
-          -- ++++++++++++++++   
+         -- ++++++++++++++++  
+        | o +              +  
+        | f + image bbox   +  
+        | f +              +  
+        | s +              +  
+         -- ++++++++++++++++   
             
         '''
         image_bbox = Polygon([
@@ -162,7 +159,51 @@ def find_caption_by_bbox(image:LTImage, text_element:LTTextContainer, offset:int
                               (image_coords[2], image_coords[3]),
                               (image_coords[0] - offset, image_coords[3]),
                         ])
+        
+    if direction == "down-right":
+        '''
+        ++++++++++++++++---  
+        +              +  |  
+        + image bbox   +  |  
+        +              +  | 
+        +              +  | 
+        ++++++++++++++++  | 
+        |___ offset_______|  
+        
+        '''
+        image_bbox = Polygon([
+                            # bottom
+                            # coodinates [x, y, x, y]
+                            (image_coords[0], image_coords[1]- offset),
+                            (image_coords[2] + offset, image_coords[1]- offset),
+                            # top:
+                            (image_coords[2] + offset, image_coords[3]),
+                            (image_coords[0], image_coords[3]),
+                        ])
+        
+    if direction == "up-left":
 
+        '''
+          _________________
+         |      offset     | 
+         |  ++++++++++++++++  
+         |  +              +  
+         |  + image bbox   +  
+         |  +              +  
+         |  +              +  
+         ---++++++++++++++++   
+        
+        '''
+        image_bbox = Polygon([
+                            # bottom
+                            # coodinates [x, y, x, y]
+                            (image_coords[0] - offset, image_coords[1]),
+                            (image_coords[2], image_coords[1]),
+                            # top:
+                            (image_coords[2], image_coords[3] + offset),
+                            (image_coords[0] - offset, image_coords[3]+ offset),
+                        ])
+            
     text_bbox = Polygon(  [(text_coords[0], text_coords[1]),
                             (text_coords[2], text_coords[1]),
                             (text_coords[2], text_coords[3]),
