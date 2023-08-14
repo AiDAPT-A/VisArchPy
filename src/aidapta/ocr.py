@@ -1,16 +1,8 @@
-'''OCR pipeline with Tesseract
+"""
+A library for applyin Optic Character Recognition with Tesseract
+to PDF files.
 Author: Manuel Garcia
-
-This pipeline extract images by performing OCR (Tesseract) on PDF files.
-The pipeline is based on the following steps:
-1. Convert PDF file to image, one page at a time
-2. Extract OCR data as hOCR document
-3. Extract bounding boxes for non-text regions from hOCR document
-4. Crop images based on bounding boxes
-5. Save cropped images to output directory
-'''
-
-
+"""
 
 import pytesseract
 from bs4 import BeautifulSoup
@@ -25,15 +17,21 @@ def convert_pdf_to_image(pdf_file: str, dpi:int = 200, **kargs)-> list[Image]:
     """
     Convert PDF file to image, one page at a time.
 
-    params:
-    --------
-    pdf_file: path to PDF file
-    dpi: resolution of the output image
-    **kargs: additional arguments for convert_from_path function from pdf2image package
+    Parameters
+    ----------
+    pdf_file: str   
+        path to PDF file
+    dpi: int     
+        resolution of the output image
+    kargs: 
+        additional arguments for the convert_from_path function from pdf2image package.
+        For example, first_page and last_page can be used to specify the range of 
+        pages to convert.
 
-    returns:
+    Returns
     --------
-    List of images as Pillow Image
+    list of images 
+        List of images. Images are of type Pillow Image
 
     """
 
@@ -46,22 +44,30 @@ def convert_pdf_to_image(pdf_file: str, dpi:int = 200, **kargs)-> list[Image]:
         return convert_from_path(pdf_file, dpi=dpi)
 
 
-
-def extract_bboxes_from_horc(images: list[Image], config: str ='--oem 1 --psm 1', page_number=None, entry_id=None) -> dict:
+def extract_bboxes_from_horc(images: list[Image], config: str ='--oem 1 --psm 1', 
+                             page_number:int =None, entry_id: str=None) -> dict:
     """
     Extract bounding boxes for non-text regions from hOCR document.
 
-    params:
-    --------
-    images: list of images as Pillow Image
-    config: tesseract config options. Default: --oem 1 --psm 1. Engine Neural nets LSTM only. Auto page segmentation with OSD
-    entry_id: id for entry (an entry identifies a group of files somehow related). Optional.
+    Parameters
+    -----------
+    images: list[Image] 
+        list of images of type Pillow Image
+    config: str
+        tesseract configuration options. Default: --oem 1 --psm 1. 
+        Which applies: Engine Neural nets LSTM only. Auto page segmentation with OSD
+    page_number: int
+        page number for the PDF file. Optional.
+    entry_id: 
+        id for entry (an entry identifies a group of files somehow related). Optional.
     
-    returns:
-    ----------
-    Dictionary with bounding boxes and ids for non-text regions
-    Example:
-    {'page': {'img': None, 'bboxes': [], 'ids': []} }
+    Returns
+    -------
+    dict
+        Dictionary with bounding boxes and ids for non-text regions
+        Example:
+    
+        {'page': {'img': None, 'bboxes': [], 'ids': []} }
     """
     _config = config + ' hocr'
 
@@ -101,9 +107,11 @@ def extract_bboxes_from_horc(images: list[Image], config: str ='--oem 1 --psm 1'
                 page_number = page_number
 
             if entry_id is not None:
-                results[f'{entry_id}-page-{page_number}'] = {'img': img, 'bboxes': non_text_bboxes, 'ids': paragraphs_ids}
+                results[f'{entry_id}-page-{page_number}'] = {'img': img, 'bboxes': non_text_bboxes,
+                                                              'ids': paragraphs_ids}
             else:
-                results[f'page-{page_number}'] = {'img': img, 'bboxes': non_text_bboxes, 'ids': paragraphs_ids}
+                results[f'page-{page_number}'] = {'img': img, 'bboxes': non_text_bboxes, 
+                                                  'ids': paragraphs_ids}
         
     return results
 
@@ -113,17 +121,20 @@ def crop_images_to_bbox(hocr_results: dict, output_dir:str, filter_size:int=50) 
     Crop images based on bounding boxes. Croped images are saved to output 
     directory as PNG files.
 
-    params:
-    --------
+    Parameters
+    -----------
+    hocr_results: dict
+        Dictionary with bounding boxes and ids for non-text regions 
+    
+    output_dir: str
+        path to output directory for cropped images
+    
+    filter_size: int
+        minimum size (width or height) of bounding box used to filter out images. 
+        Default: 50 pixels
 
-    image: Pillow Image or list of Pillow Image objects
-    bbox: bounding box as list [x, y, width, height] or list of bounding boxes
-    output_dir: path to output directory for cropped images
-    ids: id or list of ids for cropped images
-    filter_size: minimum size (width or height) of bounding box used to crop image. Default: 50 pixels
-
-    returs:
-    --------
+    Returns
+    -------
     None
     """
 
@@ -140,20 +151,26 @@ def crop_images_to_bbox(hocr_results: dict, output_dir:str, filter_size:int=50) 
     return None
 
 
-def mark_bounding_boxes(hocr_results: dict, output_dir:str, ids:list=None, filter_size:int=50, page_number=None) -> None:
+def mark_bounding_boxes(hocr_results: dict, output_dir:str, ids:list=None, 
+                        filter_size:int=50, page_number:int=None) -> None:
     """
-    Draw bounding boxes of input images and save a copy to output directory.
+    Draw bounding boxes on ocr images and save a copy to the output directory.
 
-    params:
-    --------
-    imges: lis of Pillow Image
-    bbox: list of bounding boxes
-    output_idr: path to output directory
-    ids: labels for bounding boxes. Optional.
-    filter_size: minimum size (width or height) of bounding box to be drawn. Default: 50 pixels
-    page_number: page number to be drawn. Optional. If None, the HOCR page number is used.
+    Parameters
+    ----------
+    imges: dict
+        Dictionary with bounding boxes and ids for non-text regions
+    output_dir: str
+        path to output directory to save marked images
+    ids: list
+        list of ids for bounding boxes. Optional.
+    filter_size: int
+        minimum size (width or height) f bounding box used to filter out images.
+        Default: 50 pixels
+    page_number: int
+        page number to be drawn. Optional. If None, the HOCR page number is used.
     
-    returns:
+    Returns
     --------
     None
     """
