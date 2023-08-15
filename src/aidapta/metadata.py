@@ -87,7 +87,7 @@ class Visual:
     document_page: int # page number in the document index
     bbox: List[int] # bounding box of the visual in the document page
     id : Optional[str] = field(init=True, default=str(uuid.uuid4())) # unique identifier
-    caption: Optional[str] = field(init=False, default=None) # caption of the visual    
+    caption: Optional[list] = field(init=False, default=None) # caption of the visual    
     visual_type: Optional[str] = field(init=False, default=None) # one of: photo, drawing, map, etc
     location: FilePath = field(init=False, default=None) # location where the visual is stored
 
@@ -120,15 +120,15 @@ class Visual:
         Raises
         ------
         Warning
-            If the caption is already set
+            If the caption already contains two elements
 
         """
 
-        if self.caption:
-            raise Warning(f"Caption already set. caption: {self.caption}")
+        if len(self.caption) < 2:
+            self.caption.append(caption)
         else:
-            self.caption = caption
-
+            raise Warning(f"Caption already set. caption: {self.caption}")
+        
     def set_location(self, location: FilePath, update: bool = False) -> None:
         """Sets the location where the visual is stored
         
