@@ -132,7 +132,7 @@ def find_caption_by_bbox(image_object:LTImage|BoundingBox, text_object:LTTextCon
     text_coords = text_object.bbox
 
     if offset.unit == "mm": # Bbox from pdfminer are in points
-        offset = mm_to_point(offset.distance)
+        offset_distance = mm_to_point(offset.distance)
 
     if direction not in ["right", "left", "down", "up", "right-down", "left-up", "all", None]:
         raise ValueError("direction must be either right, left, down, up, right-down, left-up, all")
@@ -157,11 +157,11 @@ def find_caption_by_bbox(image_object:LTImage|BoundingBox, text_object:LTTextCon
         image_bbox = Polygon([
                               # bottom
                               # coodinates [x, y, x, y]
-                              (image_coords[0]- offset, image_coords[1]- offset),
-                              (image_coords[2]+ offset, image_coords[1]- offset),
+                              (image_coords[0]- offset_distance, image_coords[1]- offset_distance),
+                              (image_coords[2]+ offset_distance, image_coords[1]- offset_distance),
                               # top:
-                              (image_coords[2]+ offset, image_coords[3]+ offset),
-                              (image_coords[0]- offset, image_coords[3]+ offset),
+                              (image_coords[2]+ offset_distance, image_coords[3]+ offset_distance),
+                              (image_coords[0]- offset_distance, image_coords[3]+ offset_distance),
                         ])
 
 
@@ -183,8 +183,8 @@ def find_caption_by_bbox(image_object:LTImage|BoundingBox, text_object:LTTextCon
                               (image_coords[0], image_coords[1]),
                               (image_coords[2], image_coords[1]),
                               # top:
-                              (image_coords[2], image_coords[3] + offset),
-                              (image_coords[0], image_coords[3]+ offset),
+                              (image_coords[2], image_coords[3] + offset_distance),
+                              (image_coords[0], image_coords[3]+ offset_distance),
                         ])
 
     if direction == "down":
@@ -201,8 +201,8 @@ def find_caption_by_bbox(image_object:LTImage|BoundingBox, text_object:LTTextCon
         image_bbox = Polygon([
                               # bottom
                               # coodinates [x, y, x, y]
-                              (image_coords[0], image_coords[1]- offset),
-                              (image_coords[2], image_coords[1]- offset),
+                              (image_coords[0], image_coords[1]- offset_distance),
+                              (image_coords[2], image_coords[1]- offset_distance),
                               # top:
                               (image_coords[2], image_coords[3]),
                               (image_coords[0], image_coords[3]),
@@ -221,9 +221,9 @@ def find_caption_by_bbox(image_object:LTImage|BoundingBox, text_object:LTTextCon
         image_bbox = Polygon([
                               # bottom
                               (image_coords[0], image_coords[1]),
-                              (image_coords[2]+ offset, image_coords[1]),
+                              (image_coords[2]+ offset_distance, image_coords[1]),
                               # top:
-                              (image_coords[2]+offset, image_coords[3]),
+                              (image_coords[2]+offset_distance, image_coords[3]),
                               (image_coords[0], image_coords[3]),
                         ])
         
@@ -239,11 +239,11 @@ def find_caption_by_bbox(image_object:LTImage|BoundingBox, text_object:LTTextCon
         '''
         image_bbox = Polygon([
                               # bottom
-                              (image_coords[0] - offset, image_coords[1]),
+                              (image_coords[0] - offset_distance, image_coords[1]),
                               (image_coords[2], image_coords[1]),
                               # top:
                               (image_coords[2], image_coords[3]),
-                              (image_coords[0] - offset, image_coords[3]),
+                              (image_coords[0] - offset_distance, image_coords[3]),
                         ])
         
     if direction == "down-right":
@@ -260,10 +260,10 @@ def find_caption_by_bbox(image_object:LTImage|BoundingBox, text_object:LTTextCon
         image_bbox = Polygon([
                             # bottom
                             # coodinates [x, y, x, y]
-                            (image_coords[0], image_coords[1]- offset),
-                            (image_coords[2] + offset, image_coords[1]- offset),
+                            (image_coords[0], image_coords[1]- offset_distance),
+                            (image_coords[2] + offset_distance, image_coords[1]- offset_distance),
                             # top:
-                            (image_coords[2] + offset, image_coords[3]),
+                            (image_coords[2] + offset_distance, image_coords[3]),
                             (image_coords[0], image_coords[3]),
                         ])
         
@@ -283,11 +283,11 @@ def find_caption_by_bbox(image_object:LTImage|BoundingBox, text_object:LTTextCon
         image_bbox = Polygon([
                             # bottom
                             # coodinates [x, y, x, y]
-                            (image_coords[0] - offset, image_coords[1]),
+                            (image_coords[0] - offset_distance, image_coords[1]),
                             (image_coords[2], image_coords[1]),
                             # top:
-                            (image_coords[2], image_coords[3] + offset),
-                            (image_coords[0] - offset, image_coords[3]+ offset),
+                            (image_coords[2], image_coords[3] + offset_distance),
+                            (image_coords[0] - offset_distance, image_coords[3]+ offset_distance),
                         ])
             
     text_bbox = Polygon(  [
