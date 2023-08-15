@@ -110,7 +110,7 @@ def main(entry_id: str,):
                 # This might generate multiple matches
                 bbox_matches =[]
                 for _text in page["texts"]:
-                    match = find_caption_by_bbox(img, _text, offset=CAP_SETTINGS["offset"], 
+                    match = find_caption_by_bbox(img, _text, offset_distance=CAP_SETTINGS["offset"], 
                                                 direction=CAP_SETTINGS["direction"])
                     if match:
                         bbox_matches.append(match)
