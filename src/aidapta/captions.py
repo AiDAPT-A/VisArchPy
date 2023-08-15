@@ -6,6 +6,41 @@ import re
 from pdfminer.layout import LTTextContainer, LTImage, LTFigure
 from typing import List
 from shapely.geometry import Polygon
+from dataclasses import dataclass
+from aidapta.utils import mm_to_point
+
+@dataclass
+class BoundingBox:
+    """ 
+    represents a bounding box of an element in the form (x0, y0, x1, y1).
+    Coordinates represent the lower-left corner (x0, y0) and the upper-right corner (x1, y1).
+    """
+
+    element: tuple 
+
+    def __post_init__(self):
+        if len(self.element) != 4:
+            raise ValueError("bounding box must be a tupple of 4 elements \
+                             (x0, y0, x1, y1)")
+
+    def bbox(self) -> tuple:
+        """returns the coordinates of the bounding box"""
+        return self.element    
+    
+
+@dataclass
+class OffsetDistance:
+    """ 
+    represents an offset distance in the form (distance, unit).
+    """
+
+    distance: float 
+    unit: str
+
+    def __post_init__(self):
+        if self.unit not in ["mm", "px"]:
+            raise ValueError("unit must be either mm or px (pixels)")
+
 
 def find_caption_by_text(text_element:LTTextContainer, keywords: List = ['figure', 'caption', 'figuur']
                          ) -> LTTextContainer|bool:
@@ -32,7 +67,6 @@ def find_caption_by_text(text_element:LTTextContainer, keywords: List = ['figure
     TypeError
         if keyword is not a string
     """
-    
 
     if len(keywords) == 0:
         raise ValueError("List of keywords cannot be empty. Try adding adding at least one keyword")
@@ -53,14 +87,14 @@ def find_caption_by_text(text_element:LTTextContainer, keywords: List = ['figure
         return False
 
 
-def find_caption_by_bbox(image_object:LTImage|tuple, text_object:LTTextContainer|tuple, offset:int=0, direction:str=None
+def find_caption_by_bbox(image_object:LTImage|BoundingBox, text_object:LTTextContainer|BoundingBox, offset:OffsetDistance, direction:str=None
                          ) -> LTTextContainer|bool:
     """
-    Finds if the boudning box of a text element is withing certain distance (offset) 
+    Finds if the boudning box of a text element is within certain distance (offset) 
     from the bounding box of an Image element.
     
     Parameters
-    -----------
+    ----------
     image_object: LTImage object or tuple
         Image whose bounding box will be used as reference.
         Either a single LTImage object or a list of coordinates
@@ -71,8 +105,8 @@ def find_caption_by_bbox(image_object:LTImage|tuple, text_object:LTTextContainer
         Either a single LTTextContainer object or a list of coordinates
         of the form (x0, y0, x1, y1), where (x0, y0) is the lower-left
         corner and (x1, y1) the upper-right corner.
-    offset: int
-        distance from image to be compared with, Unit: 1/72 inch or about 0.3528 mm
+    offset: OffsetDistance object
+        distance from image within which the text element will be searched.
     direction: str
         the directions the offeset will be applied around the image bounding box. 
         Default None, which applies offect in 'all' directions. Posibile values: right, 
@@ -87,26 +121,25 @@ def find_caption_by_bbox(image_object:LTImage|tuple, text_object:LTTextContainer
     Raises
     ------
     ValueError
-        if image_object or text_object of type tupple is not of size 4 
-
+        if direction is not one of the following: right, left, down, up, right-down, 
+        left-up, all
+    TypeError
+        if offset is in pixels and image_object is not a BoundingBox object. This 
+        is to insure that the offset is applied in the same units as the image bounding box.
     """
 
-    if isinstance(image_object, LTImage):
-        image_coords = image_object.bbox
-    else:
-        if len(image_object) != 4:
-            raise ValueError("image coordinates must be a tupple of 4 elements \
-                             (x0, y0, x1, y1)") 
-        image_coords = image_object
-    
-    if isinstance(text_object, LTTextContainer):
-        text_coords = text_object.bbox
-    else:
-        if len(text_object) != 4:
-            raise ValueError("text coordinates must be a tupple of 4 elements \
-                             (x0, y0, x1, y1)") 
-        text_coords = text_object
+    image_coords = image_object.bbox
+    text_coords = text_object.bbox
 
+    if offset.unit == "mm": # Bbox from pdfminer are in points
+        offset = mm_to_point(offset.distance)
+
+    if direction not in ["right", "left", "down", "up", "right-down", "left-up", "all", None]:
+        raise ValueError("direction must be either right, left, down, up, right-down, left-up, all")
+    
+    if offset.unit == "px" and not isinstance(image_object, BoundingBox):
+        raise TypeError("offset in pixels can only be used with a BoundingBox object")
+    
     if direction == None or direction == "all":
         '''
          ____________________
@@ -257,7 +290,8 @@ def find_caption_by_bbox(image_object:LTImage|tuple, text_object:LTTextContainer
                             (image_coords[0] - offset, image_coords[3]+ offset),
                         ])
             
-    text_bbox = Polygon(  [(text_coords[0], text_coords[1]),
+    text_bbox = Polygon(  [
+                            (text_coords[0], text_coords[1]),
                             (text_coords[2], text_coords[1]),
                             (text_coords[2], text_coords[3]),
                             (text_coords[0], text_coords[3]),
@@ -286,12 +320,13 @@ if __name__ == '__main__':
             if isinstance(element, LTTextContainer):
                 text_elements.append(element)
 
-    for e in text_elements:
-        # print(e.get_text())
-        print(e.bbox)
-        match = find_caption_by_text(e, keywords=["Figure", "caption", "figuur" ])
-        print(match)
-        if match is not False:
-            print( match)
-            print("===========================")
+
+    # for e in text_elements:
+    #     # print(e.get_text())
+    #     print(e.bbox)
+    #     match = find_caption_by_text(e, keywords=["Figure", "caption", "figuur" ])
+    #     print(match)
+    #     if match is not False:
+    #         print( match)
+    #         print("===========================")
 
