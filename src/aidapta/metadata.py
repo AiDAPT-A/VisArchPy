@@ -124,7 +124,9 @@ class Visual:
 
         """
 
-        if len(self.caption) < 2:
+        if self.caption is None: 
+            self.caption = [ caption ]
+        elif len(self.caption) < 2:
             self.caption.append(caption)
         else:
             raise Warning(f"Caption already set. caption: {self.caption}")
