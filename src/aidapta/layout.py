@@ -142,6 +142,6 @@ if __name__ == "__main__":
         # print(elements)
         for img in elements["images"]:
             for _text in elements["texts"]:
-                match = find_caption_by_bbox(img, _text, offset=10, direction="down")
+                match = find_caption_by_bbox(img, _text, offset_distance=10, direction="down")
                 if match:
                     print(img, _text)
