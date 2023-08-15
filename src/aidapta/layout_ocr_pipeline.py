@@ -17,6 +17,7 @@ from aidapta.captions import find_caption_by_bbox, find_caption_by_text
 from aidapta.layout import sort_layout_elements, create_output_dir
 from aidapta.metadata import Document, Metadata, Visual, FilePath
 from omegaconf import DictConfig
+from aidapta.captions import OffsetDistance
 
 @hydra.main(version_base=None, config_path="", config_name="config")
 def main(cfg: DictConfig) -> None:
@@ -67,6 +68,9 @@ def main(cfg: DictConfig) -> None:
     base_url = "http://resolver.tudelft.nl/" 
     entry.add_web_url(base_url)
 
+    offset_dist = OffsetDistance ( cfg.layout.caption_settings.offset[0], cfg.layout.caption_settings.offset[1])
+    print ("offset distance", offset_dist)
+
     # PROCESS PDF FILES
     start_processing_time = time.time()
     for pdf in PDF_FILES:
@@ -109,9 +113,10 @@ def main(cfg: DictConfig) -> None:
                 
                 # Search for captions using proximity to image
                 # This may generate multiple matches
+                print("offset type", type(offset_dist))
                 bbox_matches =[]
                 for _text in page["texts"]:
-                    match = find_caption_by_bbox(img, _text, offset= cfg.layout.caption_settings.offset, 
+                    match = find_caption_by_bbox(img, _text, offset= offset_dist, 
                                                 direction= cfg.layout.caption_settings.direction)
                     if match:
                         bbox_matches.append(match)
@@ -167,7 +172,7 @@ def main(cfg: DictConfig) -> None:
             # if page["images"] == []: # apply to pages where no images were found by layout analysis
                 page_image = ocr.convert_pdf_to_image(pdf_document.location, dpi= cfg.ocr.resolution, first_page=ocr_page["page_number"], last_page=ocr_page["page_number"])
                 ocr_results = ocr.extract_bboxes_from_horc(page_image, config='--psm 3 --oem 1', entry_id=entry_id, page_number=ocr_page["page_number"])
-                ocr.marked_bounding_boxes(ocr_results, ocr_directory, filter_size=100)      
+                ocr.mark_bounding_boxes(ocr_results, ocr_directory, filter_size=100)      
     
     end_processing_time = time.time()
     processing_time = end_processing_time - start_processing_time
