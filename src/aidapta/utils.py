@@ -35,6 +35,24 @@ def create_output_dir(base_path: str, path="") -> str:
     return pathlib.Path(full_path)
 
 
+def mm_to_point(quantity:float) -> float:
+    """
+    Converts a quantity in milimeters to points (1/72 inches)
+
+    Parameters
+    ----------
+    quantity: float
+        quantity in milimeters
+    
+    Returns
+    -------
+    float
+        quantity in points
+    """
+
+    return quantity * 2.8346456693
+
+
 def extract_mods_metadata(mods_file: str) -> dict:
     """ Extract metadata from MODS files, version 3.6
     
