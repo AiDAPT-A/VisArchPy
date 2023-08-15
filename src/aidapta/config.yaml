@@ -5,7 +5,7 @@ dir:
 entry: '00001'
 layout:
   caption_settings:
-    offset: 14
+    offset: [4, "mm"]
     direction: down
     keywords: ['figure', 'caption', 'figuur']
   image_settings:
@@ -13,4 +13,8 @@ layout:
     height: 100
 ocr:
   resolution: 200
+  caption_settings:
+    offset: [10, "px"]
+    direction: down
+    keywords: ['figure', 'caption', 'figuur']
 
