@@ -129,7 +129,7 @@ class Visual:
         elif len(self.caption) < 2:
             self.caption.append(caption)
         else:
-            raise Warning(f"Caption already set. caption: {self.caption}")
+            raise Warning(f"Maximum number of captions already set. Ignoring caption: {self.caption}")
         
     def set_location(self, location: FilePath, update: bool = False) -> None:
         """Sets the location where the visual is stored
