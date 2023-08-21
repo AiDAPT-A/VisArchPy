@@ -4,16 +4,15 @@ to PDF files.
 Author: Manuel Garcia
 """
 
+import itertools
 import pytesseract
-from bs4 import BeautifulSoup
-from pdf2image import convert_from_path
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
+from bs4 import BeautifulSoup
+from pdf2image import convert_from_path
 from PIL.Image import Image
 from tqdm import tqdm
-from shapely.geometry import Polygon
-import itertools
-import copy
+
 
 
 def convert_pdf_to_image(pdf_file: str, dpi:int = 200, **kargs)-> list[Image]:
@@ -340,10 +339,13 @@ def filter_bbox_contained(bboxes: list) -> list:
     for permutation in itertools.permutations(unique_bboxes, 2):
         comparisons.append(permutation)
 
-    # # check if a bbox is contained by another bbox
+    # check if a bbox is contained by another bbox
     for comparison in comparisons:
-        if is_contained(comparison[0], comparison[1]): # retuns True if box 0 is contained in box 1
+        if is_contained(comparison[0], comparison[1]): # retuns True if box 0 
+            #is contained in box 1
             try: 
+                # remove box 0  form the list of boxes
+                # if it is contained in box 1
                 unique_bboxes.remove(comparison[0])
             except ValueError:
                 pass # ignore value error when the box has already been removed
@@ -371,7 +373,7 @@ if __name__ == '__main__':
     # key_2 = next(iter(results))
     # print(results[key_], results[key_2])
 
-    boxes = [[0, 0, 100, 100], [0, 0, 100, 100], [200, 300, 350, 400], [10, 20, 90, 90],[10, 10, 90, 90], [10, 10, 90, 90], [10, 10, 15, 20],  [1000, 1000, 1100, 1100]]
+    boxes = [[0, 0, 100, 100], [200, 300, 350, 400], [10, 20, 90, 90],[10, 10, 90, 90], [10, 10, 90, 90], [10, 10, 15, 20],  [1000, 1000, 1100, 1100]]
     
 
     print(filter_bbox_contained(boxes))
