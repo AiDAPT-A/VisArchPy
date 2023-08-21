@@ -11,6 +11,9 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from PIL.Image import Image
 from tqdm import tqdm
+from shapely.geometry import Polygon
+import itertools
+import copy
 
 
 def convert_pdf_to_image(pdf_file: str, dpi:int = 200, **kargs)-> list[Image]:
@@ -212,7 +215,7 @@ def mark_bounding_boxes(hocr_results: dict, output_dir:str, ids:list=None,
     return None
 
 
-def filter_bboxes(bboxes: list, min_width: int = None, min_height: int = None, 
+def filter_bbox_by_size(bboxes: list, min_width: int = None, min_height: int = None, 
                   aspect_ratio: tuple[float, str] = None ) -> list:
     """
     Filters bounding boxes based on size and aspect ratio of width and height.
@@ -273,6 +276,81 @@ def filter_bboxes(bboxes: list, min_width: int = None, min_height: int = None,
     return filtered_bboxes
 
 
+def filter_bbox_largest(bboxes: list) -> list:
+    """
+    Finds the largest bounding box in a list of bounding boxes.
+    The largest bounding box is defined as the one with the largest area.
+
+    Parameters
+    ----------
+    bboxes: list
+        list of bounding boxes. Each bounding box is a list of coordinates
+    
+    Returns
+    -------
+    list
+        largest bounding box as a list of coordinates
+    """
+    
+    def compute_area(bbox):
+        x1, y1, x2, y2 = bbox
+        width = x2 - x1
+        height = y2 - y1
+        return width * height
+
+    largest_bbox = max(bboxes, key=compute_area)
+    
+    return largest_bbox
+
+
+def filter_bbox_contained(bboxes: list) -> list:
+    """
+    Filters out bounding boxes that are completly contained by another bounding box.
+    A bounding box is considered contained if all its coordinates are within the
+    coordinates of another bounding box.
+
+    Parameters
+    ----------
+    bboxes: list
+        list of bounding boxes. Each bounding box is a list of coordinates
+    
+    Returns
+    -------
+    list
+        lis of bounding boxes that are not completly contained by another bounding box
+    """
+    
+    def is_contained(bbox1, bbox2):
+        "Check if bbox1 is contained in bbox"
+        x1, y1, x2, y2 = bbox1
+        x1_, y1_, x2_, y2_ = bbox2
+        if x1_ <= x1 and y1_ <= y1 and x2_ >= x2 and y2_ >= y2:
+            return True
+        else:
+            return False
+
+    # remove duplicates in input list of bboxes
+    unique_bboxes = []
+    for item in bboxes:
+        if item not in unique_bboxes:
+            unique_bboxes.append(item)
+
+    # generate all possible permutations of unique bboxes
+    comparisons = []
+    for permutation in itertools.permutations(unique_bboxes, 2):
+        comparisons.append(permutation)
+
+    # # check if a bbox is contained by another bbox
+    for comparison in comparisons:
+        if is_contained(comparison[0], comparison[1]): # retuns True if box 0 is contained in box 1
+            try: 
+                unique_bboxes.remove(comparison[0])
+            except ValueError:
+                pass # ignore value error when the box has already been removed
+
+    return unique_bboxes
+
+
 if __name__ == '__main__':
 
     PDF_FILE = 'data-pipelines/data/caption-tests/multi-image-caption.pdf'
@@ -293,10 +371,10 @@ if __name__ == '__main__':
     # key_2 = next(iter(results))
     # print(results[key_], results[key_2])
 
-    boxes = [[0, 0, 100, 100], [0, 0, 50, 100], [0, 0, 100, 50], [0, 0, 5, 5]]
+    boxes = [[0, 0, 100, 100], [0, 0, 100, 100], [200, 300, 350, 400], [10, 20, 90, 90],[10, 10, 90, 90], [10, 10, 90, 90], [10, 10, 15, 20],  [1000, 1000, 1100, 1100]]
+    
 
-    f = filter_bboxes(boxes, aspect_ratio=(1, '>'))
-    print(f)
+    print(filter_bbox_contained(boxes))
  
     # marked_bounding_boxes(results, OUTPUT_DIR, filter_size=100)
     # crop_images_to_bbox(results, OUTPUT_DIR, filter_size=100)
