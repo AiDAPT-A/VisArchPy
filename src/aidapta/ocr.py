@@ -211,14 +211,76 @@ def mark_bounding_boxes(hocr_results: dict, output_dir:str, ids:list=None,
     
     return None
 
+
+def filter_bboxes(bboxes: list, min_width: int = None, min_height: int = None, 
+                  aspect_ratio: tuple[float, str] = None ) -> list:
+    """
+    Filters bounding boxes based on size and aspect ratio of width and height.
+    Aspect ratio is calculated as width/height.
+
+    Parameters
+    ----------
+    bboxes: list
+        list of bounding boxes. Each bounding box is a list of coordinates
+    
+    min_width: int
+        minimum width of bounding box. Optional.
+
+    min_height: int
+        minimum height of bounding box. Optional.
+
+    aspect_ratio: tuple
+        aspect ratio of bounding box to be filtered out. A tuple with a value of the aspect ratio (float)
+        and an operator (string, either '<' or '>') indicating if filter excludes boxes 
+        smaller than or larger than the aspect ratio. For example, (1.5, '>') will filter
+        out boxes with aspect ratio larger than (>) 1.5, and (1.5, '<') will filter out
+        boxes with aspect ratio smaller than (<) 1.5. Optional.
+    
+    Returns
+    -------
+    list
+        filtering results with bounding boxes and ids for non-text regions
+    """
+    
+    if min_width is None and min_height is None and aspect_ratio is None:
+        raise ValueError('At least one filtering parameter must be provided')
+    
+    # type checking
+    if isinstance(aspect_ratio, tuple):
+        aspect = aspect_ratio[0]
+        operator = aspect_ratio[1]
+        if operator not in ['<', '>']:
+            raise ValueError('Operator must be either "<" or ">"')
+
+    filtered_bboxes = []
+    for bbox in bboxes:
+        x1, y1, x2, y2 = bbox
+        width = x2 - x1
+        height = y2 - y1
+        if min_width is not None and width < min_width:
+            continue
+        if min_height is not None and height < min_height:
+            continue
+        if aspect_ratio[0] is not None:
+            if aspect_ratio[1] == '<':
+                if width/height < aspect_ratio[0]:
+                    continue
+            elif aspect_ratio[1] == '>':
+                if width/height > aspect_ratio[0]:
+                    continue
+        filtered_bboxes.append(bbox)
+    
+    return filtered_bboxes
+
+
 if __name__ == '__main__':
 
-    # PDF_FILE = 'data-pipelines/data/caption-tests/multi-image-caption.pdf'
+    PDF_FILE = 'data-pipelines/data/caption-tests/multi-image-caption.pdf'
     # registry 1
     # PDF_FILE='data-pipelines/data/design-data100/00001_P5_Yilin_Zhou.pdf'
     # regisry 2
     # PDF_FILE='data-pipelines/data/design-data100/00002_P5PresentatieEricdeRidder_28jun.pdf' 
-    PDF_FILE= 'data-pipelines/data/design-data100/00002_RESEARCHBOOKEricdeRidder_P5Repository.pdf'
+    # PDF_FILE= 'data-pipelines/data/design-data100/00002_RESEARCHBOOKEricdeRidder_P5Repository.pdf'
     # registry 3
     # PDF_FILE = 'data-pipelines/data/design-data100/00003/00003_Report_Giorgio_Larcher_vol.1.pdf'
     # PDF_FILE = 'data-pipelines/data/design-data100/00003/00003_Report_Giorgio_Larcher_vol.2.pdf'
@@ -226,7 +288,15 @@ if __name__ == '__main__':
     OUTPUT_DIR = 'data-pipelines/data/ocr-test/00002/vol2-psm3-oem1'
     images = convert_pdf_to_image(PDF_FILE, dpi=200)
 
-    results = extract_bboxes_from_horc(images, config='--psm 3 --oem 1')
+    # results = extract_bboxes_from_horc(images, config='--psm 3 --oem 1')
+    # key_ = next(iter(results))
+    # key_2 = next(iter(results))
+    # print(results[key_], results[key_2])
+
+    boxes = [[0, 0, 100, 100], [0, 0, 50, 100], [0, 0, 100, 50], [0, 0, 5, 5]]
+
+    f = filter_bboxes(boxes, aspect_ratio=(1, '>'))
+    print(f)
  
     # marked_bounding_boxes(results, OUTPUT_DIR, filter_size=100)
-    crop_images_to_bbox(results, OUTPUT_DIR, filter_size=100)
+    # crop_images_to_bbox(results, OUTPUT_DIR, filter_size=100)
