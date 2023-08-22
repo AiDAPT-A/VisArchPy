@@ -13,7 +13,7 @@ from pdfminer.high_level import extract_pages
 from pdfminer.image import ImageWriter
 from tqdm import tqdm
 from aidapta.utils import extract_mods_metadata, get_entry_number_from_mods
-from aidapta.captions import find_caption_by_bbox, find_caption_by_text
+from aidapta.captions import find_caption_by_distance, find_caption_by_text
 from aidapta.layout import sort_layout_elements, create_output_dir
 from aidapta.metadata import Document, Metadata, Visual, FilePath
 from omegaconf import DictConfig
@@ -103,7 +103,7 @@ def main(cfg: DictConfig) -> None:
 
             iw = ImageWriter(image_directory)
 
-            if page["images"] == []:
+            if page["images"] == []: # collects pages where no images were found by layout analysis
                 ocr_pages.append(page)
         
             for img in page["images"]:
@@ -116,7 +116,7 @@ def main(cfg: DictConfig) -> None:
                 print("offset type", type(offset_dist))
                 bbox_matches =[]
                 for _text in page["texts"]:
-                    match = find_caption_by_bbox(img, _text, offset= offset_dist, 
+                    match = find_caption_by_distance(img, _text, offset= offset_dist, 
                                                 direction= cfg.layout.caption_settings.direction)
                     if match:
                         bbox_matches.append(match)
@@ -207,5 +207,5 @@ def main(cfg: DictConfig) -> None:
 if __name__ == "__main__":
     
     # for id in range(11,12):
-    str_id = str(1).zfill(5)
+    str_id = str(2).zfill(5)
     main()

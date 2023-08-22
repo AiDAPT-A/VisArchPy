@@ -127,7 +127,7 @@ def sort_layout_elements(page:LTPage, img_width:int = None, img_height:int = Non
 
                     
 if __name__ == "__main__":
-    from aidapta.captions import find_caption_by_text, find_caption_by_bbox
+    from aidapta.captions import find_caption_by_text, find_caption_by_distance
 
     pdf_2 ="data-pipelines/data/4563050_AmberLuesink_P5Report_TheRevivaloftheJustCity.pdf"
     # has 158283 figure elements
@@ -142,6 +142,6 @@ if __name__ == "__main__":
         # print(elements)
         for img in elements["images"]:
             for _text in elements["texts"]:
-                match = find_caption_by_bbox(img, _text, offset_distance=10, direction="down")
+                match = find_caption_by_distance(img, _text, offset_distance=10, direction="down")
                 if match:
                     print(img, _text)
