@@ -1,54 +1,50 @@
 """A pipeline for extracting metadata from MODS files and imges from PDF files.
+It applyes image search and analysis based  in two steps:
+    First, it analyses the layout of the PDF file using the pdfminer.six library.
+    Second, it applies OCR to the pages where no images were found by layout analysis.
 Author: Manuel Garcia
 """
 
+import hydra
 import os
 import pathlib
 import shutil
 import time
 import logging
+import aidapta.ocr as ocr
 from pdfminer.high_level import extract_pages
 from pdfminer.image import ImageWriter
 from tqdm import tqdm
 from aidapta.utils import extract_mods_metadata, get_entry_number_from_mods
-from aidapta.captions import find_caption_by_bbox, find_caption_by_text
-from aidapta.image import sort_layout_elements, create_output_dir
+from aidapta.captions import find_caption_by_distance, find_caption_by_text
+from aidapta.layout import sort_layout_elements, create_output_dir
 from aidapta.metadata import Document, Metadata, Visual, FilePath
-import aidapta.ocr as ocr
+from omegaconf import DictConfig
+from aidapta.captions import OffsetDistance
 
-
-def main(entry_id: str,):
+@hydra.main(version_base=None, config_path="", config_name="config")
+def main(cfg: DictConfig) -> None:
 
     start_time = time.time()
 
     #SETTINGS                              
 
     # SELECT INPUT DIRECTORY
-    INPUT_DIR = "data-pipelines/data/design-data100/" # an absolute path is recommended,
+    INPUT_DIR = cfg.dir.input # an absolute path is recommended,
 
     # SELECT OUTPUT DIRECTORY
     # if run multiple times to the same output directory, the images will be duplicated and 
     # metadata will be overwritten
     # This will become the root directory for a Visual object
-    OUTPUT_DIR = "data-pipelines/data/layout-ocr-test/"
+    OUTPUT_DIR = cfg.dir.output # an absolute path is recommended   
     # SET MODS FILE
+    entry_id = cfg.entry
     MODS_FILE = os.path.join(INPUT_DIR, entry_id+"_mods.xml")
 
     # TEMPORARY DIRECTORY
     # this directory is used to store temporary files. PDF files are copied to this directory
-    TMP_DIR = "data-pipelines/data/tmp/" 
-
-    #CAPTION MATCH SETTINGS
-    CAP_SETTINGS ={"method": "bbox",
-            "offset": 14, # one unit equals 1/72 inch or 0.3528 mm
-            "direction": "down", # all directions
-            "keywords": ['figure', 'caption', 'figuur'] # case insentitive
-            }
+    TMP_DIR = cfg.dir.temp 
     
-    # SETTINGS FOR THE IMAGE EXTRACTION
-    IMG_SETTINGS = {"width": 100, "height": 100} # recommended values: 0, 0
-
-
     # Create output directory for the entry
     entry_directory = create_output_dir(OUTPUT_DIR, entry_id)
     
@@ -56,7 +52,7 @@ def main(entry_id: str,):
     logging.basicConfig(filename=os.path.join(OUTPUT_DIR, entry_id, entry_id + '.log'), encoding='utf-8', level=logging.INFO)
     logging.info("Starting pipeline for entry: " + entry_id)
 
-    logging.info("Image settings: " + str(IMG_SETTINGS))
+    logging.info("Image settings: " + str(cfg.layout.image_settings))
 
     # EXTRACT METADATA FROM MODS FILE
     meta_blob = extract_mods_metadata(MODS_FILE)
@@ -74,6 +70,9 @@ def main(entry_id: str,):
     # set web url. This is not part of the MODS file
     base_url = "http://resolver.tudelft.nl/" 
     entry.add_web_url(base_url)
+
+    offset_dist = OffsetDistance ( cfg.layout.caption_settings.offset[0], cfg.layout.caption_settings.offset[1])
+    print ("offset distance", offset_dist)
 
     # PROCESS PDF FILES
     start_processing_time = time.time()
@@ -96,8 +95,8 @@ def main(entry_id: str,):
 
         pages = []
         for page in tqdm(pdf_pages, desc="Reading pages", unit="pages"):
-            elements = sort_layout_elements(page, img_height=IMG_SETTINGS["width"], 
-                                            img_width=IMG_SETTINGS["height"])
+            elements = sort_layout_elements(page, img_height = cfg.layout.image_settings.width, 
+                                            img_width=cfg.layout.image_settings.height)
             pages.append(elements)
 
         ocr_pages = []
@@ -107,7 +106,7 @@ def main(entry_id: str,):
 
             iw = ImageWriter(image_directory)
 
-            if page["images"] == []:
+            if page["images"] == []: # collects pages where no images were found by layout analysis
                 ocr_pages.append(page)
         
             for img in page["images"]:
@@ -117,10 +116,11 @@ def main(entry_id: str,):
                 
                 # Search for captions using proximity to image
                 # This may generate multiple matches
+                print("offset type", type(offset_dist))
                 bbox_matches =[]
                 for _text in page["texts"]:
-                    match = find_caption_by_bbox(img, _text, offset=CAP_SETTINGS["offset"], 
-                                                direction=CAP_SETTINGS["direction"])
+                    match = find_caption_by_distance(img, _text, offset= offset_dist, 
+                                                direction= cfg.layout.caption_settings.direction)
                     if match:
                         bbox_matches.append(match)
                 # Search for captions using proximity (offset) and text analyses (keywords)
@@ -133,7 +133,7 @@ def main(entry_id: str,):
                     visual.set_caption(caption)
                 else: # more than one matches in bbox_matches
                     for _text in bbox_matches:
-                        text_match = find_caption_by_text(_text, keywords=CAP_SETTINGS["keywords"])
+                        text_match = find_caption_by_text(_text, keywords=cfg.layout.caption_settings.keywords)
                     if text_match:
                         caption = ""
                         for text_line in bbox_matches[0]:
@@ -173,9 +173,9 @@ def main(entry_id: str,):
         for ocr_page in tqdm(ocr_pages, desc="OCR analysis", total=len(ocr_pages), unit="OCR pages"):
 
             # if page["images"] == []: # apply to pages where no images were found by layout analysis
-                page_image = ocr.convert_pdf_to_image(pdf_document.location, dpi=200, first_page=ocr_page["page_number"], last_page=ocr_page["page_number"])
+                page_image = ocr.convert_pdf_to_image(pdf_document.location, dpi= cfg.ocr.resolution, first_page=ocr_page["page_number"], last_page=ocr_page["page_number"])
                 ocr_results = ocr.extract_bboxes_from_horc(page_image, config='--psm 3 --oem 1', entry_id=entry_id, page_number=ocr_page["page_number"])
-                ocr.marked_bounding_boxes(ocr_results, ocr_directory, filter_size=100)      
+                ocr.mark_bounding_boxes(ocr_results, ocr_directory, filter_size=100)      
     
     end_processing_time = time.time()
     processing_time = end_processing_time - start_processing_time
@@ -210,5 +210,5 @@ def main(entry_id: str,):
 if __name__ == "__main__":
     
     # for id in range(11,12):
-    str_id = str(1).zfill(5)
-    main(str_id)
+    str_id = str(2).zfill(5)
+    main()

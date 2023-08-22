@@ -1,11 +1,13 @@
 """
-This script extract images from a PDF file using PyPDF2
+A library for the extraction of images from a PDF file that performs 
+document layout analysis using PDFMiner
 Author: M.G. Garcia
 """
 import os
 import pathlib
 from PyPDF2 import PdfReader
 from pdfminer.high_level import extract_pages
+from aidapta.utils import create_output_dir
 from pdfminer.layout import (
     LTPage, 
     LTItem, 
@@ -19,36 +21,22 @@ from pdfminer.layout import (
 
 # From https://pypdf2.readthedocs.io/en/latest/user/extract-images.html
 
-def create_output_dir(base_path: str, path="") -> str:
-    """
-    creates a directory in the base path if it doesn't exists.
-
-    params:
-    ----------
-        base_path: path to destination directory
-        name: name  or path for the new directory, parent directories are created if they don't exists
-    returns:
-        relative path (comibining base_path and path) to the new created directory
-    """
-
-    if isinstance(base_path, pathlib.Path):
-        base_path = str(base_path)
-
-    full_path = os.path.join(base_path, path)
-    pathlib.Path(full_path).mkdir(parents=True, exist_ok=True)
-
-    return pathlib.Path(full_path)
-
 
 def extract_images(pdf_file: str, output_dir: str) -> None:
     """
     extracts image from a PDF file
     
-    params:
+    Parameters
     ----------
-        pdf_file: path to the PDF file
-        output_dir: path to directory to extract images. Outputs
+    pdf_file: str
+        path to the PDF file
+    output_dir: str 
+        path to directory to extract images. Outputs
         are organized in folder based on the name of the input PDF
+    
+    Returns
+    -------
+    None
     """
     
     # open PDF document
@@ -69,7 +57,8 @@ def extract_images(pdf_file: str, output_dir: str) -> None:
             for image_file_object in page.images:
                 print(image_file_object)
                 
-                with open(str(output_directory)+'/' + 'page' +str(page_index) +'-'+str(count) + image_file_object.name, "wb") as fp:
+                with open(str(output_directory)+'/' + 'page' +str(page_index) +'-'+str(count) + 
+                          image_file_object.name, "wb") as fp:
                     fp.write(image_file_object.data)
                     count += 1
         except ValueError:
@@ -78,20 +67,28 @@ def extract_images(pdf_file: str, output_dir: str) -> None:
     return None
 
 
-def sort_layout_elements(page:LTPage, img_width = None, img_height = None)-> dict:
+def sort_layout_elements(page:LTPage, img_width:int = None, img_height:int = None)-> dict:
     """
-    sorts LTTextContainer, LTImage, LTFigure, and LTCurve elements from a single PDF page using PDFMiner.six
+    sorts LTTextContainer, LTImage, LTFigure, and LTCurve elements from a single PDF 
+    page using PDFMiner.six
 
-    params:
+    Parameters
     ----------
-        pdf_file: path to the PDF file
-        img_width: minimum width of an image to be extracted
-        img_height: minimum height of an image to be extracted. If
-            None, img_width will be used
+    pdf_file: LTPage
+        path to the PDF file
+    img_width: int
+        minimum width of image to be extracted. If
+        None,  a value of 0 will be used
+    img_height: int 
+        minimum height of image to be extracted. If
+        None, img_width will be used
 
-    returns:    
+    Returns    
+    -------
+    dict
         dictionary with LTTextContainer, LTImage, and LTCurve elements
     """
+
     if img_width is None:
         img_width = 0
     if img_height is None:
@@ -103,7 +100,6 @@ def sort_layout_elements(page:LTPage, img_width = None, img_height = None)-> dic
     text_elements = []
     image_elements = []
     vector_elements = []
-
 
     # From pdfminer six#
     def render(item: LTItem) -> None:
@@ -126,11 +122,12 @@ def sort_layout_elements(page:LTPage, img_width = None, img_height = None)-> dic
 
     render(page)
 
-    return {"page_number": page_number, "texts": text_elements, "images": image_elements, "vectors": vector_elements}
+    return {"page_number": page_number, "texts": text_elements, "images": image_elements, 
+            "vectors": vector_elements}
 
                     
 if __name__ == "__main__":
-    from aidapta.captions import find_caption_by_text, find_caption_by_bbox
+    from aidapta.captions import find_caption_by_text, find_caption_by_distance
 
     pdf_2 ="data-pipelines/data/4563050_AmberLuesink_P5Report_TheRevivaloftheJustCity.pdf"
     # has 158283 figure elements
@@ -145,6 +142,6 @@ if __name__ == "__main__":
         # print(elements)
         for img in elements["images"]:
             for _text in elements["texts"]:
-                match = find_caption_by_bbox(img, _text, offset=10, direction="down")
+                match = find_caption_by_distance(img, _text, offset_distance=10, direction="down")
                 if match:
                     print(img, _text)

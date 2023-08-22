@@ -1,23 +1,70 @@
 import requests
 import re
 import os
+import pathlib
 from pymods import MODSReader
 from bs4 import BeautifulSoup
-from aidapta.image import create_output_dir
+
 
 from aidapta.metadata import Person, Faculty, Department
+
+def create_output_dir(base_path: str, path="") -> str:
+    """
+    creates a directory in the base path if it doesn't exists.
+
+    Parameters
+    ----------
+    base_path: str
+        path to destination directory
+    name: str
+        name or path for the new directory, parent directories are 
+        created if they don't exists
+    
+    Returns
+    -------
+    Pathlib object
+        relative path (comibining base_path and path) to the new created directory
+    """
+
+    if isinstance(base_path, pathlib.Path):
+        base_path = str(base_path)
+
+    full_path = os.path.join(base_path, path)
+    pathlib.Path(full_path).mkdir(parents=True, exist_ok=True)
+
+    return pathlib.Path(full_path)
+
+
+def convert_mm_to_point(quantity:float) -> float:
+    """
+    Converts a quantity in milimeters to points (1/72 inches)
+
+    Parameters
+    ----------
+    quantity: float
+        quantity in milimeters
+    
+    Returns
+    -------
+    float
+        quantity in points
+    """
+
+    return quantity * 2.8346456693
 
 
 def extract_mods_metadata(mods_file: str) -> dict:
     """ Extract metadata from MODS files, version 3.6
     
-    Params
-    ======
-    mods_file: path to MODS file
+    Parameters
+    ----------
+    mods_file: str
+        path to MODS file
 
     Returns
-    =======
-    Dictionary with MODS elements and values
+    -------
+    dict
+        Dictionary with MODS elements and values
     """
     
     mods = MODSReader(mods_file)
@@ -129,13 +176,19 @@ def extract_mods_metadata(mods_file: str) -> dict:
     return meta
 
 
-
 def extract_metadata_from_html(reference_url: str) -> dict:
-    """
-    Extracts metadata from HTML pages from the Thesis repository, TU Delft Library.
+    """ Extracts metadata from HTML pages from the Thesis repository, 
+    TU Delft Library.
 
-    param:
-        reference_url: URL from 'to reference to this document use'
+    Parameters
+    ----------
+    reference_url: str
+        URL from 'to reference to this document use'
+    
+    Returns
+    -------
+    dict
+        metadata from HTML page
     """
 
     # download html page
@@ -170,9 +223,16 @@ def download_PDF(download_url: str, destination: str) -> None:
     Downloads files from the Thesis repository, TU Delft Library to 
     a destination directory
 
-    param:
-        download_url: URL of the file to download
-        destination: path to a directory to store the downloaded file 
+    Parameters
+    ----------
+    download_url: str 
+        URL of the file to download
+    destination: str
+        path to a directory to store the downloaded file 
+    
+    Returns
+    -------
+    None
     """
 
     response = requests.get(download_url, stream=True)
@@ -198,11 +258,17 @@ def download_PDF(download_url: str, destination: str) -> None:
 def get_entry_number_from_mods(mods_file_path: str) -> str:
     """
     Extracts the entry number from a MODS file name. 
-    The number is the firts 5 characteris of the file name.
+    It assumes the number is the first 5 characteris of the file name.
     
-    param:
-    ------
-        mods_file_path: path to a MODS file
+    Parameters
+    ----------
+    mods_file_path: str
+        path to a MODS file
+
+    Returns
+    -------
+    str
+        the number of an entry with leading zeros 
     """
 
     return mods_file_path.split("/")[-1][:5]
