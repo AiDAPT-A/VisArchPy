@@ -35,7 +35,7 @@ def create_output_dir(base_path: str, path="") -> str:
     return pathlib.Path(full_path)
 
 
-def mm_to_point(quantity:float) -> float:
+def convert_mm_to_point(quantity:float) -> float:
     """
     Converts a quantity in milimeters to points (1/72 inches)
 
@@ -258,7 +258,7 @@ def download_PDF(download_url: str, destination: str) -> None:
 def get_entry_number_from_mods(mods_file_path: str) -> str:
     """
     Extracts the entry number from a MODS file name. 
-    The number is the firts 5 characteris of the file name.
+    It assumes the number is the first 5 characteris of the file name.
     
     Parameters
     ----------

@@ -7,7 +7,7 @@ from pdfminer.layout import LTTextContainer, LTImage, LTFigure
 from typing import List
 from shapely.geometry import Polygon
 from dataclasses import dataclass
-from aidapta.utils import mm_to_point
+from aidapta.utils import convert_mm_to_point
 
 @dataclass
 class BoundingBox:
@@ -87,10 +87,10 @@ def find_caption_by_text(text_element:LTTextContainer, keywords: List = ['figure
         return False
 
 
-def find_caption_by_bbox(image_object:LTImage|BoundingBox, text_object:LTTextContainer|BoundingBox, offset:OffsetDistance, direction:str=None
+def find_caption_by_distance(image_object:LTImage|BoundingBox, text_object:LTTextContainer|BoundingBox, offset:OffsetDistance, direction:str=None
                          ) -> LTTextContainer|bool:
     """
-    Finds if the boudning box of a text element is within certain distance (offset) 
+    Finds a text element withing a certain distance (offset) 
     from the bounding box of an Image element.
     
     Parameters
@@ -116,7 +116,7 @@ def find_caption_by_bbox(image_object:LTImage|BoundingBox, text_object:LTTextCon
     -------
     LTTextContainer object or bool
         False if no match is found, otherwise the
-        text elemenet within offset distance
+        text element within offset distance
     
     Raises
     ------
@@ -132,7 +132,7 @@ def find_caption_by_bbox(image_object:LTImage|BoundingBox, text_object:LTTextCon
     text_coords = text_object.bbox
 
     if offset.unit == "mm": # Bbox from pdfminer are in points
-        offset_distance = mm_to_point(offset.distance)
+        offset_distance = convert_mm_to_point(offset.distance)
 
     if direction not in ["right", "left", "down", "up", "right-down", "left-up", "all", None]:
         raise ValueError("direction must be either right, left, down, up, right-down, left-up, all")
