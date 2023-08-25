@@ -5,13 +5,14 @@ It applyes image search and analysis based  in two steps:
 Author: Manuel Garcia
 """
 
-import hydra
 import os
 import pathlib
 import shutil
 import time
 import logging
+import typer
 import aidapta.ocr as ocr
+from typing import Optional
 from pdfminer.high_level import extract_pages
 from pdfminer.image import ImageWriter
 from tqdm import tqdm
@@ -19,49 +20,120 @@ from aidapta.utils import extract_mods_metadata, get_entry_number_from_mods
 from aidapta.captions import find_caption_by_distance, find_caption_by_text
 from aidapta.layout import sort_layout_elements, create_output_dir
 from aidapta.metadata import Document, Metadata, Visual, FilePath
-from omegaconf import DictConfig
 from aidapta.captions import OffsetDistance
+from typing_extensions import Annotated 
 
-@hydra.main(version_base=None, config_path="", config_name="config")
-def main(cfg: DictConfig) -> None:
+app = typer.Typer()
 
+@app.command()
+def layout_ocr(entry_range: str = typer.Argument(help="Range of entries to process. e.g.: 1-10"),
+               data_directory: str = typer.Argument( help="path to directory containing MODS and pdf files"),
+               output_directory: str = typer.Argument( help="path to directory where results will be saved"),
+               temp_directory: Annotated[Optional[str], typer.Argument(help="temporary directory")] = None
+               ) -> None:
+    """Extracts metadata from MODS files and images from PDF files
+      using layout and OCR analysis."""
+    
+    start_id = int(entry_range.split("-")[0])
+    end_id = int(entry_range.split("-")[1])
+
+    for id in range(start_id, end_id+1):
+        str_id = str(id).zfill(5)
+
+        pipeline(str_id,
+                 data_directory,
+                 output_directory,
+                 temp_directory)
+
+
+def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_directory: str = None) -> None:
+    """A pipeline for extracting metadata from MODS files and imges from PDF files
+      using layout and OCR analysis.
+      
+    Parameters
+    ----------
+
+    entry_id : str
+        The entry id, which is the same as the MODS file name without the extension.
+    data_directory : str
+        The path to the directory containing the MODS and PDF files.
+    output_directory : str
+        The path to the directory where the results will be saved.
+      """
+    
     start_time = time.time()
-
     #SETTINGS                              
-
     # SELECT INPUT DIRECTORY
-    INPUT_DIR = cfg.dir.input # an absolute path is recommended,
+    DATA_DIR = data_directory
 
     # SELECT OUTPUT DIRECTORY
     # if run multiple times to the same output directory, the images will be duplicated and 
     # metadata will be overwritten
     # This will become the root directory for a Visual object
-    OUTPUT_DIR = cfg.dir.output # an absolute path is recommended   
+    OUTPUT_DIR = output_directory # an absolute path is recommended   
     # SET MODS FILE
-    entry_id = cfg.entry
-    MODS_FILE = os.path.join(INPUT_DIR, entry_id+"_mods.xml")
+    entry_id = entry_id
+    MODS_FILE = os.path.join(DATA_DIR, entry_id+"_mods.xml")
 
     # TEMPORARY DIRECTORY
     # this directory is used to store temporary files. PDF files are copied to this directory
-    TMP_DIR = cfg.dir.temp 
+
+    if temp_directory:
+        TMP_DIR = temp_directory
+    else:
+        TMP_DIR = os.path.join("./tmp")
+
+    # LAYOUT ANALYSIS SETTINGS
     
+    layout_settings = {
+        "caption": {
+            "offset": [4, "mm"],
+            "direction": "down",
+            "keywords": ['figure', 'caption', 'figuur'] 
+            },
+        "image": {
+            "width": 100,
+            "height": 100,
+        }
+    }
+
+    # OCR ANALYSIS SETTINGS
+
+    ocr_settings = {
+        "caption": {
+            "offset": [10, "px"],
+            "direction": "down",
+            "keywords": ['figure', 'caption', 'figuur'] 
+            },
+        "image": {
+            "width": 100,
+            "height": 100,
+        },
+        "resolution": 200,
+        "output_resolution": 300,
+    }
+
     # Create output directory for the entry
     entry_directory = create_output_dir(OUTPUT_DIR, entry_id)
     
     # start logging
-    logging.basicConfig(filename=os.path.join(OUTPUT_DIR, entry_id, entry_id + '.log'), encoding='utf-8', level=logging.INFO)
-    logging.info("Starting pipeline for entry: " + entry_id)
+    logging.basicConfig(filename=os.path.join(OUTPUT_DIR, 
+                        entry_id, entry_id + '.log'), 
+                        encoding='utf-8', 
+                        level=logging.INFO)
+    
+    logging.info("Starting Layout+OCR pipeline for entry: " + entry_id)
 
-    logging.info("Image settings: " + str(cfg.layout.image_settings))
+    # logging.info("Image settings: " + str(cfg.layout.image_settings))
 
     # EXTRACT METADATA FROM MODS FILE
     meta_blob = extract_mods_metadata(MODS_FILE)
 
     # FIND PDF FILES FOR A GIVEN ENTRY
     PDF_FILES = []
-    for f in tqdm(os.listdir(INPUT_DIR), desc="Collecting PDF files", unit="files"):
+    for f in tqdm(os.listdir(DATA_DIR), desc="Collecting PDF files", unit="files"):
         if f.startswith(entry_id) and f.endswith(".pdf"):
-            PDF_FILES.append(INPUT_DIR+f)
+            PDF_FILES.append(DATA_DIR+f)
 
     # INITIALISE METADATA OBJECT
     entry = Metadata()
@@ -71,8 +143,8 @@ def main(cfg: DictConfig) -> None:
     base_url = "http://resolver.tudelft.nl/" 
     entry.add_web_url(base_url)
 
-    offset_dist = OffsetDistance ( cfg.layout.caption_settings.offset[0], cfg.layout.caption_settings.offset[1])
-    print ("offset distance", offset_dist)
+    layout_offset_dist = OffsetDistance (layout_settings["caption"]["offset"][0], 
+                                         layout_settings["caption"]["offset"][1])
 
     # PROCESS PDF FILES
     start_processing_time = time.time()
@@ -95,8 +167,9 @@ def main(cfg: DictConfig) -> None:
 
         pages = []
         for page in tqdm(pdf_pages, desc="Reading pages", unit="pages"):
-            elements = sort_layout_elements(page, img_height = cfg.layout.image_settings.width, 
-                                            img_width=cfg.layout.image_settings.height)
+            elements = sort_layout_elements(page, img_width=layout_settings["image"]["width"],
+                                            img_height = layout_settings["image"]["height"] 
+                                            )
             pages.append(elements)
 
         ocr_pages = []
@@ -116,11 +189,15 @@ def main(cfg: DictConfig) -> None:
                 
                 # Search for captions using proximity to image
                 # This may generate multiple matches
-                print("offset type", type(offset_dist))
+         
                 bbox_matches =[]
                 for _text in page["texts"]:
-                    match = find_caption_by_distance(img, _text, offset= offset_dist, 
-                                                direction= cfg.layout.caption_settings.direction)
+                    match = find_caption_by_distance(
+                        img, 
+                        _text, 
+                        offset= layout_offset_dist, 
+                        direction= layout_settings["caption"]["direction"]
+                    )
                     if match:
                         bbox_matches.append(match)
                 # Search for captions using proximity (offset) and text analyses (keywords)
@@ -133,7 +210,7 @@ def main(cfg: DictConfig) -> None:
                     visual.set_caption(caption)
                 else: # more than one matches in bbox_matches
                     for _text in bbox_matches:
-                        text_match = find_caption_by_text(_text, keywords=cfg.layout.caption_settings.keywords)
+                        text_match = find_caption_by_text(_text, keywords=layout_settings["caption"]["keywords"])
                     if text_match:
                         caption = ""
                         for text_line in bbox_matches[0]:
@@ -152,17 +229,18 @@ def main(cfg: DictConfig) -> None:
                 img.name =  str(entry_id) + "-page" + str(page["page_number"]) + "-" + img.name
                 # save image to file
             
-                # TODO: https://github.com/pdfminer/pdfminer.six/pull/854
                 try:
                     image_file_name =iw.export_image(img) # returns image file name, 
                     # which last part is automatically generated by pdfminer to guarantee uniqueness
                 except ValueError:
                     # issue with MCYK images with 4 bits per pixel
+                    # https://github.com/pdfminer/pdfminer.six/pull/854
                     logging.warning("Image with unsupported format wasn't saved:" + img.name)
                     pass
                     
                 visual.set_location( FilePath(
-                                         str(image_directory), image_file_name
+                                         str(image_directory), 
+                                         image_file_name
                                         ) 
                                     ) 
             
@@ -173,9 +251,63 @@ def main(cfg: DictConfig) -> None:
         for ocr_page in tqdm(ocr_pages, desc="OCR analysis", total=len(ocr_pages), unit="OCR pages"):
 
             # if page["images"] == []: # apply to pages where no images were found by layout analysis
-                page_image = ocr.convert_pdf_to_image(pdf_document.location, dpi= cfg.ocr.resolution, first_page=ocr_page["page_number"], last_page=ocr_page["page_number"])
-                ocr_results = ocr.extract_bboxes_from_horc(page_image, config='--psm 3 --oem 1', entry_id=entry_id, page_number=ocr_page["page_number"])
-                ocr.mark_bounding_boxes(ocr_results, ocr_directory, filter_size=100)      
+                page_image = ocr.convert_pdf_to_image(
+                    pdf_document.location, 
+                    dpi= ocr_settings["resolution"], 
+                    first_page=ocr_page["page_number"], 
+                    last_page=ocr_page["page_number"],
+                    )
+ 
+                ocr_results = ocr.extract_bboxes_from_horc(
+                    page_image, config='--psm 3 --oem 1', 
+                    entry_id=entry_id, 
+                    page_number=ocr_page["page_number"])
+                
+
+                
+                page_key = ocr_results.keys()
+                page_id = list(page_key)[0]
+
+
+                # FILTERING OCR RESULTS
+                # filter by bbox size
+                filtered_width_height = ocr.filter_bbox_by_size(
+                                                        ocr_results[page_id]["bboxes"],
+                                                        min_width= ocr_settings["image"]["width"],
+                                                        min_height= ocr_settings["image"]["height"],
+                                                        )
+                
+                ocr_results[page_id]["bboxes"] = filtered_width_height
+
+                # filter bboxes that are extremely long horizontally
+                filtered_ratio = ocr.filter_bbox_by_size(
+                                                        ocr_results[page_id]["bboxes"],
+                                                        aspect_ratio = (15/1, ">")
+                                                        )
+                ocr_results[page_id]["bboxes"]= filtered_ratio      
+
+                # filter boxes with extremely long vertically
+                filtered_ratio = ocr.filter_bbox_by_size(ocr_results[page_id]["bboxes"],
+                                                        aspect_ratio = (1/15, "<")
+                                                        )
+                ocr_results[page_id]["bboxes"]= filtered_ratio              
+        
+                # TODO: continue seeting other filters
+
+                print("ocr_results", ocr_results)
+                # # filtering results
+                # filtered_by_width_height = ocr.filter_bbox_by_size(ocr_results[],
+                #                                             min_width= ocr_settings["image"]["width"],
+                #                                             min_height= ocr_settings["image"]["height"],
+                #                                             )
+                
+           
+
+                # ocr_results = ocr.filter_bbox_by_size(ocr_results, filter_size=100)
+
+
+                # ocr.mark_bounding_boxes(ocr_results, ocr_directory, filter_size=100)    
+                ocr.crop_images_to_bbox(ocr_results, ocr_directory)
     
     end_processing_time = time.time()
     processing_time = end_processing_time - start_processing_time
@@ -188,6 +320,7 @@ def main(cfg: DictConfig) -> None:
 
     # Copy MODS file and PDF files to output directory
     temp_entry_directory = create_output_dir( os.path.join(TMP_DIR, entry_id))
+    print("temp_entry_directory", temp_entry_directory)
 
     mods_file_name = pathlib.Path(MODS_FILE).stem + ".xml"
     if not os.path.exists(os.path.join(temp_entry_directory, mods_file_name)):
@@ -198,9 +331,11 @@ def main(cfg: DictConfig) -> None:
             shutil.copy2(pdf, temp_entry_directory)
     
     # SAVE METADATA TO files
-    # json_file = str(os.path.join(entry_directory, entry_id) + "-metadata.json")
+
     csv_file = str(os.path.join(entry_directory, entry_id) + "-metadata.csv")
     json_file = str(os.path.join(entry_directory, entry_id) + "-metadata.json")
+    entry.save_to_csv(csv_file)
+    entry.save_to_json(json_file)
 
     end_time = time.time()
     total_time = end_time - start_time
@@ -209,6 +344,8 @@ def main(cfg: DictConfig) -> None:
   
 if __name__ == "__main__":
     
-    # for id in range(11,12):
-    str_id = str(2).zfill(5)
-    main()
+    pipeline("00000",
+            "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/",
+            "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/",
+            "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/tmp/"
+            )
