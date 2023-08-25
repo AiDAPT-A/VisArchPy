@@ -101,6 +101,7 @@ def extract_bboxes_from_horc(images: list[Image], config: str ='--oem 1 --psm 1'
                 bounding_box = [int(value) for value in bounding_box]
                 non_text_bboxes.append(bounding_box)
                 paragraphs_ids.append(id)
+            
 
             if page_counter is not None: 
                 page_number = page_counter
@@ -141,7 +142,7 @@ def crop_images_to_bbox(hocr_results: dict, output_dir:str, filter_size:int=50) 
     """
 
     
-    for page, results in tqdm(hocr_results.items(), desc="Cropping images", unit="pages"):
+    for page, results in hocr_results.items():
         for bounding_box, id in zip(results['bboxes'], results['ids']):
             x1, y1, x2, y2 = bounding_box # coordinates from top left corner
             width = x2 - x1
@@ -215,7 +216,7 @@ def mark_bounding_boxes(hocr_results: dict, output_dir:str, ids:list=None,
 
 
 def filter_bbox_by_size(bboxes: list, min_width: int = None, min_height: int = None, 
-                  aspect_ratio: tuple[float, str] = None ) -> list:
+                  aspect_ratio: tuple[float, str] = [None, None] ) -> list:
     """
     Filters bounding boxes based on size and aspect ratio of width and height.
     Aspect ratio is calculated as width/height.
@@ -249,10 +250,14 @@ def filter_bbox_by_size(bboxes: list, min_width: int = None, min_height: int = N
     
     # type checking
     if isinstance(aspect_ratio, tuple):
-        aspect = aspect_ratio[0]
+        # aspect = aspect_ratio[0]
         operator = aspect_ratio[1]
         if operator not in ['<', '>']:
             raise ValueError('Operator must be either "<" or ">"')
+
+    print("input bboxes", bboxes)
+    if len(bboxes) == 0:
+        return bboxes
 
     filtered_bboxes = []
     for bbox in bboxes:
@@ -291,6 +296,9 @@ def filter_bbox_largest(bboxes: list) -> list:
         largest bounding box as a list of coordinates
     """
     
+    if len(bboxes) == 0:
+        return bboxes
+
     def compute_area(bbox):
         x1, y1, x2, y2 = bbox
         width = x2 - x1
@@ -318,6 +326,8 @@ def filter_bbox_contained(bboxes: list) -> list:
     list
         lis of bounding boxes that are not completly contained by another bounding box
     """
+    if len(bboxes) == 0 or len(bboxes) == 1:
+        return bboxes
     
     def is_contained(bbox1, bbox2):
         "Check if bbox1 is contained in bbox"
