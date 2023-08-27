@@ -69,11 +69,11 @@ def extract_bboxes_from_horc(images: list[Image], config: str ='--oem 1 --psm 1'
         Dictionary with bounding boxes and ids for non-text regions
         Example:
     
-        {'page': {'img': None, 'bboxes': [], 'ids': []} }
+        {'page': {'img': Image, 'bboxes': {'id': [bbox], ... } } }
     """
     _config = config + ' hocr'
 
-    results = {}
+    hocr_results = {}
 
     if isinstance(page_number, int):
         page_counter = None 
@@ -85,8 +85,8 @@ def extract_bboxes_from_horc(images: list[Image], config: str ='--oem 1 --psm 1'
         horc_data = pytesseract.image_to_pdf_or_hocr(img, extension='hocr', config=_config)
         soup = BeautifulSoup(horc_data, 'html.parser')
         paragraphs = soup.find_all('p', class_='ocr_par')
-        non_text_bboxes = [] 
-        paragraphs_ids = []
+        non_text_bboxes = {}
+        # paragraphs_ids = []
         # paragraph_confidence_scores = []
         # boxed_paragraphs = []
         for paragraph in paragraphs:
@@ -99,10 +99,9 @@ def extract_bboxes_from_horc(images: list[Image], config: str ='--oem 1 --psm 1'
             if title and text.strip() == "":
                 bounding_box = title.split(';')[0].split(' ')[1:]
                 bounding_box = [int(value) for value in bounding_box]
-                non_text_bboxes.append(bounding_box)
-                paragraphs_ids.append(id)
-            
-
+                
+                non_text_bboxes[str(id)] = bounding_box
+             
             if page_counter is not None: 
                 page_number = page_counter
                 page_counter += 1
@@ -110,13 +109,14 @@ def extract_bboxes_from_horc(images: list[Image], config: str ='--oem 1 --psm 1'
                 page_number = page_number
 
             if entry_id is not None:
-                results[f'{entry_id}-page-{page_number}'] = {'img': img, 'bboxes': non_text_bboxes,
-                                                              'ids': paragraphs_ids}
+                hocr_results[f'{entry_id}-page-{page_number}'] = {'img': img, 
+                                                             'bboxes': non_text_bboxes
+                }
             else:
-                results[f'page-{page_number}'] = {'img': img, 'bboxes': non_text_bboxes, 
-                                                  'ids': paragraphs_ids}
+                hocr_results[f'page-{page_number}'] = {'img': img, 'bboxes': non_text_bboxes
+                } 
         
-    return results
+    return hocr_results
 
 
 def crop_images_to_bbox(hocr_results: dict, output_dir:str, filter_size:int=50) -> None:
@@ -139,10 +139,20 @@ def crop_images_to_bbox(hocr_results: dict, output_dir:str, filter_size:int=50) 
     Returns
     -------
     None
-    """
 
+    Raises
+    ------
+    ValueError
+        If bboxes and ids are not of same length
+    """
     
+    # TODO: UPDATE ALL functions to use new hocr_results format
+
     for page, results in hocr_results.items():
+
+        if len(results['bboxes']) != len(results['ids']):
+            raise ValueError(f'bboxes and ids must be of same length. Page: {page}')
+
         for bounding_box, id in zip(results['bboxes'], results['ids']):
             x1, y1, x2, y2 = bounding_box # coordinates from top left corner
             width = x2 - x1
@@ -255,7 +265,6 @@ def filter_bbox_by_size(bboxes: list, min_width: int = None, min_height: int = N
         if operator not in ['<', '>']:
             raise ValueError('Operator must be either "<" or ">"')
 
-    print("input bboxes", bboxes)
     if len(bboxes) == 0:
         return bboxes
 
