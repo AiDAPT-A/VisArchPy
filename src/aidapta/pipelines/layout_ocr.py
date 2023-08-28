@@ -160,7 +160,7 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
         image_directory = create_output_dir(entry_directory, 
                                             pdf_file_name) # returns a pathlib object
         
-        ocr_directory = create_output_dir(image_directory, "ocr")
+        # ocr_directory = create_output_dir(image_directory, "ocr")
 
         # PROCESS SINGLE PDF 
         pdf_pages = extract_pages(pdf_document.location)
@@ -173,6 +173,7 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
             pages.append(elements)
 
         ocr_pages = []
+
         # PROCESS PAGE USING LAYOUT ANALYSIS
         for page in tqdm(pages, desc="layout analysis", total=len(pages), 
                          unit="sorted pages"):
@@ -238,7 +239,7 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
                     logging.warning("Image with unsupported format wasn't saved:" + img.name)
                     pass
                     
-                visual.set_location( FilePath(
+                visual.set_location(FilePath(
                                          str(image_directory), 
                                          image_file_name
                                         ) 
@@ -263,51 +264,54 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
                     entry_id=entry_id, 
                     page_number=ocr_page["page_number"])
                 
-
-                
-                page_key = ocr_results.keys()
-                page_id = list(page_key)[0]
-
-
-                # FILTERING OCR RESULTS
-                # filter by bbox size
-                filtered_width_height = ocr.filter_bbox_by_size(
-                                                        ocr_results[page_id]["bboxes"],
-                                                        min_width= ocr_settings["image"]["width"],
-                                                        min_height= ocr_settings["image"]["height"],
-                                                        )
-                
-                ocr_results[page_id]["bboxes"] = filtered_width_height
-
-                # filter bboxes that are extremely long horizontally
-                filtered_ratio = ocr.filter_bbox_by_size(
-                                                        ocr_results[page_id]["bboxes"],
-                                                        aspect_ratio = (15/1, ">")
-                                                        )
-                ocr_results[page_id]["bboxes"]= filtered_ratio      
-
-                # filter boxes with extremely long vertically
-                filtered_ratio = ocr.filter_bbox_by_size(ocr_results[page_id]["bboxes"],
-                                                        aspect_ratio = (1/15, "<")
-                                                        )
-                ocr_results[page_id]["bboxes"]= filtered_ratio              
-        
-                # TODO: continue seeting other filters
-
-                print("ocr_results", ocr_results)
-                # # filtering results
-                # filtered_by_width_height = ocr.filter_bbox_by_size(ocr_results[],
-                #                                             min_width= ocr_settings["image"]["width"],
-                #                                             min_height= ocr_settings["image"]["height"],
-                #                                             )
-                
-           
-
-                # ocr_results = ocr.filter_bbox_by_size(ocr_results, filter_size=100)
+               
+                if ocr_results:  # skips pages with no results
+                    page_key = ocr_results.keys()
+                    page_id = list(page_key)[0]
 
 
-                # ocr.mark_bounding_boxes(ocr_results, ocr_directory, filter_size=100)    
-                ocr.crop_images_to_bbox(ocr_results, ocr_directory)
+                    # FILTERING OCR RESULTS
+                    # filter by bbox size
+                    filtered_width_height = ocr.filter_bbox_by_size(
+                                                            ocr_results[page_id]["bboxes"],
+                                                            min_width= ocr_settings["image"]["width"],
+                                                            min_height= ocr_settings["image"]["height"],
+                                                            )
+                    
+                    ocr_results[page_id]["bboxes"] = filtered_width_height
+
+                    # # filter bboxes that are extremely horizontally long 
+                    filtered_ratio = ocr.filter_bbox_by_size(
+                                                            ocr_results[page_id]["bboxes"],
+                                                            aspect_ratio = (15/1, ">")
+                                                            )
+                    ocr_results[page_id]["bboxes"]= filtered_ratio      
+
+                    # filter boxes with extremely vertically long
+                    filtered_ratio = ocr.filter_bbox_by_size(ocr_results[page_id]["bboxes"],
+                                                            aspect_ratio = (1/15, "<")
+                                                            )
+                    ocr_results[page_id]["bboxes"]= filtered_ratio              
+            
+                    # filter boxes contained by larger boxes
+                    filtered_contained = ocr.filter_bbox_contained(ocr_results[page_id]["bboxes"])
+                    ocr_results[page_id]["bboxes"]= filtered_contained
+                    # print(ocr_page)
+
+                    # exclude pages with no bboxes (a.k.a. no inner images)
+                    if len (ocr_results[page_id]["bboxes"]) > 0:
+                        for bbox in ocr_results[page_id]["bboxes"]:
+                            visual = Visual(document=pdf_document,
+                                            document_page=ocr_page["page_number"],
+                                            bbox=bbox)
+                            
+                        
+                #         print('type image dir', type(image_directory))
+                #         visual.set_location(FilePath(str(image_directory), f'{page_id}-{bbox}.png' ))
+                #         entry.add_visual(visual)
+
+                # ocr.mark_bounding_boxes(ocr_results, OUTPUT_DIR, filter_size=100)    
+                ocr.crop_images_to_bbox(ocr_results, OUTPUT_DIR)         
     
     end_processing_time = time.time()
     processing_time = end_processing_time - start_processing_time
@@ -344,7 +348,7 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
   
 if __name__ == "__main__":
     
-    pipeline("00000",
+    pipeline("00001",
             "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/",
             "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/",
             "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/tmp/"
