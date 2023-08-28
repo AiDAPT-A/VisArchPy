@@ -195,7 +195,6 @@ def mark_bounding_boxes(hocr_results: dict, output_dir:str,
 
             # Create a Rectangle patch
     
-            print(content['bboxes'])
             for id in content['bboxes']:
                 x1, y1, x2, y2 = content['bboxes'][id] # coordinates from top left corner
                 width = x2 - x1
@@ -218,7 +217,7 @@ def mark_bounding_boxes(hocr_results: dict, output_dir:str,
     return None
 
 
-def filter_bbox_by_size(bboxes: list, min_width: int = None, min_height: int = None, 
+def filter_bbox_by_size(bboxes: dict, min_width: int = None, min_height: int = None, 
                   aspect_ratio: tuple[float, str] = [None, None] ) -> list:
     """
     Filters bounding boxes based on size and aspect ratio of width and height.
@@ -226,7 +225,7 @@ def filter_bbox_by_size(bboxes: list, min_width: int = None, min_height: int = N
 
     Parameters
     ----------
-    bboxes: list
+    bboxes: dict
         list of bounding boxes. Each bounding box is a list of coordinates
     
     min_width: int
@@ -244,7 +243,7 @@ def filter_bbox_by_size(bboxes: list, min_width: int = None, min_height: int = N
     
     Returns
     -------
-    list
+    dict
         filtering results with bounding boxes and ids for non-text regions
     """
     
@@ -261,9 +260,9 @@ def filter_bbox_by_size(bboxes: list, min_width: int = None, min_height: int = N
     if len(bboxes) == 0:
         return bboxes
 
-    filtered_bboxes = []
-    for bbox in bboxes:
-        x1, y1, x2, y2 = bbox
+    filtered_bboxes = {}
+    for id in bboxes.keys():
+        x1, y1, x2, y2 = bboxes[id]
         width = x2 - x1
         height = y2 - y1
         if min_width is not None and width < min_width:
@@ -277,7 +276,8 @@ def filter_bbox_by_size(bboxes: list, min_width: int = None, min_height: int = N
             elif aspect_ratio[1] == '>':
                 if width/height > aspect_ratio[0]:
                     continue
-        filtered_bboxes.append(bbox)
+        # overwrite bboxes with filtered bboxes
+        filtered_bboxes[id] = bboxes[id]
     
     return filtered_bboxes
 
@@ -385,10 +385,13 @@ if __name__ == '__main__':
     # key_2 = next(iter(results))
     # print(results[key_], results[key_2])
 
-    boxes = [[0, 0, 100, 100], [200, 300, 350, 400], [10, 20, 90, 90],[10, 10, 90, 90], [10, 10, 90, 90], [10, 10, 15, 20],  [1000, 1000, 1100, 1100]]
+    boxes = {'id1':[0, 0, 100, 100], 'id2': [200, 300, 350, 400], 'id3': [10, 20, 90, 90],
+             'id4':[10, 10, 90, 90], 'id5': [10, 10, 90, 90], 'id6': [10, 10, 15, 20],
+               'id6':  [1000, 1000, 1100, 1100]}
     
+    print(filter_bbox_by_size(boxes, min_width=100, min_height=100))
 
-    print(filter_bbox_contained(boxes))
+    # print(filter_bbox_contained(boxes))
  
     # marked_bounding_boxes(results, OUTPUT_DIR, filter_size=100)
     # crop_images_to_bbox(results, OUTPUT_DIR, filter_size=100)
