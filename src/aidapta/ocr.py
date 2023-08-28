@@ -218,7 +218,7 @@ def mark_bounding_boxes(hocr_results: dict, output_dir:str,
 
 
 def filter_bbox_by_size(bboxes: dict, min_width: int = None, min_height: int = None, 
-                  aspect_ratio: tuple[float, str] = [None, None] ) -> list:
+                  aspect_ratio: tuple[float, str] = [None, None] ) -> dict:
     """
     Filters bounding boxes based on size and aspect ratio of width and height.
     Aspect ratio is calculated as width/height.
@@ -282,37 +282,39 @@ def filter_bbox_by_size(bboxes: dict, min_width: int = None, min_height: int = N
     return filtered_bboxes
 
 
-def filter_bbox_largest(bboxes: list) -> list:
+def filter_bbox_largest(bboxes: dict) -> dict:
     """
-    Finds the largest bounding box in a list of bounding boxes.
+    Finds the largest bounding box in a set of bounding boxes.
     The largest bounding box is defined as the one with the largest area.
 
     Parameters
     ----------
-    bboxes: list
-        list of bounding boxes. Each bounding box is a list of coordinates
+    bboxes: dict
+        bounding boxes. Each bounding box contains an id and a list of coordinates
     
     Returns
     -------
-    list
-        largest bounding box as a list of coordinates
+    dict
+        largest bounding box as a dictionary with id and coordinates
     """
     
     if len(bboxes) == 0:
         return bboxes
 
-    def compute_area(bbox):
+    def compute_area(bbox: list) -> float:
         x1, y1, x2, y2 = bbox
         width = x2 - x1
         height = y2 - y1
         return width * height
 
-    largest_bbox = max(bboxes, key=compute_area)
-    
+    bboxes_area = {key: compute_area(value) for key, value in bboxes.items()}
+    largest_id_bbox = max(bboxes_area, key=bboxes_area.get)
+    largest_bbox = {largest_id_bbox: bboxes[largest_id_bbox]}
+ 
     return largest_bbox
 
 
-def filter_bbox_contained(bboxes: list) -> list:
+def filter_bbox_contained(bboxes: dict) -> dict:
     """
     Filters out bounding boxes that are completly contained by another bounding box.
     A bounding box is considered contained if all its coordinates are within the
@@ -320,13 +322,13 @@ def filter_bbox_contained(bboxes: list) -> list:
 
     Parameters
     ----------
-    bboxes: list
-        list of bounding boxes. Each bounding box is a list of coordinates
+    bboxes: dict
+        bounding boxes. Each bounding box has an id and a list of coordinates
     
     Returns
     -------
-    list
-        lis of bounding boxes that are not completly contained by another bounding box
+    dict
+        bounding boxes that are not completly contained by another bounding box
     """
     if len(bboxes) == 0 or len(bboxes) == 1:
         return bboxes
@@ -340,7 +342,7 @@ def filter_bbox_contained(bboxes: list) -> list:
         else:
             return False
 
-    # remove duplicates in input list of bboxes
+    # remove duplicates in input bboxes
     unique_bboxes = []
     for item in bboxes:
         if item not in unique_bboxes:
@@ -387,9 +389,11 @@ if __name__ == '__main__':
 
     boxes = {'id1':[0, 0, 100, 100], 'id2': [200, 300, 350, 400], 'id3': [10, 20, 90, 90],
              'id4':[10, 10, 90, 90], 'id5': [10, 10, 90, 90], 'id6': [10, 10, 15, 20],
-               'id6':  [1000, 1000, 1100, 1100]}
+               'id6':  [1000, 1000, 1200, 1200]}
     
-    print(filter_bbox_by_size(boxes, min_width=100, min_height=100))
+    # print(filter_bbox_by_size(boxes, min_width=100, min_height=100))
+    print(filter_bbox_largest(boxes))
+
 
     # print(filter_bbox_contained(boxes))
  
