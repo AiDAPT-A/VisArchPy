@@ -140,31 +140,25 @@ def crop_images_to_bbox(hocr_results: dict, output_dir:str, filter_size:int=50) 
     -------
     None
 
-    Raises
-    ------
-    ValueError
-        If bboxes and ids are not of same length
     """
     
     # TODO: UPDATE ALL functions to use new hocr_results format
 
-    for page, results in hocr_results.items():
+    for page, content in hocr_results.items():
 
-        if len(results['bboxes']) != len(results['ids']):
-            raise ValueError(f'bboxes and ids must be of same length. Page: {page}')
 
-        for bounding_box, id in zip(results['bboxes'], results['ids']):
-            x1, y1, x2, y2 = bounding_box # coordinates from top left corner
+        for id in content['bboxes']:
+            x1, y1, x2, y2 = content['bboxes'][id] # coordinates from top left corner
             width = x2 - x1
             height = y2 - y1
             if min(width, height) >= filter_size:
-                cropped_image = results['img'].crop((x1, y1, x2, y2))
+                cropped_image = content['img'].crop((x1, y1, x2, y2))
                 cropped_image.save(f'{output_dir}/{page}-id-{id}.png')
 
     return None
 
 
-def mark_bounding_boxes(hocr_results: dict, output_dir:str, ids:list=None, 
+def mark_bounding_boxes(hocr_results: dict, output_dir:str,  
                         filter_size:int=50, page_number:int=None) -> None:
     """
     Draw bounding boxes on ocr images and save a copy to the output directory.
@@ -187,30 +181,29 @@ def mark_bounding_boxes(hocr_results: dict, output_dir:str, ids:list=None,
     --------
     None
     """
-    # if len(images) != len(bbox):
-    #     raise ValueError('images and bbox must be of same length')
 
 
-    for page, result in hocr_results.items():
+    for page, content in hocr_results.items():
 
-        if len( result['bboxes']) != 0: # skip creating images for pages with no bounding boxes
+        if len( content['bboxes']) != 0: # skip creating images for pages with no bounding boxes
             
             fig, ax = plt.subplots(1)
 
             plt.axis('off')
             # Display the image
-            ax.imshow(result['img'])
+            ax.imshow(content['img'])
 
             # Create a Rectangle patch
     
-            for bounding_box, label in zip(result['bboxes'] , result['ids']):
-                x1, y1, x2, y2 = bounding_box # coordinates from top left corner
+            print(content['bboxes'])
+            for id in content['bboxes']:
+                x1, y1, x2, y2 = content['bboxes'][id] # coordinates from top left corner
                 width = x2 - x1
                 height = y2 - y1
                 if min(width, height) >= filter_size:
                     rect = patches.Rectangle((x1, y1), width, height, linewidth=1.5, edgecolor='r', facecolor='none')
                     ax.add_patch(rect)
-                    tag_text = label
+                    tag_text = id
                     tag_x = x1
                     tag_y = y1
                     plt.text(tag_x, tag_y, tag_text, fontsize=9, color='blue', ha='left', va='center')
