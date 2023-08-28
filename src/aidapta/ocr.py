@@ -6,12 +6,14 @@ Author: Manuel Garcia
 
 import itertools
 import pytesseract
+import copy
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from bs4 import BeautifulSoup
 from pdf2image import convert_from_path
 from PIL.Image import Image
 from tqdm import tqdm
+from collections import Counter
 
 
 
@@ -328,13 +330,14 @@ def filter_bbox_contained(bboxes: dict) -> dict:
     Returns
     -------
     dict
-        bounding boxes that are not completly contained by another bounding box
+        bounding boxes that are not completly contained by another bounding box.
+        If two bounding boxes have the same coordinates, only one of them is kept.
     """
     if len(bboxes) == 0 or len(bboxes) == 1:
         return bboxes
     
     def is_contained(bbox1, bbox2):
-        "Check if bbox1 is contained in bbox"
+        "Check if bbox1 is contained in bbox2"
         x1, y1, x2, y2 = bbox1
         x1_, y1_, x2_, y2_ = bbox2
         if x1_ <= x1 and y1_ <= y1 and x2_ >= x2 and y2_ >= y2:
@@ -342,29 +345,41 @@ def filter_bbox_contained(bboxes: dict) -> dict:
         else:
             return False
 
-    # remove duplicates in input bboxes
-    unique_bboxes = []
-    for item in bboxes:
-        if item not in unique_bboxes:
-            unique_bboxes.append(item)
+    # remove element in input bboxes that contain the same coordinates
+    unique_bboxes = {}
+    for id, box in bboxes.items():
+        if box in unique_bboxes.values():
+            continue
+        else:
+            unique_bboxes[id] = box
 
-    # generate all possible permutations of unique bboxes
-    comparisons = []
+    comparisons = [] # permuttion of boxes ids
+    # compute permutations over boxes ids
     for permutation in itertools.permutations(unique_bboxes, 2):
         comparisons.append(permutation)
 
+    print('unique boxes', unique_bboxes)
+
+    no_contained_boxes = copy.deepcopy(unique_bboxes)
     # check if a bbox is contained by another bbox
     for comparison in comparisons:
-        if is_contained(comparison[0], comparison[1]): # retuns True if box 0 
+        # print('comparison', comparison)
+        if is_contained(unique_bboxes[comparison[0]], unique_bboxes[comparison[1]]): # retuns True if box 0 
             #is contained in box 1
+            
             try: 
-                # remove box 0  form the list of boxes
-                # if it is contained in box 1
-                unique_bboxes.remove(comparison[0])
-            except ValueError:
+                # remove box that is contained by
+                # any other box
+                no_contained_boxes.pop(comparison[0])
+            except KeyError:
+                # Ensures that at least one of the boxes with the same coordinates is kept
+                # in the final results
+                no_contained_boxes[comparison[0]] = unique_bboxes[comparison[0]]
                 pass # ignore value error when the box has already been removed
+        else:
+            continue
 
-    return unique_bboxes
+    return no_contained_boxes
 
 
 if __name__ == '__main__':
@@ -389,13 +404,17 @@ if __name__ == '__main__':
 
     boxes = {'id1':[0, 0, 100, 100], 'id2': [200, 300, 350, 400], 'id3': [10, 20, 90, 90],
              'id4':[10, 10, 90, 90], 'id5': [10, 10, 90, 90], 'id6': [10, 10, 15, 20],
-               'id6':  [1000, 1000, 1200, 1200]}
+               'id7':  [1000, 1000, 1200, 1200], 'id8': [200, 300, 350, 400], 'id9': [200, 300, 350, 400],}
+    
+
+    boxes2 = {'id1':[0, 0, 100, 100], 'id2': [200, 300, 350, 400], 
+               'id7':  [1000, 1000, 1200, 1200]}
     
     # print(filter_bbox_by_size(boxes, min_width=100, min_height=100))
-    print(filter_bbox_largest(boxes))
+    # print(filter_bbox_largest(boxes))
 
 
-    # print(filter_bbox_contained(boxes))
+    print(filter_bbox_contained(boxes2))
  
     # marked_bounding_boxes(results, OUTPUT_DIR, filter_size=100)
     # crop_images_to_bbox(results, OUTPUT_DIR, filter_size=100)
