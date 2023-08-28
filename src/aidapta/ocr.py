@@ -51,7 +51,7 @@ def convert_pdf_to_image(pdf_file: str, dpi:int = 200, **kargs)-> list[Image]:
 def extract_bboxes_from_horc(images: list[Image], config: str ='--oem 1 --psm 1', 
                              page_number:int =None, entry_id: str=None) -> dict:
     """
-    Extract bounding boxes for non-text regions from hOCR document.
+    Extract bounding boxes for elements from hOCR document.
 
     Parameters
     -----------
@@ -71,7 +71,10 @@ def extract_bboxes_from_horc(images: list[Image], config: str ='--oem 1 --psm 1'
         Dictionary with bounding boxes and ids for non-text regions
         Example:
     
-        {'page': {'img': Image, 'bboxes': {'id': [bbox], ... } } }
+        {'pageId': {'img': pageImage, 
+                    'bboxes': {'id': [bbox], ... }, 
+                    'text_bboxes': {'id': [bbox], ...} 
+        } }
     """
     _config = config + ' hocr'
 
@@ -88,10 +91,12 @@ def extract_bboxes_from_horc(images: list[Image], config: str ='--oem 1 --psm 1'
         soup = BeautifulSoup(horc_data, 'html.parser')
         paragraphs = soup.find_all('p', class_='ocr_par')
         non_text_bboxes = {}
+        text_bboxes = {}
         # paragraphs_ids = []
         # paragraph_confidence_scores = []
         # boxed_paragraphs = []
         for paragraph in paragraphs:
+            # print('para',paragraph)
             title = paragraph.get('title')
             id = paragraph.get('id')
             # use to check if paragraph contains text
@@ -103,21 +108,34 @@ def extract_bboxes_from_horc(images: list[Image], config: str ='--oem 1 --psm 1'
                 bounding_box = [int(value) for value in bounding_box]
                 
                 non_text_bboxes[str(id)] = bounding_box
-             
+            else:
+                bounding_box = title.split(';')[0].split(' ')[1:]
+                bounding_box = [int(value) for value in bounding_box]
+                text_bboxes[str(id)] = bounding_box
+
             if page_counter is not None: 
-                page_number = page_counter
+                _page_number = page_counter
                 page_counter += 1
             else:
-                page_number = page_number
+                _page_number = page_number
 
             if entry_id is not None:
-                hocr_results[f'{entry_id}-page-{page_number}'] = {'img': img, 
-                                                             'bboxes': non_text_bboxes
+                hocr_results[f'{entry_id}-page-{_page_number}'] = {'img': img, 
+                                                            'bboxes': non_text_bboxes,
+                                                            'text_bboxes': text_bboxes
                 }
             else:
-                hocr_results[f'page-{page_number}'] = {'img': img, 'bboxes': non_text_bboxes
+                hocr_results[f'page-{_page_number}'] = {'img': img, 
+                                                    'bboxes': non_text_bboxes,
+                                                    'text_bboxes': text_bboxes
                 } 
-        
+    
+    if not hocr_results:
+        # hocr results may be empty if no text or imge is recognized if no
+        # But what about the image of the page itself? Shouldn't the results include a 
+        # dictionary with the image and the page number at least?
+        print('empty hocr_results for', page_number)
+
     return hocr_results
 
 
@@ -148,14 +166,13 @@ def crop_images_to_bbox(hocr_results: dict, output_dir:str, filter_size:int=50) 
 
     for page, content in hocr_results.items():
 
-
         for id in content['bboxes']:
             x1, y1, x2, y2 = content['bboxes'][id] # coordinates from top left corner
             width = x2 - x1
             height = y2 - y1
             if min(width, height) >= filter_size:
                 cropped_image = content['img'].crop((x1, y1, x2, y2))
-                cropped_image.save(f'{output_dir}/{page}-id-{id}.png')
+                cropped_image.save(f'{output_dir}/{page}-{id}.png')
 
     return None
 
@@ -357,8 +374,6 @@ def filter_bbox_contained(bboxes: dict) -> dict:
     # compute permutations over boxes ids
     for permutation in itertools.permutations(unique_bboxes, 2):
         comparisons.append(permutation)
-
-    print('unique boxes', unique_bboxes)
 
     no_contained_boxes = copy.deepcopy(unique_bboxes)
     # check if a bbox is contained by another bbox
