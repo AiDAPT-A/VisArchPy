@@ -114,9 +114,9 @@ def find_caption_by_distance(image_object:LTImage|BoundingBox, text_object:LTTex
 
     Returns
     -------
-    LTTextContainer object or bool
+    LTTextContainer | BoundingBox or bool
         False if no match is found, otherwise the
-        text element within offset distance
+        text element within offset distance is returned
     
     Raises
     ------
