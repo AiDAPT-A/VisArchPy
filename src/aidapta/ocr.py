@@ -16,7 +16,6 @@ from tqdm import tqdm
 from collections import Counter
 
 
-
 def convert_pdf_to_image(pdf_file: str, dpi:int = 200, **kargs)-> list[Image]:
     """
     Convert PDF file to image, one page at a time.
@@ -68,7 +67,8 @@ def extract_bboxes_from_horc(images: list[Image], config: str ='--oem 1 --psm 1'
     Returns
     -------
     dict
-        Dictionary with bounding boxes and ids for non-text regions
+        Dictionary with bounding boxes and ids for non-text regions. If nothing is 
+        detected by the OCR, it returns an empty dictionary.
         Example:
     
         {'pageId': {'img': pageImage, 
@@ -130,11 +130,8 @@ def extract_bboxes_from_horc(images: list[Image], config: str ='--oem 1 --psm 1'
                                                     'text_bboxes': text_bboxes
                 } 
     
-    if not hocr_results:
-        # hocr results may be empty if no text or imge is recognized if no
-        # But what about the image of the page itself? Shouldn't the results include a 
-        # dictionary with the image and the page number at least?
-        print('empty hocr_results for', page_number)
+    # hocr results may be empty if no parragraphs are recognized
+    # during the OCR analysis. 
 
     return hocr_results
 
