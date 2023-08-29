@@ -17,11 +17,12 @@ from pdfminer.high_level import extract_pages
 from pdfminer.image import ImageWriter
 from tqdm import tqdm
 from aidapta.utils import extract_mods_metadata, get_entry_number_from_mods
-from aidapta.captions import find_caption_by_distance, find_caption_by_text
+from aidapta.captions import find_caption_by_distance, find_caption_by_text, BoundingBox
 from aidapta.layout import sort_layout_elements, create_output_dir
 from aidapta.metadata import Document, Metadata, Visual, FilePath
 from aidapta.captions import OffsetDistance
 from typing_extensions import Annotated 
+import pytesseract as tess
 
 app = typer.Typer()
 
@@ -159,7 +160,7 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
         pdf_file_name = pathlib.Path(pdf_document.location).stem
         image_directory = create_output_dir(entry_directory, 
                                             pdf_file_name) # returns a pathlib object
-        
+               
         # ocr_directory = create_output_dir(image_directory, "ocr")
 
         # PROCESS SINGLE PDF 
@@ -217,7 +218,6 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
                         for text_line in bbox_matches[0]:
                             caption += text_line.get_text().strip() 
                     # Set the caption to the first text match.
-                    # TODO: implement recording multiple matches when no single match can be ruled out
                     # All other matches will be ignored. 
                     # This may introduce errors, but it is better than having multiple captions
                         try:
@@ -264,11 +264,9 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
                     entry_id=entry_id, 
                     page_number=ocr_page["page_number"])
                 
-               
                 if ocr_results:  # skips pages with no results
                     page_key = ocr_results.keys()
                     page_id = list(page_key)[0]
-
 
                     # FILTERING OCR RESULTS
                     # filter by bbox size
@@ -300,13 +298,51 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
 
                     # exclude pages with no bboxes (a.k.a. no inner images)
                     if len (ocr_results[page_id]["bboxes"]) > 0:
-                        for bbox in ocr_results[page_id]["bboxes"]:
+                        for bbox_id in ocr_results[page_id]["bboxes"]: # loop over image boxes
+                            print('box in ocr results ', bbox_id)
+                            bbox_cords = ocr_results[page_id]["bboxes"][bbox_id]
+                            print('coords', bbox_cords)
                             visual = Visual(document=pdf_document,
                                             document_page=ocr_page["page_number"],
-                                            bbox=bbox)
+                                            bbox=bbox_cords)
+                            
+                            # Search for captions using proximity to image
+                            # This may generate multiple matches
+                            bbox_matches =[]
+                            bbox_object = BoundingBox(tuple(bbox_cords))
+
+                            print(ocr_page)
+
+                            # TODO: ocr results and layout analysis have bounding
+                            # boxes in different coordinates. Implement conversion in BoundingBox class? Add abstractions for a homogeneous data
+                            # model during processing? 
+                            for text_box_id in ocr_page["text_bboxes"]:
+                            
+                                text_cords = ocr_page["text_bboxes"][text_box_id]
+                                text_object = BoundingBox(tuple(text_cords))
+                                match = find_caption_by_distance(
+                                    bbox_object, 
+                                    text_object, 
+                                    offset= layout_offset_dist, 
+                                    direction= layout_settings["caption"]["direction"]
+                                )
+                                if match:
+                                    bbox_matches.append(match)
+                            
+                            if len(bbox_matches) == 0: # if more than one bbox matches, move to text analysis
+                                pass
+                            else:
+                                # get text from image   
+                                for match in bbox_matches:
+                                    caption = tess.image_to_string(ocr_page[page_id]["image"],
+                                            boxes = match.bbox
+                                    )
+                                try:
+                                    visual.set_caption(caption)
+                                except Warning: # ignore warnings when caption is already set.
+                                    logging.warning("Caption already set for: " + bbox)
                             
                         
-                #         print('type image dir', type(image_directory))
                 #         visual.set_location(FilePath(str(image_directory), f'{page_id}-{bbox}.png' ))
                 #         entry.add_visual(visual)
 
@@ -348,7 +384,7 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
   
 if __name__ == "__main__":
     
-    pipeline("00001",
+    pipeline("00000",
             "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/",
             "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/",
             "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/tmp/"
