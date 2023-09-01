@@ -53,6 +53,29 @@ def convert_mm_to_point(quantity:float) -> float:
     return quantity * 2.8346456693
 
 
+def convert_dpi_to_point(quantity:float, dpi: int) -> float:
+    """
+    Converts a quantity in dots per inch (dpi) to points (1/72 inches)
+
+    Parameters
+    ----------
+    quantity: float
+        quantity in dots per inch
+    
+    Returns
+    -------
+    float
+        quantity in points
+    """
+
+    if not isinstance(dpi, int):
+        raise TypeError("dpi must be an integer")
+    if dpi < 0:
+        raise ValueError("dpi must be positive")
+
+    return quantity / dpi * 72
+
+
 def extract_mods_metadata(mods_file: str) -> dict:
     """ Extract metadata from MODS files, version 3.6
     
