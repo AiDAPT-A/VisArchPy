@@ -72,8 +72,8 @@ def extract_bboxes_from_horc(images: list[Image], config: str ='--oem 1 --psm 1'
         Example:
     
         {'pageId': {'img': pageImage, 
-                    'bboxes': {'id': [bbox], ... }, 
-                    'text_bboxes': {'id': [bbox], ...} 
+                    'bboxes': {'id1': [bbox], ... 'idn': [bbox] }, 
+                    'text_bboxes': {'id1': [bbox], ... 'idn': [bbox] } 
         } }
     """
     _config = config + ' hocr'
@@ -414,12 +414,12 @@ if __name__ == '__main__':
     # key_2 = next(iter(results))
     # print(results[key_], results[key_2])
 
-    boxes = {'id1':[0, 0, 100, 100], 'id2': [200, 300, 350, 400], 'id3': [10, 20, 90, 90],
-             'id4':[10, 10, 90, 90], 'id5': [10, 10, 90, 90], 'id6': [10, 10, 15, 20],
-               'id7':  [1000, 1000, 1200, 1200], 'id8': [200, 300, 350, 400], 'id9': [200, 300, 350, 400],}
+    # boxes = {'id1':[0, 0, 100, 100], 'id2': [200, 300, 350, 400], 'id3': [10, 20, 90, 90],
+    #          'id4':[10, 10, 90, 90], 'id5': [10, 10, 90, 90], 'id6': [10, 10, 15, 20],
+    #            'id7':  [1000, 1000, 1200, 1200], 'id8': [200, 300, 350, 400], 'id9': [200, 300, 350, 400],}
     
 
-    boxes2 = {'id1':[0, 0, 100, 100], 'id2': [200, 300, 350, 400], 
+    boxes2 = {'id1':[0, 0, 100, 210], 'id2': [80, 300, 350, 400], 
                'id7':  [1000, 1000, 1200, 1200]}
     
     # print(filter_bbox_by_size(boxes, min_width=100, min_height=100))
