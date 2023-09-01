@@ -7,25 +7,58 @@ from pdfminer.layout import LTTextContainer, LTImage, LTFigure
 from typing import List
 from shapely.geometry import Polygon
 from dataclasses import dataclass
-from aidapta.utils import convert_mm_to_point
+from aidapta.utils import convert_mm_to_point, convert_dpi_to_point
+
+
 
 @dataclass
 class BoundingBox:
     """ 
     represents a bounding box of an element in the form (x0, y0, x1, y1).
     Coordinates represent the lower-left corner (x0, y0) and the upper-right corner (x1, y1).
+    Units are in points (pt) by default. Supports other units such as dots-per-inch (dpi, in 
+    which case the coordinates are in pixels (px)) and millimeters (mm).
     """
 
-    element: tuple 
+    coords: tuple 
+    unit: str | int = "pt" 
+
 
     def __post_init__(self):
-        if len(self.element) != 4:
+        if len(self.coords) != 4:
             raise ValueError("bounding box must be a tupple of 4 elements \
                              (x0, y0, x1, y1)")
+        
+        if not isinstance(self.unit, int) and self.unit not in ["mm", "pt"]:
+            raise TypeError("unit must be either 'mm', 'pt' (points), or an integer \
+                            representing DPI")
 
     def bbox(self) -> tuple:
-        """returns the coordinates of the bounding box"""
-        return self.element    
+        """
+        Returns the coordinates of the bounding box
+        
+        Returns
+        -------
+        tuple
+            coordinates of the bounding box in points (pt)
+        """
+
+        if self.unit == "mm":
+            return self._convert_mm_to_point()
+        elif self.unit == "pt":
+            return self.coords # points
+        else: # when a dpi is provided
+            return self._convert_dpi_to_point(self.unit)
+
+    def _convert_mm_to_point(self) -> tuple:
+        """converts the coordinates of the bounding box from millimeters (mm) to points (pt)"""
+    
+        return tuple(convert_mm_to_point(coord) for coord in self.coords)
+
+    def _convert_dpi_to_point(self, dpi=int) -> tuple:
+        """converts the coordinates of the bounding box from pixels (px) to points (pt)"""
+    
+        return tuple(convert_dpi_to_point(coord, dpi)  for coord in self.coords)
     
 
 @dataclass
@@ -314,11 +347,16 @@ if __name__ == '__main__':
 
     text_elements = []
 
-    for page_layout in extract_pages(pdf_2):
+    b = BoundingBox((1, 2, 3, 4), 200)
 
-        for element in page_layout:
-            if isinstance(element, LTTextContainer):
-                text_elements.append(element)
+    # print (b)
+    print(b)
+    print(b.bbox())
+    # for page_layout in extract_pages(pdf_2):
+
+    #     for element in page_layout:
+    #         if isinstance(element, LTTextContainer):
+    #             text_elements.append(element)
 
 
     # for e in text_elements:
