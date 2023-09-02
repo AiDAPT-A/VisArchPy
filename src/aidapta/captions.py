@@ -120,8 +120,8 @@ def find_caption_by_text(text_element:LTTextContainer, keywords: List = ['figure
         return False
 
 
-def find_caption_by_distance(image_object:LTImage|BoundingBox, text_object:LTTextContainer|BoundingBox, offset:OffsetDistance, direction:str=None
-                         ) -> LTTextContainer|bool:
+def find_caption_by_distance(image_object:LTImage|BoundingBox, text_object:LTTextContainer|BoundingBox, 
+                             offset:OffsetDistance, direction:str=None) -> LTTextContainer|bool:
     """
     Finds a text element withing a certain distance (offset) 
     from the bounding box of an Image element.
@@ -139,7 +139,8 @@ def find_caption_by_distance(image_object:LTImage|BoundingBox, text_object:LTTex
         of the form (x0, y0, x1, y1), where (x0, y0) is the lower-left
         corner and (x1, y1) the upper-right corner.
     offset: OffsetDistance object
-        distance from image within which the text element will be searched.
+        distance from image within which the text element will be searched. All distances
+        are converted to points (pt) before being applied.
     direction: str
         the directions the offeset will be applied around the image bounding box. 
         Default None, which applies offect in 'all' directions. Posibile values: right, 
@@ -173,6 +174,12 @@ def find_caption_by_distance(image_object:LTImage|BoundingBox, text_object:LTTex
     if offset.unit == "px" and not isinstance(image_object, BoundingBox):
         raise TypeError("offset in pixels can only be used with a BoundingBox object")
     
+    if isinstance(image_object, BoundingBox):
+        image_coords = image_object.bbox()
+    
+    if isinstance(text_object, BoundingBox):
+        text_coords = text_object.bbox()
+
     if direction == None or direction == "all":
         '''
          ____________________
