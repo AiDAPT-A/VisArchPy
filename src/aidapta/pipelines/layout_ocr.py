@@ -301,9 +301,9 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
                     # exclude pages with no bboxes (a.k.a. no inner images)
                     if len (ocr_results[page_id]["bboxes"]) > 0:
                         for bbox_id in ocr_results[page_id]["bboxes"]: # loop over image boxes
-                            print('box in ocr results ', bbox_id)
+
                             bbox_cords = ocr_results[page_id]["bboxes"][bbox_id]
-                            print('coords', bbox_cords)
+
                             visual = Visual(document=pdf_document,
                                             document_page=page["page_number"],
                                             bbox=bbox_cords)
@@ -312,8 +312,6 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
                             # This may generate multiple matches
                             bbox_matches =[]
                             bbox_object = BoundingBox(tuple(bbox_cords), ocr_settings["resolution"])
-
-                            print(ocr_results)
 
                             # TODO: ocr results and layout analysis have bounding
                             # boxes in different coordinates. Implement conversion in BoundingBox class? Add abstractions for a homogeneous data
@@ -326,7 +324,7 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
                                 match = find_caption_by_distance(
                                     bbox_object, 
                                     text_object, 
-                                    offset= layout_offset_dist, 
+                                    offset= OffsetDistance(35, 'px') , # TODO: use ocr_settings
                                     direction= layout_settings["caption"]["direction"]
                                 )
                                 if match:
@@ -339,18 +337,19 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
                                 # get text from image   
                                 for match in bbox_matches:
                                     print(match.bbox_px())
+                                    # TODO: decode text from strings. Tests with multiple image files.
                                     caption = ocr.region_to_string(page_image[0], match.bbox_px(), config='--psm 3 --oem 1')
                                 try:
-                                    visual.set_caption(caption)
+                                    visual.set_caption('OCR-'+caption)
                                 except Warning: # ignore warnings when caption is already set.
                                     logging.warning("Caption already set for: " + match.bbox)
                             
                         
-                #         visual.set_location(FilePath(str(image_directory), f'{page_id}-{bbox}.png' ))
-                #         entry.add_visual(visual)
+                            visual.set_location(FilePath(str(image_directory), f'{page_id}-{bbox_id}.png' ))
+                            entry.add_visual(visual)
 
-                # ocr.mark_bounding_boxes(ocr_results, OUTPUT_DIR, filter_size=100)    
-                ocr.crop_images_to_bbox(ocr_results, OUTPUT_DIR)         
+                ocr.mark_bounding_boxes(ocr_results, OUTPUT_DIR)    
+                ocr.crop_images_to_bbox(ocr_results, image_directory)         
     
     end_processing_time = time.time()
     processing_time = end_processing_time - start_processing_time
