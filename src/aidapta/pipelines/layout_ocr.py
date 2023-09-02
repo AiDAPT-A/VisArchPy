@@ -110,7 +110,7 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
             "width": 100,
             "height": 100,
         },
-        "resolution": 200,
+        "resolution": 200, # analysis resolution, dpi
         "output_resolution": 300,
     }
 
@@ -173,7 +173,7 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
                                             )
             pages.append(elements)
 
-        ocr_pages = []
+        no_image_pages = []
 
         # PROCESS PAGE USING LAYOUT ANALYSIS
         for page in tqdm(pages, desc="layout analysis", total=len(pages), 
@@ -182,7 +182,7 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
             iw = ImageWriter(image_directory)
 
             if page["images"] == []: # collects pages where no images were found by layout analysis
-                ocr_pages.append(page)
+                no_image_pages.append(page)
         
             for img in page["images"]:
             
@@ -248,21 +248,23 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
                 # add visual to entry
                 entry.add_visual(visual)
 
+
+
         # PROCESS PAGE USING OCR ANALYSIS
-        for ocr_page in tqdm(ocr_pages, desc="OCR analysis", total=len(ocr_pages), unit="OCR pages"):
+        for page in tqdm(no_image_pages, desc="OCR analysis", total=len(no_image_pages), unit="OCR pages"):
 
             # if page["images"] == []: # apply to pages where no images were found by layout analysis
-                page_image = ocr.convert_pdf_to_image(
+                page_image = ocr.convert_pdf_to_image( # returns a list with one element
                     pdf_document.location, 
                     dpi= ocr_settings["resolution"], 
-                    first_page=ocr_page["page_number"], 
-                    last_page=ocr_page["page_number"],
+                    first_page=page["page_number"], 
+                    last_page=page["page_number"],
                     )
  
                 ocr_results = ocr.extract_bboxes_from_horc(
                     page_image, config='--psm 3 --oem 1', 
                     entry_id=entry_id, 
-                    page_number=ocr_page["page_number"])
+                    page_number=page["page_number"])
                 
                 if ocr_results:  # skips pages with no results
                     page_key = ocr_results.keys()
@@ -303,23 +305,24 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
                             bbox_cords = ocr_results[page_id]["bboxes"][bbox_id]
                             print('coords', bbox_cords)
                             visual = Visual(document=pdf_document,
-                                            document_page=ocr_page["page_number"],
+                                            document_page=page["page_number"],
                                             bbox=bbox_cords)
                             
                             # Search for captions using proximity to image
                             # This may generate multiple matches
                             bbox_matches =[]
-                            bbox_object = BoundingBox(tuple(bbox_cords))
+                            bbox_object = BoundingBox(tuple(bbox_cords), ocr_settings["resolution"])
 
-                            print(ocr_page)
+                            print(ocr_results)
 
                             # TODO: ocr results and layout analysis have bounding
                             # boxes in different coordinates. Implement conversion in BoundingBox class? Add abstractions for a homogeneous data
                             # model during processing? 
-                            for text_box_id in ocr_page["text_bboxes"]:
+                            for text_box in ocr_results[page_id]["text_bboxes"].items():
+
                             
-                                text_cords = ocr_page["text_bboxes"][text_box_id]
-                                text_object = BoundingBox(tuple(text_cords))
+                                text_cords = text_box[1]
+                                text_object = BoundingBox(tuple(text_cords), ocr_settings["resolution"])
                                 match = find_caption_by_distance(
                                     bbox_object, 
                                     text_object, 
@@ -329,18 +332,18 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
                                 if match:
                                     bbox_matches.append(match)
                             
+                            print(bbox_matches)
                             if len(bbox_matches) == 0: # if more than one bbox matches, move to text analysis
                                 pass
                             else:
                                 # get text from image   
                                 for match in bbox_matches:
-                                    caption = tess.image_to_string(ocr_page[page_id]["image"],
-                                            boxes = match.bbox
-                                    )
+                                    print(match.bbox_px())
+                                    caption = ocr.region_to_string(page_image[0], match.bbox_px(), config='--psm 3 --oem 1')
                                 try:
                                     visual.set_caption(caption)
                                 except Warning: # ignore warnings when caption is already set.
-                                    logging.warning("Caption already set for: " + bbox)
+                                    logging.warning("Caption already set for: " + match.bbox)
                             
                         
                 #         visual.set_location(FilePath(str(image_directory), f'{page_id}-{bbox}.png' ))
