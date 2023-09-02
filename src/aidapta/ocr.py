@@ -14,6 +14,34 @@ from pdf2image import convert_from_path
 from PIL.Image import Image
 from tqdm import tqdm
 from collections import Counter
+from pytesseract import image_to_string
+from PIL import Image
+
+
+def region_to_string(image: Image, bbox: list[float], config: str ='--oem 1 --psm 1') -> str:
+    """
+    Extract text from a region of an image.
+
+    Parameters
+    ----------
+    imge: Image
+        image of type Pillow Image
+    bbox: list
+        list of coordinates for bounding box of the region to be analyzed
+    config: str
+        tesseract configuration options. Default: --oem 1 --psm 1. 
+        Which applies: Engine Neural nets LSTM only. Auto page segmentation with OSD
+    
+    Returns
+    -------
+    str
+        text extracted from the region of the image
+    """
+
+    x1, y1, x2, y2 = bbox
+    region = image.crop((x1, y1, x2, y2))
+    text = pytesseract.image_to_string(region, config=config)
+    return text
 
 
 def convert_pdf_to_image(pdf_file: str, dpi:int = 200, **kargs)-> list[Image]:
@@ -409,7 +437,16 @@ if __name__ == '__main__':
     OUTPUT_DIR = 'data-pipelines/data/ocr-test/00002/vol2-psm3-oem1'
     images = convert_pdf_to_image(PDF_FILE, dpi=200)
 
-    # results = extract_bboxes_from_horc(images, config='--psm 3 --oem 1')
+    print(images[0])
+
+    region = [1000, 500, 2000, 1000]
+
+    result = region_to_string(images[0], region )
+
+    print(result)
+
+
+    results = extract_bboxes_from_horc(images, config='--psm 3 --oem 1')
     # key_ = next(iter(results))
     # key_2 = next(iter(results))
     # print(results[key_], results[key_2])
@@ -426,7 +463,7 @@ if __name__ == '__main__':
     # print(filter_bbox_largest(boxes))
 
 
-    print(filter_bbox_contained(boxes2))
+    # print(filter_bbox_contained(boxes2))
  
-    # marked_bounding_boxes(results, OUTPUT_DIR, filter_size=100)
+    # mark_bounding_boxes(results, OUTPUT_DIR, filter_size=100)
     # crop_images_to_bbox(results, OUTPUT_DIR, filter_size=100)
