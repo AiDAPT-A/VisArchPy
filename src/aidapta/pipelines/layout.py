@@ -9,6 +9,8 @@ import pathlib
 import shutil
 import time
 import logging
+import typer
+from typing import Optional
 from pdfminer.high_level import extract_pages
 from pdfminer.image import ImageWriter
 from tqdm import tqdm
@@ -16,6 +18,11 @@ from aidapta.utils import extract_mods_metadata, get_entry_number_from_mods
 from aidapta.captions import find_caption_by_distance, find_caption_by_text
 from aidapta.layout import sort_layout_elements, create_output_dir
 from aidapta.metadata import Document, Metadata, Visual, FilePath
+
+
+app = typer.Typer()
+
+@app.command()
 
 
 def main(entry_id: str,):

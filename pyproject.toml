@@ -33,6 +33,7 @@ dependencies = [
     "pdf2image",
     "pytesseract",
     "matplotlib",
+    "typer"
 ]
 
 [tool.pytest.ini_options]

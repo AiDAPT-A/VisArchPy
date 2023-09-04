@@ -86,6 +86,7 @@ class Visual:
     document: Document # document where the visual is located
     document_page: int # page number in the document index
     bbox: List[int] # bounding box of the visual in the document page
+    bbox_units: str # units of the bounding box
     id : Optional[str] = field(init=True, default=str(uuid.uuid4())) # unique identifier
     caption: Optional[list] = field(init=False, default=None) # caption of the visual    
     visual_type: Optional[str] = field(init=False, default=None) # one of: photo, drawing, map, etc

@@ -6,13 +6,42 @@ Author: Manuel Garcia
 
 import itertools
 import pytesseract
+import copy
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from bs4 import BeautifulSoup
 from pdf2image import convert_from_path
 from PIL.Image import Image
 from tqdm import tqdm
+from collections import Counter
+from pytesseract import image_to_string
+from PIL import Image
 
+
+def region_to_string(image: Image, bbox: list[float], config: str ='--oem 1 --psm 1') -> str:
+    """
+    Extract text from a region of an image.
+
+    Parameters
+    ----------
+    imge: Image
+        image of type Pillow Image
+    bbox: list
+        list of coordinates for bounding box of the region to be analyzed
+    config: str
+        tesseract configuration options. Default: --oem 1 --psm 1. 
+        Which applies: Engine Neural nets LSTM only. Auto page segmentation with OSD
+    
+    Returns
+    -------
+    str
+        text extracted from the region of the image
+    """
+
+    x1, y1, x2, y2 = bbox
+    region = image.crop((x1, y1, x2, y2))
+    text = pytesseract.image_to_string(region, config=config)
+    return text
 
 
 def convert_pdf_to_image(pdf_file: str, dpi:int = 200, **kargs)-> list[Image]:
@@ -49,7 +78,7 @@ def convert_pdf_to_image(pdf_file: str, dpi:int = 200, **kargs)-> list[Image]:
 def extract_bboxes_from_horc(images: list[Image], config: str ='--oem 1 --psm 1', 
                              page_number:int =None, entry_id: str=None) -> dict:
     """
-    Extract bounding boxes for non-text regions from hOCR document.
+    Extract bounding boxes for elements from hOCR document.
 
     Parameters
     -----------
@@ -66,14 +95,18 @@ def extract_bboxes_from_horc(images: list[Image], config: str ='--oem 1 --psm 1'
     Returns
     -------
     dict
-        Dictionary with bounding boxes and ids for non-text regions
+        Dictionary with bounding boxes and ids for non-text regions. If nothing is 
+        detected by the OCR, it returns an empty dictionary.
         Example:
     
-        {'page': {'img': None, 'bboxes': [], 'ids': []} }
+        {'pageId': {'img': pageImage, 
+                    'bboxes': {'id1': [bbox], ... 'idn': [bbox] }, 
+                    'text_bboxes': {'id1': [bbox], ... 'idn': [bbox] } 
+        } }
     """
     _config = config + ' hocr'
 
-    results = {}
+    hocr_results = {}
 
     if isinstance(page_number, int):
         page_counter = None 
@@ -85,11 +118,13 @@ def extract_bboxes_from_horc(images: list[Image], config: str ='--oem 1 --psm 1'
         horc_data = pytesseract.image_to_pdf_or_hocr(img, extension='hocr', config=_config)
         soup = BeautifulSoup(horc_data, 'html.parser')
         paragraphs = soup.find_all('p', class_='ocr_par')
-        non_text_bboxes = [] 
-        paragraphs_ids = []
+        non_text_bboxes = {}
+        text_bboxes = {}
+        # paragraphs_ids = []
         # paragraph_confidence_scores = []
         # boxed_paragraphs = []
         for paragraph in paragraphs:
+            # print('para',paragraph)
             title = paragraph.get('title')
             id = paragraph.get('id')
             # use to check if paragraph contains text
@@ -99,23 +134,34 @@ def extract_bboxes_from_horc(images: list[Image], config: str ='--oem 1 --psm 1'
             if title and text.strip() == "":
                 bounding_box = title.split(';')[0].split(' ')[1:]
                 bounding_box = [int(value) for value in bounding_box]
-                non_text_bboxes.append(bounding_box)
-                paragraphs_ids.append(id)
+                
+                non_text_bboxes[str(id)] = bounding_box
+            else:
+                bounding_box = title.split(';')[0].split(' ')[1:]
+                bounding_box = [int(value) for value in bounding_box]
+                text_bboxes[str(id)] = bounding_box
 
             if page_counter is not None: 
-                page_number = page_counter
+                _page_number = page_counter
                 page_counter += 1
             else:
-                page_number = page_number
+                _page_number = page_number
 
             if entry_id is not None:
-                results[f'{entry_id}-page-{page_number}'] = {'img': img, 'bboxes': non_text_bboxes,
-                                                              'ids': paragraphs_ids}
+                hocr_results[f'{entry_id}-page-{_page_number}'] = {'img': img, 
+                                                            'bboxes': non_text_bboxes,
+                                                            'text_bboxes': text_bboxes
+                }
             else:
-                results[f'page-{page_number}'] = {'img': img, 'bboxes': non_text_bboxes, 
-                                                  'ids': paragraphs_ids}
-        
-    return results
+                hocr_results[f'page-{_page_number}'] = {'img': img, 
+                                                    'bboxes': non_text_bboxes,
+                                                    'text_bboxes': text_bboxes
+                } 
+    
+    # hocr results may be empty if no parragraphs are recognized
+    # during the OCR analysis. 
+
+    return hocr_results
 
 
 def crop_images_to_bbox(hocr_results: dict, output_dir:str, filter_size:int=50) -> None:
@@ -138,23 +184,26 @@ def crop_images_to_bbox(hocr_results: dict, output_dir:str, filter_size:int=50) 
     Returns
     -------
     None
-    """
 
+    """
     
-    for page, results in tqdm(hocr_results.items(), desc="Cropping images", unit="pages"):
-        for bounding_box, id in zip(results['bboxes'], results['ids']):
-            x1, y1, x2, y2 = bounding_box # coordinates from top left corner
+    # TODO: UPDATE ALL functions to use new hocr_results format
+
+    for page, content in hocr_results.items():
+
+        for id in content['bboxes']:
+            x1, y1, x2, y2 = content['bboxes'][id] # coordinates from top left corner
             width = x2 - x1
             height = y2 - y1
             if min(width, height) >= filter_size:
-                cropped_image = results['img'].crop((x1, y1, x2, y2))
-                cropped_image.save(f'{output_dir}/{page}-id-{id}.png')
+                cropped_image = content['img'].crop((x1, y1, x2, y2))
+                cropped_image.save(f'{output_dir}/{page}-{id}.png')
 
     return None
 
 
-def mark_bounding_boxes(hocr_results: dict, output_dir:str, ids:list=None, 
-                        filter_size:int=50, page_number:int=None) -> None:
+def mark_bounding_boxes(hocr_results: dict, output_dir:str,  
+                        filter_size:int=50, page_number:int=None, text_boxes:bool=False) -> None:
     """
     Draw bounding boxes on ocr images and save a copy to the output directory.
 
@@ -171,58 +220,74 @@ def mark_bounding_boxes(hocr_results: dict, output_dir:str, ids:list=None,
         Default: 50 pixels
     page_number: int
         page number to be drawn. Optional. If None, the HOCR page number is used.
+    text_boxes: bool
+        if True, text bounding boxes are also drawn. Default: False
     
     Returns
     --------
     None
     """
-    # if len(images) != len(bbox):
-    #     raise ValueError('images and bbox must be of same length')
 
 
-    for page, result in hocr_results.items():
+    for page, content in hocr_results.items():
 
-        if len( result['bboxes']) != 0: # skip creating images for pages with no bounding boxes
+        if len( content['bboxes']) != 0: # skip creating images for pages with no bounding boxes
             
             fig, ax = plt.subplots(1)
 
             plt.axis('off')
             # Display the image
-            ax.imshow(result['img'])
+            ax.imshow(content['img'])
 
             # Create a Rectangle patch
     
-            for bounding_box, label in zip(result['bboxes'] , result['ids']):
-                x1, y1, x2, y2 = bounding_box # coordinates from top left corner
+            
+            # Plot image boxes
+            for id in content['bboxes']:
+                x1, y1, x2, y2 = content['bboxes'][id] # coordinates from top left corner
                 width = x2 - x1
                 height = y2 - y1
                 if min(width, height) >= filter_size:
                     rect = patches.Rectangle((x1, y1), width, height, linewidth=1.5, edgecolor='r', facecolor='none')
                     ax.add_patch(rect)
-                    tag_text = label
+                    tag_text = id
                     tag_x = x1
                     tag_y = y1
                     plt.text(tag_x, tag_y, tag_text, fontsize=9, color='blue', ha='left', va='center')
 
+            # Plot text boxes
+            if text_boxes:
+                for id in content['text_bboxes']:
+                    x1, y1, x2, y2 = content['text_bboxes'][id] # coordinates from top left corner
+                    width = x2 - x1
+                    height = y2 - y1
+                    if min(width, height) >= filter_size:
+                        rect = patches.Rectangle((x1, y1), width, height, linewidth=1.5, edgecolor='r', facecolor='none')
+                        ax.add_patch(rect)
+                        tag_text = id
+                        tag_x = x1
+                        tag_y = y1
+                        plt.text(tag_x, tag_y, tag_text, fontsize=9, color='blue', ha='left', va='center')
+
             if page_number is not None:
                 page = page_number
            
-            plt.savefig(f'{output_dir}/{page}.png', dpi=200, bbox_inches='tight')    
+            plt.savefig(f'{output_dir}/{page}.png', dpi=400, bbox_inches='tight')    
         
             plt.close()
     
     return None
 
 
-def filter_bbox_by_size(bboxes: list, min_width: int = None, min_height: int = None, 
-                  aspect_ratio: tuple[float, str] = None ) -> list:
+def filter_bbox_by_size(bboxes: dict, min_width: int = None, min_height: int = None, 
+                  aspect_ratio: tuple[float, str] = [None, None] ) -> dict:
     """
     Filters bounding boxes based on size and aspect ratio of width and height.
     Aspect ratio is calculated as width/height.
 
     Parameters
     ----------
-    bboxes: list
+    bboxes: dict
         list of bounding boxes. Each bounding box is a list of coordinates
     
     min_width: int
@@ -240,7 +305,7 @@ def filter_bbox_by_size(bboxes: list, min_width: int = None, min_height: int = N
     
     Returns
     -------
-    list
+    dict
         filtering results with bounding boxes and ids for non-text regions
     """
     
@@ -249,14 +314,17 @@ def filter_bbox_by_size(bboxes: list, min_width: int = None, min_height: int = N
     
     # type checking
     if isinstance(aspect_ratio, tuple):
-        aspect = aspect_ratio[0]
+        # aspect = aspect_ratio[0]
         operator = aspect_ratio[1]
         if operator not in ['<', '>']:
             raise ValueError('Operator must be either "<" or ">"')
 
-    filtered_bboxes = []
-    for bbox in bboxes:
-        x1, y1, x2, y2 = bbox
+    if len(bboxes) == 0:
+        return bboxes
+
+    filtered_bboxes = {}
+    for id in bboxes.keys():
+        x1, y1, x2, y2 = bboxes[id]
         width = x2 - x1
         height = y2 - y1
         if min_width is not None and width < min_width:
@@ -270,39 +338,45 @@ def filter_bbox_by_size(bboxes: list, min_width: int = None, min_height: int = N
             elif aspect_ratio[1] == '>':
                 if width/height > aspect_ratio[0]:
                     continue
-        filtered_bboxes.append(bbox)
+        # overwrite bboxes with filtered bboxes
+        filtered_bboxes[id] = bboxes[id]
     
     return filtered_bboxes
 
 
-def filter_bbox_largest(bboxes: list) -> list:
+def filter_bbox_largest(bboxes: dict) -> dict:
     """
-    Finds the largest bounding box in a list of bounding boxes.
+    Finds the largest bounding box in a set of bounding boxes.
     The largest bounding box is defined as the one with the largest area.
 
     Parameters
     ----------
-    bboxes: list
-        list of bounding boxes. Each bounding box is a list of coordinates
+    bboxes: dict
+        bounding boxes. Each bounding box contains an id and a list of coordinates
     
     Returns
     -------
-    list
-        largest bounding box as a list of coordinates
+    dict
+        largest bounding box as a dictionary with id and coordinates
     """
     
-    def compute_area(bbox):
+    if len(bboxes) == 0:
+        return bboxes
+
+    def compute_area(bbox: list) -> float:
         x1, y1, x2, y2 = bbox
         width = x2 - x1
         height = y2 - y1
         return width * height
 
-    largest_bbox = max(bboxes, key=compute_area)
-    
+    bboxes_area = {key: compute_area(value) for key, value in bboxes.items()}
+    largest_id_bbox = max(bboxes_area, key=bboxes_area.get)
+    largest_bbox = {largest_id_bbox: bboxes[largest_id_bbox]}
+ 
     return largest_bbox
 
 
-def filter_bbox_contained(bboxes: list) -> list:
+def filter_bbox_contained(bboxes: dict) -> dict:
     """
     Filters out bounding boxes that are completly contained by another bounding box.
     A bounding box is considered contained if all its coordinates are within the
@@ -310,17 +384,20 @@ def filter_bbox_contained(bboxes: list) -> list:
 
     Parameters
     ----------
-    bboxes: list
-        list of bounding boxes. Each bounding box is a list of coordinates
+    bboxes: dict
+        bounding boxes. Each bounding box has an id and a list of coordinates
     
     Returns
     -------
-    list
-        lis of bounding boxes that are not completly contained by another bounding box
+    dict
+        bounding boxes that are not completly contained by another bounding box.
+        If two bounding boxes have the same coordinates, only one of them is kept.
     """
+    if len(bboxes) == 0 or len(bboxes) == 1:
+        return bboxes
     
     def is_contained(bbox1, bbox2):
-        "Check if bbox1 is contained in bbox"
+        "Check if bbox1 is contained in bbox2"
         x1, y1, x2, y2 = bbox1
         x1_, y1_, x2_, y2_ = bbox2
         if x1_ <= x1 and y1_ <= y1 and x2_ >= x2 and y2_ >= y2:
@@ -328,29 +405,39 @@ def filter_bbox_contained(bboxes: list) -> list:
         else:
             return False
 
-    # remove duplicates in input list of bboxes
-    unique_bboxes = []
-    for item in bboxes:
-        if item not in unique_bboxes:
-            unique_bboxes.append(item)
+    # remove element in input bboxes that contain the same coordinates
+    unique_bboxes = {}
+    for id, box in bboxes.items():
+        if box in unique_bboxes.values():
+            continue
+        else:
+            unique_bboxes[id] = box
 
-    # generate all possible permutations of unique bboxes
-    comparisons = []
+    comparisons = [] # permuttion of boxes ids
+    # compute permutations over boxes ids
     for permutation in itertools.permutations(unique_bboxes, 2):
         comparisons.append(permutation)
 
+    no_contained_boxes = copy.deepcopy(unique_bboxes)
     # check if a bbox is contained by another bbox
     for comparison in comparisons:
-        if is_contained(comparison[0], comparison[1]): # retuns True if box 0 
+        # print('comparison', comparison)
+        if is_contained(unique_bboxes[comparison[0]], unique_bboxes[comparison[1]]): # retuns True if box 0 
             #is contained in box 1
+            
             try: 
-                # remove box 0  form the list of boxes
-                # if it is contained in box 1
-                unique_bboxes.remove(comparison[0])
-            except ValueError:
+                # remove box that is contained by
+                # any other box
+                no_contained_boxes.pop(comparison[0])
+            except KeyError:
+                # Ensures that at least one of the boxes with the same coordinates is kept
+                # in the final results
+                no_contained_boxes[comparison[0]] = unique_bboxes[comparison[0]]
                 pass # ignore value error when the box has already been removed
+        else:
+            continue
 
-    return unique_bboxes
+    return no_contained_boxes
 
 
 if __name__ == '__main__':
@@ -368,15 +455,33 @@ if __name__ == '__main__':
     OUTPUT_DIR = 'data-pipelines/data/ocr-test/00002/vol2-psm3-oem1'
     images = convert_pdf_to_image(PDF_FILE, dpi=200)
 
-    # results = extract_bboxes_from_horc(images, config='--psm 3 --oem 1')
+    print(images[0])
+
+    region = [1000, 500, 2000, 1000]
+
+    result = region_to_string(images[0], region )
+
+    print(result)
+
+
+    results = extract_bboxes_from_horc(images, config='--psm 3 --oem 1')
     # key_ = next(iter(results))
     # key_2 = next(iter(results))
     # print(results[key_], results[key_2])
 
-    boxes = [[0, 0, 100, 100], [200, 300, 350, 400], [10, 20, 90, 90],[10, 10, 90, 90], [10, 10, 90, 90], [10, 10, 15, 20],  [1000, 1000, 1100, 1100]]
+    # boxes = {'id1':[0, 0, 100, 100], 'id2': [200, 300, 350, 400], 'id3': [10, 20, 90, 90],
+    #          'id4':[10, 10, 90, 90], 'id5': [10, 10, 90, 90], 'id6': [10, 10, 15, 20],
+    #            'id7':  [1000, 1000, 1200, 1200], 'id8': [200, 300, 350, 400], 'id9': [200, 300, 350, 400],}
     
 
-    print(filter_bbox_contained(boxes))
+    boxes2 = {'id1':[0, 0, 100, 210], 'id2': [80, 300, 350, 400], 
+               'id7':  [1000, 1000, 1200, 1200]}
+    
+    # print(filter_bbox_by_size(boxes, min_width=100, min_height=100))
+    # print(filter_bbox_largest(boxes))
+
+
+    # print(filter_bbox_contained(boxes2))
  
-    # marked_bounding_boxes(results, OUTPUT_DIR, filter_size=100)
+    # mark_bounding_boxes(results, OUTPUT_DIR, filter_size=100)
     # crop_images_to_bbox(results, OUTPUT_DIR, filter_size=100)
