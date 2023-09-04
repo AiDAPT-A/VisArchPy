@@ -70,7 +70,7 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
     # SELECT OUTPUT DIRECTORY
     # if run multiple times to the same output directory, the images will be duplicated and 
     # metadata will be overwritten
-    # This will become the root directory for a Visual object
+    # This will become the root path for a Visual object
     OUTPUT_DIR = output_directory # an absolute path is recommended   
     # SET MODS FILE
     entry_id = entry_id
@@ -110,20 +110,35 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
             "width": 100,
             "height": 100,
         },
-        "resolution": 400, # analysis resolution, dpi
-        "output_resolution": 300,
+        "resolution": 250, # analysis resolution, dpi
     }
 
     # Create output directory for the entry
     entry_directory = create_output_dir(OUTPUT_DIR, entry_id)
     
     # start logging
-    logging.basicConfig(filename=os.path.join(OUTPUT_DIR, 
-                        entry_id, entry_id + '.log'), 
-                        encoding='utf-8', 
-                        level=logging.INFO)
+    logger = logging.getLogger('layout_ocr')
+
+    # Set the logging level to INFO (or any other desired level)
+    logger.setLevel(logging.INFO)
+
+    # Create a file handler to save log messages to a file
+    log_file = os.path.join(OUTPUT_DIR, entry_id, entry_id + '.log')
+    file_handler = logging.FileHandler(log_file)
+
+    # Create a formatter to specify the log message format
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    file_handler.setFormatter(formatter)
+
+    # Add the file handler to the logger
+    logger.addHandler(file_handler)
+
+    # logging.basicConfig(filename=os.path.join(OUTPUT_DIR, 
+    #                     entry_id, entry_id + '.log'), 
+    #                     encoding='utf-8', 
+    #                     level=logging.INFO)
     
-    logging.info("Starting Layout+OCR pipeline for entry: " + entry_id)
+    logger.info("Starting Layout+OCR pipeline for entry: " + entry_id)
 
     # logging.info("Image settings: " + str(cfg.layout.image_settings))
 
@@ -135,11 +150,15 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
     for f in tqdm(os.listdir(DATA_DIR), desc="Collecting PDF files", unit="files"):
         if f.startswith(entry_id) and f.endswith(".pdf"):
             PDF_FILES.append(DATA_DIR+f)
+    
+    print(PDF_FILES)
 
     # INITIALISE METADATA OBJECT
     entry = Metadata()
     # add metadata from MODS file
     entry.set_metadata(meta_blob)
+
+    # print('meta blob', meta_blob)
     # set web url. This is not part of the MODS file
     base_url = "http://resolver.tudelft.nl/" 
     entry.add_web_url(base_url)
@@ -154,7 +173,7 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
     start_processing_time = time.time()
     for pdf in PDF_FILES:
         print("--> Processing file:", pdf)
-        logging.info("Processing file: " + pdf)
+        logger.info("Processing file: " + pdf)
         # create document object
         pdf_document = Document(pdf)
         entry.add_document(pdf_document)
@@ -184,13 +203,13 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
 
             iw = ImageWriter(image_directory)
 
-            if True: # page["images"] == []: # collects pages where no images were found by layout analysis # TODO: fix this
+            if page["images"] == []: # collects pages where no images were found by layout analysis # TODO: fix this
                 no_image_pages.append(page)
         
             for img in page["images"]:
             
                 visual = Visual(document_page=page["page_number"], 
-                                document=pdf_document, bbox=img.bbox)
+                                document=pdf_document, bbox=img.bbox, bbox_units="pt")
                 
                 # Search for captions using proximity to image
                 # This may generate multiple matches
@@ -212,7 +231,7 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
                     caption = ""
                     for text_line in bbox_matches[0]:
                         caption += text_line.get_text().strip() 
-                    # visual.set_caption(caption) #TODO: fix this
+                    visual.set_caption(caption) #TODO: fix this
                 else: # more than one matches in bbox_matches
                     for _text in bbox_matches:
                         text_match = find_caption_by_text(_text, keywords=layout_settings["caption"]["keywords"])
@@ -223,11 +242,11 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
                     # Set the caption to the first text match.
                     # All other matches will be ignored. 
                     # This may introduce errors, but it is better than having multiple captions
-                        # try:
-                        #     # visual.set_caption(caption) # TODO: fix this
-                        # except Warning: # ignore warnings when caption is already set.
-                        #     logging.warning("Caption already set for image: " + img.name)
-                        #     pass
+                        try:
+                            visual.set_caption(caption) # TODO: fix this
+                        except Warning: # ignore warnings when caption is already set.
+                            logger.warning("Caption already set for image: " + img.name)
+                            pass
                         
                 # rename image name to include page number
                 img.name =  str(entry_id) + "-page" + str(page["page_number"]) + "-" + img.name
@@ -239,21 +258,21 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
                 except ValueError:
                     # issue with MCYK images with 4 bits per pixel
                     # https://github.com/pdfminer/pdfminer.six/pull/854
-                    logging.warning("Image with unsupported format wasn't saved:" + img.name)
+                    logger.warning("Image with unsupported format wasn't saved:" + img.name)
                     pass
                     
-                visual.set_location(FilePath(
-                                         str(image_directory), 
-                                         image_file_name
-                                        ) 
-                                    ) 
+                visual.set_location(FilePath( root_path=OUTPUT_DIR, file_path= entry_id + '/'  + pdf_file_name + '/' + image_file_name))
+                                    #      str(image_directory), # sets root path
+                                    #      image_file_name
+                                    #     ) 
+                                    # ) 
             
                 # add visual to entry
                 entry.add_visual(visual)
 
 
-
         # PROCESS PAGE USING OCR ANALYSIS
+        logger.info("OCR input image resolution (DPI): " + str(ocr_settings["resolution"]))
         for page in tqdm(no_image_pages, desc="OCR analysis", total=len(no_image_pages), unit="OCR pages"):
 
             # if page["images"] == []: # apply to pages where no images were found by layout analysis
@@ -310,14 +329,14 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
 
                             visual = Visual(document=pdf_document,
                                             document_page=page["page_number"],
-                                            bbox=bbox_cords)
+                                            bbox=bbox_cords, bbox_units="px")
                             
                             # Search for captions using proximity to image
                             # This may generate multiple matches
                             bbox_matches =[]
                             bbox_object = BoundingBox(tuple(bbox_cords), ocr_settings["resolution"])
 
-                            print('searching for caption for: ', bbox_id)
+                            # print('searching for caption for: ', bbox_id)
                             for text_box in ocr_results[page_id]["text_bboxes"].items():
 
                                 # print("text box: ", text_box)
@@ -332,10 +351,10 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
                                 )
                                 if match:
                                     bbox_matches.append(match)
-                                    print('matched text id: ', text_box[0])
-                                    print(match)
+                                    # print('matched text id: ', text_box[0])
+                                    # print(match)
                             
-                            print('found matches: ', len(bbox_matches))
+                            # print('found matches: ', len(bbox_matches))
 
                             # print(bbox_matches)
                             # caption = None
@@ -349,25 +368,27 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
                                     # TODO: decode text from strings. Tests with multiple image files.
 
                                     ocr_caption = ocr.region_to_string(page_image[0], match.bbox_px(), config='--psm 3 --oem 1')
-                                    print('ocr box: ', match.bbox_px())
-                                    print('orc caption: ', ocr_caption)
+                                    # print('ocr box: ', match.bbox_px())
+                                    # print('orc caption: ', ocr_caption)
                             
                                     if ocr_caption:
                                         try:
-                                            visual.set_caption('OCR-'+ocr_caption)
+                                            visual.set_caption(ocr_caption)
                                         except Warning: # ignore warnings when caption is already set.
-                                            logging.warning("Caption already set for: " + str(match.bbox()))
+                                            logger.warning("Caption already set for: " + str(match.bbox()))
                         
-                        
-                            visual.set_location(FilePath(str(image_directory), f'{page_id}-{bbox_id}.png' ))
-                            entry.add_visual(visual)
 
-                ocr.mark_bounding_boxes(ocr_results,  OUTPUT_DIR, filter_size=10, text_boxes=True)    
+                            visual.set_location(FilePath(root_path=OUTPUT_DIR, file_path= entry_id + '/'  + pdf_file_name + '/' + f'{page_id}-{bbox_id}.png'))
+
+                            # visual.set_location(FilePath(str(image_directory), f'{page_id}-{bbox_id}.png' ))
+
+                            entry.add_visual(visual)
+   
                 ocr.crop_images_to_bbox(ocr_results, image_directory)         
     
     end_processing_time = time.time()
     processing_time = end_processing_time - start_processing_time
-    logging.info("PDF processing time: " + str(processing_time))
+    logger.info("PDF processing time: " + str(processing_time))
     # ORGANIZE ENTRY FILES 
     # for data management purposes, the files are organized in the following way, after processing:
         # PDF and MODS files are copied to the TMP_DIR, 
@@ -382,8 +403,9 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
     if not os.path.exists(os.path.join(temp_entry_directory, mods_file_name)):
         shutil.copy2(MODS_FILE, temp_entry_directory)
 
+
     for pdf in PDF_FILES:
-        if not os.path.exists(os.path.join(temp_entry_directory, pdf)):
+        if not os.path.exists(os.path.join(temp_entry_directory, os.path.basename(pdf) )):
             shutil.copy2(pdf, temp_entry_directory)
     
     # SAVE METADATA TO files
@@ -395,13 +417,15 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
 
     end_time = time.time()
     total_time = end_time - start_time
-    logging.info("Total time: " + str(total_time))
+    logger.info("Total time: " + str(total_time))
     print("total time", total_time)
   
 if __name__ == "__main__":
     
-    pipeline("00002",
-            "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/",
-            "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/",
-            "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/tmp/"
-            )
+    typer.run(layout_ocr)
+
+    # pipeline("00000",
+    #         "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/",
+    #         "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/",
+    #         "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/tmp/"
+    #         )
