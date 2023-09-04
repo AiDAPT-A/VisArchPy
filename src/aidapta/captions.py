@@ -6,8 +6,10 @@ import re
 from pdfminer.layout import LTTextContainer, LTImage, LTFigure
 from typing import List
 from shapely.geometry import Polygon
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from aidapta.utils import convert_mm_to_point, convert_dpi_to_point
+from typing import Optional
+
 
 
 
@@ -22,6 +24,8 @@ class BoundingBox:
 
     coords: tuple 
     unit: str | int = "pt" 
+    width: Optional[float] = field(init=False)
+    height: Optional[float] = field(init=False)
 
 
     def __post_init__(self):
@@ -32,6 +36,9 @@ class BoundingBox:
         if not isinstance(self.unit, int) and self.unit not in ["mm", "pt"]:
             raise TypeError("unit must be either 'mm', 'pt' (points), or an integer \
                             representing DPI")
+        
+        self.width = self.coords[2] - self.coords[0]
+        self.height = self.coords[3] - self.coords[1]
 
     def bbox(self) -> tuple:
         """
@@ -49,6 +56,17 @@ class BoundingBox:
             return self.coords # points
         else: # when a dpi is provided
             return self._convert_dpi_to_point(self.unit)
+
+    def bbox_px(self) -> tuple:
+        """
+        Returns the coordinates of the bounding box in pixels (px)
+        """
+
+        if isinstance(self.unit, int):
+            return self.coords 
+        else:
+            raise TypeError(f"only units with DPI can be converted to pixels (px). Got {self.unit} instead.")
+
 
     def _convert_mm_to_point(self) -> tuple:
         """converts the coordinates of the bounding box from millimeters (mm) to points (pt)"""
@@ -124,7 +142,7 @@ def find_caption_by_distance(image_object:LTImage|BoundingBox, text_object:LTTex
                              offset:OffsetDistance, direction:str=None) -> LTTextContainer|bool:
     """
     Finds a text element withing a certain distance (offset) 
-    from the bounding box of an Image element.
+    from the bounding box of an Image element. The area covered by the image itself is excluded.
     
     Parameters
     ----------
@@ -171,22 +189,54 @@ def find_caption_by_distance(image_object:LTImage|BoundingBox, text_object:LTTex
     if direction not in ["right", "left", "down", "up", "right-down", "left-up", "all", None]:
         raise ValueError("direction must be either right, left, down, up, right-down, left-up, all")
     
-    if offset.unit == "px" and not isinstance(image_object, BoundingBox):
-        raise TypeError("offset in pixels can only be used with a BoundingBox object")
+    if offset.unit == "px":
+        offset_distance = offset.distance
     
     if isinstance(image_object, BoundingBox):
-        image_coords = image_object.bbox()
-    
+
+        if image_object.unit in ["mm", "pt"]:
+            image_coords = image_object.bbox()
+        elif isinstance(image_object.unit, int):
+            image_coords = image_object.bbox_px()
+
+            # Inverting the directions is necessary
+            # for OCR because the origin of the coordinate
+            # is on the top-left corner of the image. In layout analysis
+            # the origin is on the bottom-left corner of the image.
+            if direction == 'down':
+                direction = 'up'
+            elif direction == 'up':
+                direction = 'down'
+            else:
+                pass
+                # TODO: add other directions, and test
+
+        else:
+            raise TypeError("combination of units not supported")
+        
     if isinstance(text_object, BoundingBox):
-        text_coords = text_object.bbox()
+
+        if text_object.unit in ["mm", "pt"]:
+            text_coords = text_object.bbox()
+        elif isinstance(text_object.unit, int):
+            text_coords = text_object.bbox_px()
+
+        else:
+            raise TypeError("combination of units not supported")
+        
+
+    width = abs(image_coords[2] - image_coords[0])
+    height = abs(image_coords[3] - image_coords[1])
+
+
 
     if direction == None or direction == "all":
         '''
          ____________________
-        |       offset       |
+        |    search area     |
         |  ++++++++++++++++  |
         |  +              +  |
-        |  + image bbox   +  |
+        |  + image hole   +  |
         |  +              +  |
         |  +              +  |
         |  ++++++++++++++++  | 
@@ -194,7 +244,7 @@ def find_caption_by_distance(image_object:LTImage|BoundingBox, text_object:LTTex
         
         '''
 
-        image_bbox = Polygon([
+        search_area = Polygon((
                               # bottom
                               # coodinates [x, y, x, y]
                               (image_coords[0]- offset_distance, image_coords[1]- offset_distance),
@@ -202,30 +252,40 @@ def find_caption_by_distance(image_object:LTImage|BoundingBox, text_object:LTTex
                               # top:
                               (image_coords[2]+ offset_distance, image_coords[3]+ offset_distance),
                               (image_coords[0]- offset_distance, image_coords[3]+ offset_distance),
-                        ])
+                              (image_coords[0]- offset_distance, image_coords[1]- offset_distance),
+                            ),
+                            holes= [ ((
+                            (image_coords[0], image_coords[1]),
+                            (image_coords[2], image_coords[1]),
+                            (image_coords[2], image_coords[3]),
+                            (image_coords[0], image_coords[3]),
+                            (image_coords[0], image_coords[1]),
+                        )) ]
+                        )
 
 
     if direction == "up":
         '''
          ______________
-        |    offset    | 
+        |  search area | 
         ++++++++++++++++  
         +              +  
-        + image bbox   +  
+        +  image box   +  
         +              +  
         +              +  
         ++++++++++++++++   
         
         '''
-        image_bbox = Polygon([
+        search_area = Polygon([
                               # bottom
                               # coodinates [x, y, x, y]
-                              (image_coords[0], image_coords[1]),
-                              (image_coords[2], image_coords[1]),
+                              (image_coords[0], image_coords[1] + height),
+                              (image_coords[2], image_coords[1] + height),
                               # top:
                               (image_coords[2], image_coords[3] + offset_distance),
-                              (image_coords[0], image_coords[3]+ offset_distance),
-                        ])
+                              (image_coords[0], image_coords[3] + offset_distance),
+                              (image_coords[0], image_coords[1] + height)
+        ])
 
     if direction == "down":
         '''
@@ -235,56 +295,60 @@ def find_caption_by_distance(image_object:LTImage|BoundingBox, text_object:LTTex
         +              +  
         +              +  
         ++++++++++++++++ 
-        |___ offset____|  
+        |_search_area__|  
         
         '''
-        image_bbox = Polygon([
+        search_area = Polygon([
                               # bottom
                               # coodinates [x, y, x, y]
-                              (image_coords[0], image_coords[1]- offset_distance),
-                              (image_coords[2], image_coords[1]- offset_distance),
+                              (image_coords[0], image_coords[1]),
+                              (image_coords[2], image_coords[3]- height),
                               # top:
-                              (image_coords[2], image_coords[3]),
-                              (image_coords[0], image_coords[3]),
-                        ])
+                              (image_coords[2], image_coords[3] - height - offset_distance),
+                              (image_coords[0], image_coords[1] - offset_distance),
+                              (image_coords[0], image_coords[1])
+        ])
         
     if direction == "right":
         '''
         ++++++++++++++++ --  
-        +              + o |
-        + image bbox   + f |
-        +              + f |
         +              + s |
+        + image bbox   + e |
+        +              + a |
+        +              + r |
         ++++++++++++++++ --   
           
         '''
-        image_bbox = Polygon([
+        search_area = Polygon([
                               # bottom
-                              (image_coords[0], image_coords[1]),
-                              (image_coords[2]+ offset_distance, image_coords[1]),
+                              (image_coords[0] + width, image_coords[1]),
+                              (image_coords[2] + width + offset_distance, image_coords[1]),
                               # top:
-                              (image_coords[2]+offset_distance, image_coords[3]),
-                              (image_coords[0], image_coords[3]),
-                        ])
+                              (image_coords[2] + width +offset_distance, image_coords[3]),
+                              (image_coords[0] + width, image_coords[3]),
+                              (image_coords[0] + width, image_coords[1]),
+        ])
         
     if direction == "left":
         '''
          -- ++++++++++++++++  
-        | o +              +  
-        | f + image bbox   +  
-        | f +              +  
         | s +              +  
+        | e + image bbox   +  
+        | a +              +  
+        | r +              +  
          -- ++++++++++++++++   
             
         '''
-        image_bbox = Polygon([
+        search_area = Polygon((
                               # bottom
                               (image_coords[0] - offset_distance, image_coords[1]),
-                              (image_coords[2], image_coords[1]),
+                              (image_coords[2] - width, image_coords[1]),
                               # top:
-                              (image_coords[2], image_coords[3]),
+                              (image_coords[2] - width, image_coords[3]),
                               (image_coords[0] - offset_distance, image_coords[3]),
-                        ])
+                              (image_coords[0] - offset_distance, image_coords[1])
+
+        ))
         
     if direction == "down-right":
         '''
@@ -294,24 +358,27 @@ def find_caption_by_distance(image_object:LTImage|BoundingBox, text_object:LTTex
         +              +  | 
         +              +  | 
         ++++++++++++++++  | 
-        |___ offset_______|  
+        |__search_area____|  
         
         '''
-        image_bbox = Polygon([
+        search_area = Polygon((
                             # bottom
                             # coodinates [x, y, x, y]
                             (image_coords[0], image_coords[1]- offset_distance),
-                            (image_coords[2] + offset_distance, image_coords[1]- offset_distance),
+                            (image_coords[2] + offset_distance, image_coords[1] - offset_distance),
                             # top:
                             (image_coords[2] + offset_distance, image_coords[3]),
-                            (image_coords[0], image_coords[3]),
-                        ])
+                            (image_coords[2], image_coords[3]),
+                            (image_coords[2], image_coords[3] - height),
+                            (image_coords[0], image_coords[3] - height),
+                            (image_coords[0], image_coords[1]- offset_distance)
+        ))
         
     if direction == "up-left":
 
         '''
           _________________
-         |      offset     | 
+         |   search area   | 
          |  ++++++++++++++++  
          |  +              +  
          |  + image bbox   +  
@@ -320,24 +387,27 @@ def find_caption_by_distance(image_object:LTImage|BoundingBox, text_object:LTTex
          ---++++++++++++++++   
         
         '''
-        image_bbox = Polygon([
+        search_area = Polygon((
                             # bottom
                             # coodinates [x, y, x, y]
                             (image_coords[0] - offset_distance, image_coords[1]),
-                            (image_coords[2], image_coords[1]),
-                            # top:
+                            (image_coords[0], image_coords[1]),
+                            (image_coords[2] - width, image_coords[3]),
+                            (image_coords[2], image_coords[3]),
                             (image_coords[2], image_coords[3] + offset_distance),
-                            (image_coords[0] - offset_distance, image_coords[3]+ offset_distance),
-                        ])
+                            (image_coords[0] - offset_distance, image_coords[3] + offset_distance),
+                            (image_coords[0] - offset_distance, image_coords[1]),
+        ))
             
     text_bbox = Polygon(  [
                             (text_coords[0], text_coords[1]),
                             (text_coords[2], text_coords[1]),
                             (text_coords[2], text_coords[3]),
                             (text_coords[0], text_coords[3]),
+                            (text_coords[0], text_coords[1])
                     ])
 
-    if image_bbox.intersects(text_bbox):
+    if search_area.intersects(text_bbox):
         return text_object
     else:
         return False
@@ -354,7 +424,58 @@ if __name__ == '__main__':
 
     text_elements = []
 
-    b = BoundingBox((1, 2, 3, 4), 200)
+    import geopandas as gpd
+    from matplotlib import pyplot as plt
+    from shapely.geometry import Polygon
+    img = BoundingBox((100, 100, 500, 500), unit=200)
+    offset = OffsetDistance(20, unit="px")
+
+    image_coords = img.bbox_px()
+
+            # invert y-axis of image coordinates
+            # when coordinates are in pixels (px)
+    x0 = image_coords[0]
+    y0 = - image_coords[1]
+    x1 = image_coords[2]
+    y1 = - image_coords[3]
+    
+    image_coords = (x0, y0, x1, y1)
+    offset_distance = offset.distance
+    
+    width = abs(image_coords[2] - image_coords[0])
+    height = abs(image_coords[3] - image_coords[1])
+
+    
+    img_pol = Polygon(  [
+                            (image_coords[0], image_coords[1]),
+                            (image_coords[2], image_coords[1]),
+                            (image_coords[2], image_coords[3]),
+                            (image_coords[0], image_coords[3]),
+                            (image_coords[0], image_coords[1])
+                    ])
+    
+
+    search_area = Polygon([
+                              # bottom
+                              # coodinates [x, y, x, y]
+                              (image_coords[0], image_coords[1]),
+                              (image_coords[2], image_coords[3]- height),
+                              # top:
+                              (image_coords[2], image_coords[3] - height - offset_distance),
+                              (image_coords[0], image_coords[1] - offset_distance),
+                              (image_coords[0], image_coords[1])
+        ])
+
+
+    print(img_pol)
+    
+    plt.plot(*img_pol.exterior.xy)
+    plt.plot(*search_area.exterior.xy)
+
+    plt.show()
+    
+
+
 
     # print (b)
     print(b)
