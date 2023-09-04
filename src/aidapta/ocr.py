@@ -203,7 +203,7 @@ def crop_images_to_bbox(hocr_results: dict, output_dir:str, filter_size:int=50) 
 
 
 def mark_bounding_boxes(hocr_results: dict, output_dir:str,  
-                        filter_size:int=50, page_number:int=None) -> None:
+                        filter_size:int=50, page_number:int=None, text_boxes:bool=False) -> None:
     """
     Draw bounding boxes on ocr images and save a copy to the output directory.
 
@@ -220,6 +220,8 @@ def mark_bounding_boxes(hocr_results: dict, output_dir:str,
         Default: 50 pixels
     page_number: int
         page number to be drawn. Optional. If None, the HOCR page number is used.
+    text_boxes: bool
+        if True, text bounding boxes are also drawn. Default: False
     
     Returns
     --------
@@ -239,6 +241,8 @@ def mark_bounding_boxes(hocr_results: dict, output_dir:str,
 
             # Create a Rectangle patch
     
+            
+            # Plot image boxes
             for id in content['bboxes']:
                 x1, y1, x2, y2 = content['bboxes'][id] # coordinates from top left corner
                 width = x2 - x1
@@ -251,10 +255,24 @@ def mark_bounding_boxes(hocr_results: dict, output_dir:str,
                     tag_y = y1
                     plt.text(tag_x, tag_y, tag_text, fontsize=9, color='blue', ha='left', va='center')
 
+            # Plot text boxes
+            if text_boxes:
+                for id in content['text_bboxes']:
+                    x1, y1, x2, y2 = content['text_bboxes'][id] # coordinates from top left corner
+                    width = x2 - x1
+                    height = y2 - y1
+                    if min(width, height) >= filter_size:
+                        rect = patches.Rectangle((x1, y1), width, height, linewidth=1.5, edgecolor='r', facecolor='none')
+                        ax.add_patch(rect)
+                        tag_text = id
+                        tag_x = x1
+                        tag_y = y1
+                        plt.text(tag_x, tag_y, tag_text, fontsize=9, color='blue', ha='left', va='center')
+
             if page_number is not None:
                 page = page_number
            
-            plt.savefig(f'{output_dir}/{page}.png', dpi=200, bbox_inches='tight')    
+            plt.savefig(f'{output_dir}/{page}.png', dpi=400, bbox_inches='tight')    
         
             plt.close()
     
