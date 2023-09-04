@@ -102,7 +102,7 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
 
     ocr_settings = {
         "caption": {
-            "offset": [10, "px"],
+            "offset": [50, "px"],
             "direction": "down",
             "keywords": ['figure', 'caption', 'figuur'] 
             },
@@ -110,7 +110,7 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
             "width": 100,
             "height": 100,
         },
-        "resolution": 200, # analysis resolution, dpi
+        "resolution": 400, # analysis resolution, dpi
         "output_resolution": 300,
     }
 
@@ -147,6 +147,9 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
     layout_offset_dist = OffsetDistance (layout_settings["caption"]["offset"][0], 
                                          layout_settings["caption"]["offset"][1])
 
+    ocr_offset_dist = OffsetDistance (ocr_settings["caption"]["offset"][0], 
+                                         ocr_settings["caption"]["offset"][1])
+
     # PROCESS PDF FILES
     start_processing_time = time.time()
     for pdf in PDF_FILES:
@@ -181,7 +184,7 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
 
             iw = ImageWriter(image_directory)
 
-            if page["images"] == []: # collects pages where no images were found by layout analysis
+            if True: # page["images"] == []: # collects pages where no images were found by layout analysis # TODO: fix this
                 no_image_pages.append(page)
         
             for img in page["images"]:
@@ -209,7 +212,7 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
                     caption = ""
                     for text_line in bbox_matches[0]:
                         caption += text_line.get_text().strip() 
-                    visual.set_caption(caption)
+                    # visual.set_caption(caption) #TODO: fix this
                 else: # more than one matches in bbox_matches
                     for _text in bbox_matches:
                         text_match = find_caption_by_text(_text, keywords=layout_settings["caption"]["keywords"])
@@ -220,11 +223,11 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
                     # Set the caption to the first text match.
                     # All other matches will be ignored. 
                     # This may introduce errors, but it is better than having multiple captions
-                        try:
-                            visual.set_caption(caption)
-                        except Warning: # ignore warnings when caption is already set.
-                            logging.warning("Caption already set for image: " + img.name)
-                            pass
+                        # try:
+                        #     # visual.set_caption(caption) # TODO: fix this
+                        # except Warning: # ignore warnings when caption is already set.
+                        #     logging.warning("Caption already set for image: " + img.name)
+                        #     pass
                         
                 # rename image name to include page number
                 img.name =  str(entry_id) + "-page" + str(page["page_number"]) + "-" + img.name
@@ -296,13 +299,14 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
                     # filter boxes contained by larger boxes
                     filtered_contained = ocr.filter_bbox_contained(ocr_results[page_id]["bboxes"])
                     ocr_results[page_id]["bboxes"]= filtered_contained
-                    # print(ocr_page)
+
+                    # print("OCR text boxes: ", ocr_results[page_id]["text_bboxes"])
 
                     # exclude pages with no bboxes (a.k.a. no inner images)
                     if len (ocr_results[page_id]["bboxes"]) > 0:
                         for bbox_id in ocr_results[page_id]["bboxes"]: # loop over image boxes
 
-                            bbox_cords = ocr_results[page_id]["bboxes"][bbox_id]
+                            bbox_cords = ocr_results[page_id]["bboxes"][bbox_id] # bbox of image in page
 
                             visual = Visual(document=pdf_document,
                                             document_page=page["page_number"],
@@ -313,42 +317,52 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
                             bbox_matches =[]
                             bbox_object = BoundingBox(tuple(bbox_cords), ocr_settings["resolution"])
 
-                            # TODO: ocr results and layout analysis have bounding
-                            # boxes in different coordinates. Implement conversion in BoundingBox class? Add abstractions for a homogeneous data
-                            # model during processing? 
+                            print('searching for caption for: ', bbox_id)
                             for text_box in ocr_results[page_id]["text_bboxes"].items():
 
-                            
+                                # print("text box: ", text_box)
+
                                 text_cords = text_box[1]
                                 text_object = BoundingBox(tuple(text_cords), ocr_settings["resolution"])
                                 match = find_caption_by_distance(
                                     bbox_object, 
                                     text_object, 
-                                    offset= OffsetDistance(35, 'px') , # TODO: use ocr_settings
-                                    direction= layout_settings["caption"]["direction"]
+                                    offset= ocr_offset_dist,
+                                    direction= ocr_settings["caption"]["direction"]
                                 )
                                 if match:
                                     bbox_matches.append(match)
+                                    print('matched text id: ', text_box[0])
+                                    print(match)
                             
-                            print(bbox_matches)
+                            print('found matches: ', len(bbox_matches))
+
+                            # print(bbox_matches)
+                            # caption = None
                             if len(bbox_matches) == 0: # if more than one bbox matches, move to text analysis
                                 pass
                             else:
                                 # get text from image   
                                 for match in bbox_matches:
-                                    print(match.bbox_px())
+                                    # print(match.bbox_px())
+                                    ########################
                                     # TODO: decode text from strings. Tests with multiple image files.
-                                    caption = ocr.region_to_string(page_image[0], match.bbox_px(), config='--psm 3 --oem 1')
-                                try:
-                                    visual.set_caption('OCR-'+caption)
-                                except Warning: # ignore warnings when caption is already set.
-                                    logging.warning("Caption already set for: " + match.bbox)
+
+                                    ocr_caption = ocr.region_to_string(page_image[0], match.bbox_px(), config='--psm 3 --oem 1')
+                                    print('ocr box: ', match.bbox_px())
+                                    print('orc caption: ', ocr_caption)
                             
+                                    if ocr_caption:
+                                        try:
+                                            visual.set_caption('OCR-'+ocr_caption)
+                                        except Warning: # ignore warnings when caption is already set.
+                                            logging.warning("Caption already set for: " + str(match.bbox()))
+                        
                         
                             visual.set_location(FilePath(str(image_directory), f'{page_id}-{bbox_id}.png' ))
                             entry.add_visual(visual)
 
-                ocr.mark_bounding_boxes(ocr_results, OUTPUT_DIR)    
+                ocr.mark_bounding_boxes(ocr_results,  OUTPUT_DIR, filter_size=10, text_boxes=True)    
                 ocr.crop_images_to_bbox(ocr_results, image_directory)         
     
     end_processing_time = time.time()
@@ -386,7 +400,7 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
   
 if __name__ == "__main__":
     
-    pipeline("00000",
+    pipeline("00002",
             "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/",
             "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/",
             "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/tmp/"
