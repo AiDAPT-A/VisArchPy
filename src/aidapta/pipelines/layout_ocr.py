@@ -11,6 +11,7 @@ import shutil
 import time
 import logging
 import typer
+import json
 import aidapta.ocr as ocr
 from typing import Optional
 from pdfminer.high_level import extract_pages
@@ -22,7 +23,6 @@ from aidapta.layout import sort_layout_elements, create_output_dir
 from aidapta.metadata import Document, Metadata, Visual, FilePath
 from aidapta.captions import OffsetDistance
 from typing_extensions import Annotated 
-import pytesseract as tess
 
 app = typer.Typer()
 
@@ -93,8 +93,8 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
             "keywords": ['figure', 'caption', 'figuur'] 
             },
         "image": {
-            "width": 100,
-            "height": 100,
+            "width": 50,
+            "height": 50,
         }
     }
 
@@ -107,8 +107,8 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
             "keywords": ['figure', 'caption', 'figuur'] 
             },
         "image": {
-            "width": 100,
-            "height": 100,
+            "width": 50,
+            "height": 50,
         },
         "resolution": 250, # analysis resolution, dpi
     }
@@ -305,13 +305,13 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
                     # # filter bboxes that are extremely horizontally long 
                     filtered_ratio = ocr.filter_bbox_by_size(
                                                             ocr_results[page_id]["bboxes"],
-                                                            aspect_ratio = (15/1, ">")
+                                                            aspect_ratio = (20/1, ">")
                                                             )
                     ocr_results[page_id]["bboxes"]= filtered_ratio      
 
                     # filter boxes with extremely vertically long
                     filtered_ratio = ocr.filter_bbox_by_size(ocr_results[page_id]["bboxes"],
-                                                            aspect_ratio = (1/15, "<")
+                                                            aspect_ratio = (1/20, "<")
                                                             )
                     ocr_results[page_id]["bboxes"]= filtered_ratio              
             
@@ -414,6 +414,12 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
     json_file = str(os.path.join(entry_directory, entry_id) + "-metadata.json")
     entry.save_to_csv(csv_file)
     entry.save_to_json(json_file)
+
+    # SAVE settings to json file
+    settings_file = str(os.path.join(entry_directory, entry_id) + "-settings.json")
+    with open(settings_file, 'w') as f:
+        json.dump({"layout": layout_settings, "ocr": ocr_settings}, f, indent=4)
+        
 
     end_time = time.time()
     total_time = end_time - start_time
