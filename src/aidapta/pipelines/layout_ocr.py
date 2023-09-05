@@ -27,7 +27,7 @@ import pytesseract as tess
 app = typer.Typer()
 
 @app.command()
-def layout_ocr(entry_range: str = typer.Argument(help="Range of entries to process. e.g.: 1-10"),
+def pipeline(entry_range: str = typer.Argument(help="Range of entries to process. e.g.: 1-10"),
                data_directory: str = typer.Argument( help="path to directory containing MODS and pdf files"),
                output_directory: str = typer.Argument( help="path to directory where results will be saved"),
                temp_directory: Annotated[Optional[str], typer.Argument(help="temporary directory")] = None
@@ -41,13 +41,13 @@ def layout_ocr(entry_range: str = typer.Argument(help="Range of entries to proce
     for id in range(start_id, end_id+1):
         str_id = str(id).zfill(5)
 
-        pipeline(str_id,
+        run_pipeline(str_id,
                  data_directory,
                  output_directory,
                  temp_directory)
 
 
-def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_directory: str = None) -> None:
+def run_pipeline(entry_id:str, data_directory: str, output_directory: str, temp_directory: str = None) -> None:
     """A pipeline for extracting metadata from MODS files and imges from PDF files
       using layout and OCR analysis.
       
@@ -422,7 +422,7 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
   
 if __name__ == "__main__":
     
-    typer.run(layout_ocr)
+    app()
 
     # pipeline("00000",
     #         "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/",
