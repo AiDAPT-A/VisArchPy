@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "aidapta"
-version = "0.1.0"
+version = "0.2.0"
 authors = [
     {name = "Manuel Garcia", email = "m.g.garciaalvarez@tudelft.nl"},
 ]
@@ -22,9 +22,7 @@ classifiers = ["Development Status :: 3 - Alpha",
 dependencies = [
     "Pillow",
     "requests",
-    "PyPDF2",
     "pdfminer.six",
-    "PyMuPDF",
     "beautifulsoup4",
     "shapely",
     "pandas",
@@ -41,4 +39,7 @@ pythonpath = "src"
 addopts = [
     "--import-mode=importlib",
 ]
+
+[project.scripts]
+aidapta = "aidapta.cli:app"
 

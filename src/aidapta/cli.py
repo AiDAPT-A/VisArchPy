@@ -14,7 +14,5 @@ app = typer.Typer()
 app.add_typer(layout_ocr.app, name="layout-ocr")
 
 
-
-
 if __name__ == "__main__":
     app()
