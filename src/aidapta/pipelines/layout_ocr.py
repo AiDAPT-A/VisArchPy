@@ -24,6 +24,11 @@ from aidapta.metadata import Document, Metadata, Visual, FilePath
 from aidapta.captions import OffsetDistance
 from typing_extensions import Annotated 
 
+# Disable PIL image size limit
+import PIL.Image
+PIL.Image.MAX_IMAGE_PIXELS = None
+
+
 app = typer.Typer()
 
 @app.command()
