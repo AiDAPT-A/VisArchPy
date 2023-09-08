@@ -156,7 +156,6 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
         if f.startswith(entry_id) and f.endswith(".pdf"):
             PDF_FILES.append(DATA_DIR+f)
     
-    print(PDF_FILES)
 
     # INITIALISE METADATA OBJECT
     entry = Metadata()
@@ -177,7 +176,7 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
     # PROCESS PDF FILES
     start_processing_time = time.time()
     for pdf in PDF_FILES:
-        print("--> Processing file:", pdf)
+        # print("--> Processing file:", pdf)
         logger.info("Processing file: " + pdf)
         # create document object
         pdf_document = Document(pdf)
@@ -402,7 +401,7 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
 
     # Copy MODS file and PDF files to output directory
     temp_entry_directory = create_output_dir( os.path.join(TMP_DIR, entry_id))
-    print("temp_entry_directory", temp_entry_directory)
+    
 
     mods_file_name = pathlib.Path(MODS_FILE).stem + ".xml"
     if not os.path.exists(os.path.join(temp_entry_directory, mods_file_name)):
@@ -433,10 +432,10 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
   
 if __name__ == "__main__":
     
-    app()
+    # app()
 
-    # pipeline("00000",
-    #         "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/",
-    #         "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/",
-    #         "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/tmp/"
-    #         )
+    pipeline("00000",
+            "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/",
+            "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/",
+            "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/tmp/"
+            )
