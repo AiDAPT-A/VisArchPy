@@ -264,7 +264,8 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
                     # issue with MCYK images with 4 bits per pixel
                     # https://github.com/pdfminer/pdfminer.six/pull/854
                     logger.warning("Image with unsupported format wasn't saved:" + img.name)
-                    pass
+                except UnboundLocalError:
+                    logger.warning("Decocder doesn't support image stream, therefore not saved:" + img.name)
                     
                 visual.set_location(FilePath( root_path=OUTPUT_DIR, file_path= entry_id + '/'  + pdf_file_name + '/' + image_file_name))
                                     #      str(image_directory), # sets root path
@@ -275,6 +276,7 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
                 # add visual to entry
                 entry.add_visual(visual)
 
+        del pages # free memory
 
         # PROCESS PAGE USING OCR ANALYSIS
         logger.info("OCR input image resolution (DPI): " + str(ocr_settings["resolution"]))
@@ -439,7 +441,7 @@ if __name__ == "__main__":
     
     # app()
 
-    pipeline("00039",
+    pipeline("00097",
             "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/pdf-issues/",
             "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/",
             "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/tmp/"
