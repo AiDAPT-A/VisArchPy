@@ -205,8 +205,12 @@ class Metadata:
     purl: List = field(init=False) # persistent URL
     type_resource: str = field(init=False) # type of resource
     web_url: str = field(init=False, default=None) # URL at Educational Repository
-    
+    # total number of images/visuals extracted from the PDF files for
+    # this entry in the repository
+    total_visuals: Optional[int] = field(init=False, default=0)
     visuals: Optional[List[Visual]] = field(init=False, default=None)
+
+
     # pdf_location: Optional[str] = field(init=False, default=None) # location of the PDF file
 
     def set_metadata(self, metadata: dict) -> None:
@@ -345,6 +349,9 @@ class Metadata:
         if not self.visuals:
             self.visuals = []
         self.visuals.append(visual)
+
+        # update total number of visuals
+        self.total_visuals += 1
 
     def as_dict(self) -> dict:
         """ Returns metadata as a dictionary """
