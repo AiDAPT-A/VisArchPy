@@ -15,7 +15,6 @@ from PIL.Image import Image
 from tqdm import tqdm
 from collections import Counter
 from pytesseract import image_to_string
-from PIL import Image
 
 
 def region_to_string(image: Image, bbox: list[float], config: str ='--oem 1 --psm 1') -> str:
