@@ -87,10 +87,13 @@ class Visual:
     document_page: int # page number in the document index
     bbox: List[int] # bounding box of the visual in the document page
     bbox_units: str # units of the bounding box
-    id : Optional[str] = field(init=True, default=str(uuid.uuid4())) # unique identifier
+    id : Optional[str] = field(init=False) # unique identifier
     caption: Optional[list] = field(init=False, default=None) # caption of the visual    
     visual_type: Optional[str] = field(init=False, default=None) # one of: photo, drawing, map, etc
     location: FilePath = field(init=False, default=None) # location where the visual is stored
+
+    def __post_init__(self):
+        self.id = str(uuid.uuid4())
 
     def set_visual_type(self, visual_type: str) -> None:
         """Sets the visual type. One of photo, drawing, map, etc.
@@ -320,10 +323,11 @@ class Metadata:
         if self.web_url and overwrite == False:
             raise ValueError('base URL already set. User overwrite=True to overwrite it.')
         else:
-            if self.uuid[:5] == 'uuid:': # some uuids start with uuid:
-                self.web_url = f'{base_url}{self.uuid}' 
-            else: # pure uuids do not start with uuid:
-                self.web_url = f'{base_url}uuid:{self.uuid}'
+            if self.uuid is not None:
+                if self.uuid[:5] == 'uuid:': # some uuids start with uuid:
+                    self.web_url = f'{base_url}{self.uuid}' 
+                else: # pure uuids do not start with uuid:
+                    self.web_url = f'{base_url}uuid:{self.uuid}'
     
     def add_visual(self, visual: Visual) -> None:
         """ Adds a visual to the metadata 
