@@ -12,6 +12,37 @@ from typing import Optional, List
 
 
 @dataclass
+class FilePath:
+    """
+    Represents a file path
+    """
+    root_path: str
+    file_path: str
+
+    def __post_init__(self):
+        if not isinstance(self.root_path, str):
+            raise TypeError("root_path must be a string")
+        if not isinstance(self.file_path, str):
+            raise TypeError("file_path must be a string")
+
+    def update_root_path(self, root_path: str) -> None:
+        """Updates the root path of the file path
+        
+        Parameters
+        ----------
+        root_path: str
+            new root path
+        
+        Returns
+        -------
+        None
+        """
+        self.root_path = root_path
+    
+    def __str__(self) -> str:
+        return os.path.join(self.root_path, self.file_path)
+
+@dataclass
 class Person:
     """
     Represents a person 
@@ -42,39 +73,9 @@ class Document:
     """
     Represents a document
     """
-    location: str # location where the document is stored
+    location: FilePath = field(init=False, default=None) # location where the visual is stored
 
 
-@dataclass
-class FilePath:
-    """
-    Represents a file path
-    """
-    root_path: str
-    file_path: str
-
-    def __post_init__(self):
-        if not isinstance(self.root_path, str):
-            raise TypeError("root_path must be a string")
-        if not isinstance(self.file_path, str):
-            raise TypeError("file_path must be a string")
-
-    def update_root_path(self, root_path: str) -> None:
-        """Updates the root path of the file path
-        
-        Parameters
-        ----------
-        root_path: str
-            new root path
-        
-        Returns
-        -------
-        None
-        """
-        self.root_path = root_path
-    
-    def __str__(self) -> str:
-        return os.path.join(self.root_path, self.file_path)
 
 
 @dataclass
