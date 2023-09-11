@@ -180,9 +180,12 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
     start_processing_time = time.time()
     for pdf in PDF_FILES:
         # print("--> Processing file:", pdf)
-        logger.info("Processing file: " + os.path.basename(pdf).split("/")[-1])
+        pdf_root = DATA_DIR
+        pdf_file_path = os.path.basename(pdf).split("/")[-1] # file name with extension
+        logger.info("Processing file: " + pdf_file_path)
         # create document object
-        pdf_document = Document(pdf)
+        pdf_formatted_path = FilePath(root_path=pdf_root, file_path=pdf_file_path)
+        pdf_document = Document(pdf_formatted_path)
         entry.add_document(pdf_document)
 
         # PREPARE OUTPUT DIRECTORY
@@ -193,7 +196,7 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
         # ocr_directory = create_output_dir(image_directory, "ocr")
 
         # PROCESS SINGLE PDF 
-        pdf_pages = extract_pages(pdf_document.location)
+        pdf_pages = extract_pages(pdf_document.location.full_path())
 
         pages = []
         for page in tqdm(pdf_pages, desc="Reading pages", unit="pages"):
@@ -285,7 +288,7 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
 
             # if page["images"] == []: # apply to pages where no images were found by layout analysis
             page_image = ocr.convert_pdf_to_image( # returns a list with one element
-                pdf_document.location, 
+                pdf_document.location.full_path(), 
                 dpi= ocr_settings["resolution"], 
                 first_page=page["page_number"], 
                 last_page=page["page_number"],
@@ -443,8 +446,8 @@ if __name__ == "__main__":
     
     # app()
 
-    pipeline("00063",
-            "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/pdf-issues/",
+    pipeline("00001",
+            "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/",
             "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/",
             "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/tmp/"
             )
