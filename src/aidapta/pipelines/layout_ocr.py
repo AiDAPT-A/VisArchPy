@@ -178,7 +178,7 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
     start_processing_time = time.time()
     for pdf in PDF_FILES:
         # print("--> Processing file:", pdf)
-        logger.info("Processing file: " + pdf)
+        logger.info("Processing file: " + os.path.basename(pdf).split("/")[-1])
         # create document object
         pdf_document = Document(pdf)
         entry.add_document(pdf_document)
@@ -420,6 +420,9 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
     json_file = str(os.path.join(entry_directory, entry_id) + "-metadata.json")
     entry.save_to_csv(csv_file)
     entry.save_to_json(json_file)
+
+    if not entry.iid:
+        logger.warning("No identifier found in MODS file")
 
     # SAVE settings to json file
     settings_file = str(os.path.join(entry_directory, entry_id) + "-settings.json")
