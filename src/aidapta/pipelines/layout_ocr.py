@@ -23,6 +23,7 @@ from aidapta.layout import sort_layout_elements, create_output_dir
 from aidapta.metadata import Document, Metadata, Visual, FilePath
 from aidapta.captions import OffsetDistance
 from typing_extensions import Annotated 
+from pdfminer.pdftypes import PDFNotImplementedError
 
 # Disable PIL image size limit
 import PIL.Image
@@ -137,11 +138,6 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
 
     # Add the file handler to the logger
     logger.addHandler(file_handler)
-
-    # logging.basicConfig(filename=os.path.join(OUTPUT_DIR, 
-    #                     entry_id, entry_id + '.log'), 
-    #                     encoding='utf-8', 
-    #                     level=logging.INFO)
     
     logger.info("Starting Layout+OCR pipeline for entry: " + entry_id)
 
@@ -156,7 +152,7 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
         if f.startswith(entry_id) and f.endswith(".pdf"):
             PDF_FILES.append(DATA_DIR+f)
     
-    print(PDF_FILES)
+    logger.info("PDF files in entry: " + str(len(PDF_FILES)))
 
     # INITIALISE METADATA OBJECT
     entry = Metadata()
@@ -175,23 +171,27 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
                                          ocr_settings["caption"]["offset"][1])
 
     # PROCESS PDF FILES
+    pdf_document_counter = 1
     start_processing_time = time.time()
     for pdf in PDF_FILES:
-        print("--> Processing file:", pdf)
-        logger.info("Processing file: " + pdf)
+        # print("--> Processing file:", pdf)
+        pdf_root = DATA_DIR
+        pdf_file_path = os.path.basename(pdf).split("/")[-1] # file name with extension
+        logger.info("Processing file: " + pdf_file_path)
         # create document object
-        pdf_document = Document(pdf)
+        pdf_formatted_path = FilePath(root_path=pdf_root, file_path=pdf_file_path)
+        pdf_document = Document(pdf_formatted_path)
         entry.add_document(pdf_document)
 
         # PREPARE OUTPUT DIRECTORY
-        pdf_file_name = pathlib.Path(pdf_document.location).stem
+        pdf_file_name = 'pdf-' + str(pdf_document_counter).zfill(3)
         image_directory = create_output_dir(entry_directory, 
                                             pdf_file_name) # returns a pathlib object
                
         # ocr_directory = create_output_dir(image_directory, "ocr")
 
         # PROCESS SINGLE PDF 
-        pdf_pages = extract_pages(pdf_document.location)
+        pdf_pages = extract_pages(pdf_document.location.full_path())
 
         pages = []
         for page in tqdm(pdf_pages, desc="Reading pages", unit="pages"):
@@ -264,133 +264,135 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
                     # issue with MCYK images with 4 bits per pixel
                     # https://github.com/pdfminer/pdfminer.six/pull/854
                     logger.warning("Image with unsupported format wasn't saved:" + img.name)
-                    pass
-                    
+                except UnboundLocalError:
+                    logger.warning("Decocder doesn't support image stream, therefore not saved:" + img.name)
+                except PDFNotImplementedError:
+                    logger.warning("PDF stream unsupported format,  image not saved:" + img.name)
+
                 visual.set_location(FilePath( root_path=OUTPUT_DIR, file_path= entry_id + '/'  + pdf_file_name + '/' + image_file_name))
-                                    #      str(image_directory), # sets root path
-                                    #      image_file_name
-                                    #     ) 
-                                    # ) 
             
                 # add visual to entry
                 entry.add_visual(visual)
 
+        pdf_document_counter += 1
+        del pages # free memory
 
         # PROCESS PAGE USING OCR ANALYSIS
         logger.info("OCR input image resolution (DPI): " + str(ocr_settings["resolution"]))
         for page in tqdm(no_image_pages, desc="OCR analysis", total=len(no_image_pages), unit="OCR pages"):
 
             # if page["images"] == []: # apply to pages where no images were found by layout analysis
-                page_image = ocr.convert_pdf_to_image( # returns a list with one element
-                    pdf_document.location, 
-                    dpi= ocr_settings["resolution"], 
-                    first_page=page["page_number"], 
-                    last_page=page["page_number"],
-                    )
- 
-                ocr_results = ocr.extract_bboxes_from_horc(
-                    page_image, config='--psm 3 --oem 1', 
-                    entry_id=entry_id, 
-                    page_number=page["page_number"])
-                
-                if ocr_results:  # skips pages with no results
-                    page_key = ocr_results.keys()
-                    page_id = list(page_key)[0]
+            page_image = ocr.convert_pdf_to_image( # returns a list with one element
+                pdf_document.location.full_path(), 
+                dpi= ocr_settings["resolution"], 
+                first_page=page["page_number"], 
+                last_page=page["page_number"],
+                )
 
-                    # FILTERING OCR RESULTS
-                    # filter by bbox size
-                    filtered_width_height = ocr.filter_bbox_by_size(
-                                                            ocr_results[page_id]["bboxes"],
-                                                            min_width= ocr_settings["image"]["width"],
-                                                            min_height= ocr_settings["image"]["height"],
-                                                            )
-                    
-                    ocr_results[page_id]["bboxes"] = filtered_width_height
-
-                    # # filter bboxes that are extremely horizontally long 
-                    filtered_ratio = ocr.filter_bbox_by_size(
-                                                            ocr_results[page_id]["bboxes"],
-                                                            aspect_ratio = (20/1, ">")
-                                                            )
-                    ocr_results[page_id]["bboxes"]= filtered_ratio      
-
-                    # filter boxes with extremely vertically long
-                    filtered_ratio = ocr.filter_bbox_by_size(ocr_results[page_id]["bboxes"],
-                                                            aspect_ratio = (1/20, "<")
-                                                            )
-                    ocr_results[page_id]["bboxes"]= filtered_ratio              
+            ocr_results = ocr.extract_bboxes_from_horc(
+                page_image, config='--psm 3 --oem 1', 
+                entry_id=entry_id, 
+                page_number=page["page_number"])
             
-                    # filter boxes contained by larger boxes
-                    filtered_contained = ocr.filter_bbox_contained(ocr_results[page_id]["bboxes"])
-                    ocr_results[page_id]["bboxes"]= filtered_contained
+            if ocr_results:  # skips pages with no results
+                page_key = ocr_results.keys()
+                page_id = list(page_key)[0]
 
-                    # print("OCR text boxes: ", ocr_results[page_id]["text_bboxes"])
+                # FILTERING OCR RESULTS
+                # filter by bbox size
+                filtered_width_height = ocr.filter_bbox_by_size(
+                                                        ocr_results[page_id]["bboxes"],
+                                                        min_width= ocr_settings["image"]["width"],
+                                                        min_height= ocr_settings["image"]["height"],
+                                                        )
+                
+                ocr_results[page_id]["bboxes"] = filtered_width_height
 
-                    # exclude pages with no bboxes (a.k.a. no inner images)
-                    if len (ocr_results[page_id]["bboxes"]) > 0:
-                        for bbox_id in ocr_results[page_id]["bboxes"]: # loop over image boxes
+                # # filter bboxes that are extremely horizontally long 
+                filtered_ratio = ocr.filter_bbox_by_size(
+                                                        ocr_results[page_id]["bboxes"],
+                                                        aspect_ratio = (20/1, ">")
+                                                        )
+                ocr_results[page_id]["bboxes"]= filtered_ratio      
 
-                            bbox_cords = ocr_results[page_id]["bboxes"][bbox_id] # bbox of image in page
+                # filter boxes with extremely vertically long
+                filtered_ratio = ocr.filter_bbox_by_size(ocr_results[page_id]["bboxes"],
+                                                        aspect_ratio = (1/20, "<")
+                                                        )
+                ocr_results[page_id]["bboxes"]= filtered_ratio              
+        
+                # filter boxes contained by larger boxes
+                filtered_contained = ocr.filter_bbox_contained(ocr_results[page_id]["bboxes"])
+                ocr_results[page_id]["bboxes"]= filtered_contained
 
-                            visual = Visual(document=pdf_document,
-                                            document_page=page["page_number"],
-                                            bbox=bbox_cords, bbox_units="px")
-                            
-                            # Search for captions using proximity to image
-                            # This may generate multiple matches
-                            bbox_matches =[]
-                            bbox_object = BoundingBox(tuple(bbox_cords), ocr_settings["resolution"])
+                # print("OCR text boxes: ", ocr_results[page_id]["text_bboxes"])
 
-                            # print('searching for caption for: ', bbox_id)
-                            for text_box in ocr_results[page_id]["text_bboxes"].items():
+                # exclude pages with no bboxes (a.k.a. no inner images)
+                if len (ocr_results[page_id]["bboxes"]) > 0:
+                    for bbox_id in ocr_results[page_id]["bboxes"]: # loop over image boxes
 
-                                # print("text box: ", text_box)
+                        bbox_cords = ocr_results[page_id]["bboxes"][bbox_id] # bbox of image in page
 
-                                text_cords = text_box[1]
-                                text_object = BoundingBox(tuple(text_cords), ocr_settings["resolution"])
-                                match = find_caption_by_distance(
-                                    bbox_object, 
-                                    text_object, 
-                                    offset= ocr_offset_dist,
-                                    direction= ocr_settings["caption"]["direction"]
-                                )
-                                if match:
-                                    bbox_matches.append(match)
-                                    # print('matched text id: ', text_box[0])
-                                    # print(match)
-                            
-                            # print('found matches: ', len(bbox_matches))
-
-                            # print(bbox_matches)
-                            # caption = None
-                            if len(bbox_matches) == 0: # if more than one bbox matches, move to text analysis
-                                pass
-                            else:
-                                # get text from image   
-                                for match in bbox_matches:
-                                    # print(match.bbox_px())
-                                    ########################
-                                    # TODO: decode text from strings. Tests with multiple image files.
-
-                                    ocr_caption = ocr.region_to_string(page_image[0], match.bbox_px(), config='--psm 3 --oem 1')
-                                    # print('ocr box: ', match.bbox_px())
-                                    # print('orc caption: ', ocr_caption)
-                            
-                                    if ocr_caption:
-                                        try:
-                                            visual.set_caption(ocr_caption)
-                                        except Warning: # ignore warnings when caption is already set.
-                                            logger.warning("Caption already set for: " + str(match.bbox()))
+                        visual = Visual(document=pdf_document,
+                                        document_page=page["page_number"],
+                                        bbox=bbox_cords, bbox_units="px")
                         
+                        # Search for captions using proximity to image
+                        # This may generate multiple matches
+                        bbox_matches =[]
+                        bbox_object = BoundingBox(tuple(bbox_cords), ocr_settings["resolution"])
 
-                            visual.set_location(FilePath(root_path=OUTPUT_DIR, file_path= entry_id + '/'  + pdf_file_name + '/' + f'{page_id}-{bbox_id}.png'))
+                        # print('searching for caption for: ', bbox_id)
+                        for text_box in ocr_results[page_id]["text_bboxes"].items():
 
-                            # visual.set_location(FilePath(str(image_directory), f'{page_id}-{bbox_id}.png' ))
+                            # print("text box: ", text_box)
 
-                            entry.add_visual(visual)
-   
-                ocr.crop_images_to_bbox(ocr_results, image_directory)         
-    
+                            text_cords = text_box[1]
+                            text_object = BoundingBox(tuple(text_cords), ocr_settings["resolution"])
+                            match = find_caption_by_distance(
+                                bbox_object, 
+                                text_object, 
+                                offset= ocr_offset_dist,
+                                direction= ocr_settings["caption"]["direction"]
+                            )
+                            if match:
+                                bbox_matches.append(match)
+                                # print('matched text id: ', text_box[0])
+                                # print(match)
+                        
+                        # print('found matches: ', len(bbox_matches))
+
+                        # print(bbox_matches)
+                        # caption = None
+                        if len(bbox_matches) == 0: # if more than one bbox matches, move to text analysis
+                            pass
+                        else:
+                            # get text from image   
+                            for match in bbox_matches:
+                                # print(match.bbox_px())
+                                ########################
+                                # TODO: decode text from strings. Tests with multiple image files.
+
+                                ocr_caption = ocr.region_to_string(page_image[0], match.bbox_px(), config='--psm 3 --oem 1')
+                                # print('ocr box: ', match.bbox_px())
+                                # print('orc caption: ', ocr_caption)
+                        
+                                if ocr_caption:
+                                    try:
+                                        visual.set_caption(ocr_caption)
+                                    except Warning: # ignore warnings when caption is already set.
+                                        logger.warning("Caption already set for: " + str(match.bbox()))
+                    
+
+                        visual.set_location(FilePath(root_path=OUTPUT_DIR, file_path= entry_id + '/'  + pdf_file_name + '/' + f'{page_id}-{bbox_id}.png'))
+
+                        # visual.set_location(FilePath(str(image_directory), f'{page_id}-{bbox_id}.png' ))
+
+                        entry.add_visual(visual)
+
+            ocr.crop_images_to_bbox(ocr_results, image_directory)         
+            del page_image # free memory
+
     end_processing_time = time.time()
     processing_time = end_processing_time - start_processing_time
     logger.info("PDF processing time: " + str(processing_time))
@@ -402,23 +404,28 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
 
     # Copy MODS file and PDF files to output directory
     temp_entry_directory = create_output_dir( os.path.join(TMP_DIR, entry_id))
-    print("temp_entry_directory", temp_entry_directory)
+    
 
     mods_file_name = pathlib.Path(MODS_FILE).stem + ".xml"
     if not os.path.exists(os.path.join(temp_entry_directory, mods_file_name)):
         shutil.copy2(MODS_FILE, temp_entry_directory)
 
 
-    for pdf in PDF_FILES:
-        if not os.path.exists(os.path.join(temp_entry_directory, os.path.basename(pdf) )):
-            shutil.copy2(pdf, temp_entry_directory)
-    
-    # SAVE METADATA TO files
+    if len(PDF_FILES) > 0:
+        for pdf in PDF_FILES:
+            if not os.path.exists(os.path.join(temp_entry_directory, os.path.basename(pdf) )):
+                shutil.copy2(pdf, temp_entry_directory)
+        
+    logger.info("Extracted visuals:" + str(entry.total_visuals))
 
+    # SAVE METADATA TO files
     csv_file = str(os.path.join(entry_directory, entry_id) + "-metadata.csv")
     json_file = str(os.path.join(entry_directory, entry_id) + "-metadata.json")
     entry.save_to_csv(csv_file)
     entry.save_to_json(json_file)
+
+    if not entry.iid:
+        logger.warning("No identifier found in MODS file")
 
     # SAVE settings to json file
     settings_file = str(os.path.join(entry_directory, entry_id) + "-settings.json")
@@ -433,10 +440,10 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
   
 if __name__ == "__main__":
     
-    app()
+    # app()
 
-    # pipeline("00000",
-    #         "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/",
-    #         "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/",
-    #         "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/tmp/"
-    #         )
+    pipeline("00001",
+            "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/",
+            "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/",
+            "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/tmp/"
+            )

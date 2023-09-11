@@ -2,8 +2,10 @@ import requests
 import re
 import os
 import pathlib
+import warnings
 from pymods import MODSReader
 from bs4 import BeautifulSoup
+
 
 
 from aidapta.metadata import Person, Faculty, Department
@@ -163,8 +165,12 @@ def extract_mods_metadata(mods_file: str) -> dict:
             l = {"code": language.code, "authority": language.authority}
             languages.append(l)
         meta["language"] = languages
-
-        meta["identifiers"] = record.identifiers[0].text # MODS allows multiple identifiers, 
+        
+        # Identifiers
+        if record.identifiers: # some MODS files don't have identifiers
+            meta["identifiers"] = record.identifiers[0].text # MODS allows multiple identifiers, 
+        else:
+            warnings.warn("No identifiers found in MODS file")
         # only the first one is used. Uuid is used as identifier
         meta["iid"] = record.iid
         meta["internet_media_type"] = record.internet_media_type

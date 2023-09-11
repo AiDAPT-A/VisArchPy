@@ -17,9 +17,7 @@ data/detect/
 data/ocr-test/
 
 img/
-data/student-data/
-data/test-download/
-data/caption-tests/
+data/
 vector/
 *.html
 

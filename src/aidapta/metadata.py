@@ -12,6 +12,47 @@ from typing import Optional, List
 
 
 @dataclass
+class FilePath:
+    """
+    Represents a file path
+    """
+    root_path: str
+    file_path: str
+
+    def __post_init__(self):
+        if not isinstance(self.root_path, str):
+            raise TypeError("root_path must be a string")
+        if not isinstance(self.file_path, str):
+            raise TypeError("file_path must be a string")
+
+    def update_root_path(self, root_path: str) -> None:
+        """Updates the root path of the file path
+        
+        Parameters
+        ----------
+        root_path: str
+            new root path
+        
+        Returns
+        -------
+        None
+        """
+        self.root_path = root_path
+
+    def full_path(self) -> str:
+        """Returns the full path of the file path
+        
+        Returns
+        -------
+        str
+            full path of the file path
+        """
+        return str(os.path.join(self.root_path, self.file_path))
+    
+    def __str__(self) -> str:
+        return os.path.join(self.root_path, self.file_path)
+
+@dataclass
 class Person:
     """
     Represents a person 
@@ -42,39 +83,11 @@ class Document:
     """
     Represents a document
     """
-    location: str # location where the document is stored
-
-
-@dataclass
-class FilePath:
-    """
-    Represents a file path
-    """
-    root_path: str
-    file_path: str
-
-    def __post_init__(self):
-        if not isinstance(self.root_path, str):
-            raise TypeError("root_path must be a string")
-        if not isinstance(self.file_path, str):
-            raise TypeError("file_path must be a string")
-
-    def update_root_path(self, root_path: str) -> None:
-        """Updates the root path of the file path
-        
-        Parameters
-        ----------
-        root_path: str
-            new root path
-        
-        Returns
-        -------
-        None
-        """
-        self.root_path = root_path
+    location: FilePath = field(init=True, default=None) # location where the visual is stored
     
-    def __str__(self) -> str:
-        return os.path.join(self.root_path, self.file_path)
+    def update_root_path(self, path: str) -> None:
+        """Updates the root path of the file path """
+        self.location.update_root_path(path)
 
 
 @dataclass
@@ -87,10 +100,13 @@ class Visual:
     document_page: int # page number in the document index
     bbox: List[int] # bounding box of the visual in the document page
     bbox_units: str # units of the bounding box
-    id : Optional[str] = field(init=True, default=str(uuid.uuid4())) # unique identifier
+    id : Optional[str] = field(init=False) # unique identifier
     caption: Optional[list] = field(init=False, default=None) # caption of the visual    
     visual_type: Optional[str] = field(init=False, default=None) # one of: photo, drawing, map, etc
     location: FilePath = field(init=False, default=None) # location where the visual is stored
+
+    def __post_init__(self):
+        self.id = str(uuid.uuid4())
 
     def set_visual_type(self, visual_type: str) -> None:
         """Sets the visual type. One of photo, drawing, map, etc.
@@ -202,8 +218,12 @@ class Metadata:
     purl: List = field(init=False) # persistent URL
     type_resource: str = field(init=False) # type of resource
     web_url: str = field(init=False, default=None) # URL at Educational Repository
-    
+    # total number of images/visuals extracted from the PDF files for
+    # this entry in the repository
+    total_visuals: Optional[int] = field(init=False, default=0)
     visuals: Optional[List[Visual]] = field(init=False, default=None)
+
+
     # pdf_location: Optional[str] = field(init=False, default=None) # location of the PDF file
 
     def set_metadata(self, metadata: dict) -> None:
@@ -320,10 +340,11 @@ class Metadata:
         if self.web_url and overwrite == False:
             raise ValueError('base URL already set. User overwrite=True to overwrite it.')
         else:
-            if self.uuid[:5] == 'uuid:': # some uuids start with uuid:
-                self.web_url = f'{base_url}{self.uuid}' 
-            else: # pure uuids do not start with uuid:
-                self.web_url = f'{base_url}uuid:{self.uuid}'
+            if self.uuid is not None:
+                if self.uuid[:5] == 'uuid:': # some uuids start with uuid:
+                    self.web_url = f'{base_url}{self.uuid}' 
+                else: # pure uuids do not start with uuid:
+                    self.web_url = f'{base_url}uuid:{self.uuid}'
     
     def add_visual(self, visual: Visual) -> None:
         """ Adds a visual to the metadata 
@@ -341,6 +362,9 @@ class Metadata:
         if not self.visuals:
             self.visuals = []
         self.visuals.append(visual)
+
+        # update total number of visuals
+        self.total_visuals += 1
 
     def as_dict(self) -> dict:
         """ Returns metadata as a dictionary """
@@ -386,7 +410,7 @@ class Metadata:
 def main() -> None:
     from aidapta.utils import extract_mods_metadata
 
-    meta_blob = extract_mods_metadata('data-pipelines/data/00001.mods.xml')
+    meta_blob = extract_mods_metadata('/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/00002_mods.xml')
     
     person1 = Person(name='John Doe', role='author')
     person2 = Person(name='Jane Doe', role='mentor')
@@ -396,11 +420,12 @@ def main() -> None:
     faculty1 = Faculty(name='Faculty of Architecture', departments=[department1])
 
     document1 = Document(location='data-pipelines/data/4563050_AmberLuesink_P5Report_TheRevivaloftheJustCity.pdf')
+    print(document1.location )
 
-    meta_data = Metadata(documents=[document1])
-    meta_data.set_metadata(meta_blob)
+    # meta_data = Metadata(documents=[document1])
+    # meta_data.set_metadata(meta_blob)
 
-    print(meta_data.as_dict())
+    # print(meta_data.as_dict())
     # meta_data.write_to_csv('data-pipelines/data/metadata.csv')
 
     # print(meta_data.as_dataframe())
