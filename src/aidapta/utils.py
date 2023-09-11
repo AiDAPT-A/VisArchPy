@@ -165,8 +165,7 @@ def extract_mods_metadata(mods_file: str) -> dict:
             l = {"code": language.code, "authority": language.authority}
             languages.append(l)
         meta["language"] = languages
-
-        print(record.identifiers)
+        
         # Identifiers
         if record.identifiers: # some MODS files don't have identifiers
             meta["identifiers"] = record.identifiers[0].text # MODS allows multiple identifiers, 
