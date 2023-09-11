@@ -23,6 +23,7 @@ from aidapta.layout import sort_layout_elements, create_output_dir
 from aidapta.metadata import Document, Metadata, Visual, FilePath
 from aidapta.captions import OffsetDistance
 from typing_extensions import Annotated 
+from pdfminer.pdftypes import PDFNotImplementedError
 
 # Disable PIL image size limit
 import PIL.Image
@@ -115,7 +116,7 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
             "width": 50,
             "height": 50,
         },
-        "resolution": 250, # analysis resolution, dpi
+        "resolution": 200, # analysis resolution, dpi
     }
 
     # Create output directory for the entry
@@ -267,12 +268,10 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
                     logger.warning("Image with unsupported format wasn't saved:" + img.name)
                 except UnboundLocalError:
                     logger.warning("Decocder doesn't support image stream, therefore not saved:" + img.name)
-                    
+                except PDFNotImplementedError:
+                    logger.warning("PDF stream unsupported format,  image not saved:" + img.name)
+
                 visual.set_location(FilePath( root_path=OUTPUT_DIR, file_path= entry_id + '/'  + pdf_file_name + '/' + image_file_name))
-                                    #      str(image_directory), # sets root path
-                                    #      image_file_name
-                                    #     ) 
-                                    # ) 
             
                 # add visual to entry
                 entry.add_visual(visual)
@@ -444,8 +443,8 @@ if __name__ == "__main__":
     
     # app()
 
-    pipeline("00000",
-            "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/",
+    pipeline("00063",
+            "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/pdf-issues/",
             "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/",
             "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/tmp/"
             )
