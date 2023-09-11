@@ -156,6 +156,7 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
         if f.startswith(entry_id) and f.endswith(".pdf"):
             PDF_FILES.append(DATA_DIR+f)
     
+    logger.info("PDF files in entry: " + str(len(PDF_FILES)))
 
     # INITIALISE METADATA OBJECT
     entry = Metadata()
@@ -408,10 +409,11 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
         shutil.copy2(MODS_FILE, temp_entry_directory)
 
 
-    for pdf in PDF_FILES:
-        if not os.path.exists(os.path.join(temp_entry_directory, os.path.basename(pdf) )):
-            shutil.copy2(pdf, temp_entry_directory)
-    
+    if len(PDF_FILES) > 0:
+        for pdf in PDF_FILES:
+            if not os.path.exists(os.path.join(temp_entry_directory, os.path.basename(pdf) )):
+                shutil.copy2(pdf, temp_entry_directory)
+        
     # SAVE METADATA TO files
 
     csv_file = str(os.path.join(entry_directory, entry_id) + "-metadata.csv")
@@ -434,8 +436,8 @@ if __name__ == "__main__":
     
     # app()
 
-    pipeline("00000",
-            "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/",
+    pipeline("00039",
+            "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/pdf-issues/",
             "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/",
             "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/tmp/"
             )
