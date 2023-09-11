@@ -175,6 +175,7 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
                                          ocr_settings["caption"]["offset"][1])
 
     # PROCESS PDF FILES
+    pdf_document_counter = 1
     start_processing_time = time.time()
     for pdf in PDF_FILES:
         # print("--> Processing file:", pdf)
@@ -184,7 +185,7 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
         entry.add_document(pdf_document)
 
         # PREPARE OUTPUT DIRECTORY
-        pdf_file_name = pathlib.Path(pdf_document.location).stem
+        pdf_file_name = 'pdf-' + str(pdf_document_counter).zfill(3)
         image_directory = create_output_dir(entry_directory, 
                                             pdf_file_name) # returns a pathlib object
                
@@ -276,6 +277,7 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
                 # add visual to entry
                 entry.add_visual(visual)
 
+        pdf_document_counter += 1
         del pages # free memory
 
         # PROCESS PAGE USING OCR ANALYSIS
@@ -441,8 +443,8 @@ if __name__ == "__main__":
     
     # app()
 
-    pipeline("00097",
-            "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/pdf-issues/",
+    pipeline("00000",
+            "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/",
             "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/",
             "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/tmp/"
             )
