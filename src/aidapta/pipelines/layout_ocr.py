@@ -416,8 +416,9 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
             if not os.path.exists(os.path.join(temp_entry_directory, os.path.basename(pdf) )):
                 shutil.copy2(pdf, temp_entry_directory)
         
-    # SAVE METADATA TO files
+    logger.info("Extracted visuals:" + str(entry.total_visuals))
 
+    # SAVE METADATA TO files
     csv_file = str(os.path.join(entry_directory, entry_id) + "-metadata.csv")
     json_file = str(os.path.join(entry_directory, entry_id) + "-metadata.json")
     entry.save_to_csv(csv_file)
@@ -439,10 +440,10 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
   
 if __name__ == "__main__":
     
-    app()
+    # app()
 
-    # pipeline("00001",
-    #         "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/",
-    #         "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/",
-    #         "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/tmp/"
-    #         )
+    pipeline("00001",
+            "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/",
+            "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/",
+            "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/tmp/"
+            )
