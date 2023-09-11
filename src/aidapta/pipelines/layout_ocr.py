@@ -116,7 +116,7 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
             "width": 50,
             "height": 50,
         },
-        "resolution": 200, # analysis resolution, dpi
+        "resolution": 250, # analysis resolution, dpi
     }
 
     # Create output directory for the entry
@@ -138,11 +138,6 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
 
     # Add the file handler to the logger
     logger.addHandler(file_handler)
-
-    # logging.basicConfig(filename=os.path.join(OUTPUT_DIR, 
-    #                     entry_id, entry_id + '.log'), 
-    #                     encoding='utf-8', 
-    #                     level=logging.INFO)
     
     logger.info("Starting Layout+OCR pipeline for entry: " + entry_id)
 
@@ -444,10 +439,10 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
   
 if __name__ == "__main__":
     
-    # app()
+    app()
 
-    pipeline("00001",
-            "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/",
-            "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/",
-            "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/tmp/"
-            )
+    # pipeline("00001",
+    #         "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/",
+    #         "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/",
+    #         "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/tmp/"
+    #         )
