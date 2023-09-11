@@ -38,6 +38,16 @@ class FilePath:
         None
         """
         self.root_path = root_path
+
+    def full_path(self) -> str:
+        """Returns the full path of the file path
+        
+        Returns
+        -------
+        str
+            full path of the file path
+        """
+        return str(os.path.join(self.root_path, self.file_path))
     
     def __str__(self) -> str:
         return os.path.join(self.root_path, self.file_path)
@@ -73,9 +83,11 @@ class Document:
     """
     Represents a document
     """
-    location: FilePath = field(init=False, default=None) # location where the visual is stored
-
-
+    location: FilePath = field(init=True, default=None) # location where the visual is stored
+    
+    def update_root_path(self, path: str) -> None:
+        """Updates the root path of the file path """
+        self.location.update_root_path(path)
 
 
 @dataclass
@@ -398,7 +410,7 @@ class Metadata:
 def main() -> None:
     from aidapta.utils import extract_mods_metadata
 
-    meta_blob = extract_mods_metadata('data-pipelines/data/00001.mods.xml')
+    meta_blob = extract_mods_metadata('/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/00002_mods.xml')
     
     person1 = Person(name='John Doe', role='author')
     person2 = Person(name='Jane Doe', role='mentor')
@@ -408,11 +420,12 @@ def main() -> None:
     faculty1 = Faculty(name='Faculty of Architecture', departments=[department1])
 
     document1 = Document(location='data-pipelines/data/4563050_AmberLuesink_P5Report_TheRevivaloftheJustCity.pdf')
+    print(document1.location )
 
-    meta_data = Metadata(documents=[document1])
-    meta_data.set_metadata(meta_blob)
+    # meta_data = Metadata(documents=[document1])
+    # meta_data.set_metadata(meta_blob)
 
-    print(meta_data.as_dict())
+    # print(meta_data.as_dict())
     # meta_data.write_to_csv('data-pipelines/data/metadata.csv')
 
     # print(meta_data.as_dataframe())
