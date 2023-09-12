@@ -424,7 +424,7 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
     entry.save_to_csv(csv_file)
     entry.save_to_json(json_file)
 
-    if not entry.iid:
+    if not entry.uuid:
         logger.warning("No identifier found in MODS file")
 
     # SAVE settings to json file
@@ -440,10 +440,11 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
   
 if __name__ == "__main__":
     
-    # app()
+    app()
 
-    pipeline("00001",
-            "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/",
-            "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/",
-            "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/tmp/"
-            )
+    # pipeline("00001",
+    #         "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/",
+    #         "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/",
+    #         "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/tmp/"
+    #         )
+
