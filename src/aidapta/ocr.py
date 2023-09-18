@@ -105,6 +105,11 @@ def extract_bboxes_from_horc(images: list[Image], config: str ='--oem 1 --psm 1'
                     'bboxes': {'id1': [bbox], ... 'idn': [bbox] }, 
                     'text_bboxes': {'id1': [bbox], ... 'idn': [bbox] } 
         } }
+
+    Raises:
+    -------
+        ValueError, if resize is larger than 32767 pixels, the current limit in Tesseract 5.3
+        
     """
     _config = config + ' hocr'
 
@@ -116,6 +121,9 @@ def extract_bboxes_from_horc(images: list[Image], config: str ='--oem 1 --psm 1'
         page_counter = 1
         # use a counter to keep track of page number
     
+    if resize > 32767:
+        raise ValueError('resize must be less than 32767 pixels, the current limit in Tesseract 5.3')
+
     for img in images:
         # print("extracting box for image: ", img)
 
