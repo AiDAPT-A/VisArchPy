@@ -416,7 +416,7 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
             if not os.path.exists(os.path.join(temp_entry_directory, os.path.basename(pdf) )):
                 shutil.copy2(pdf, temp_entry_directory)
         
-    logger.info("Extracted visuals:" + str(entry.total_visuals))
+    logger.info("Extracted visuals: " + str(entry.total_visuals))
 
     # SAVE METADATA TO files
     csv_file = str(os.path.join(entry_directory, entry_id) + "-metadata.csv")
