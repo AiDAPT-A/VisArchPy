@@ -16,6 +16,7 @@ import aidapta.ocr as ocr
 from typing import Optional
 from pdfminer.high_level import extract_pages
 from pdfminer.image import ImageWriter
+from pdfminer.pdfparser import PDFSyntaxError
 from tqdm import tqdm
 from aidapta.utils import extract_mods_metadata, get_entry_number_from_mods
 from aidapta.captions import find_caption_by_distance, find_caption_by_text, BoundingBox
@@ -194,6 +195,14 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
 
         # PROCESS SINGLE PDF 
         pdf_pages = extract_pages(pdf_document.location.full_path())
+
+        # this checks for malformed or corrupted PDF files
+        ### ==================================== ###
+        try:
+            len(list(pdf_pages))
+        except PDFSyntaxError as e:
+                logger.error("PDFSyntaxError. Couldn't read: " + pdf_document.location.file_path)    
+        ### ==================================== ###
 
         pages = []
         for page in tqdm(pdf_pages, desc="Sorting pages layout analysis", unit="pages"):
@@ -453,7 +462,7 @@ if __name__ == "__main__":
     
     # app()
 
-    pipeline("00443",
+    pipeline("00376",
             "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/pdf-issues/",
             "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/",
             "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/tmp/"
