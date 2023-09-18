@@ -121,7 +121,7 @@ def extract_bboxes_from_horc(images: list[Image], config: str ='--oem 1 --psm 1'
 
         # resize image if it is too large
         if img.width > resize or img.height > resize:
-            img.resize((resize, resize), Image.ANTIALIAS)
+            img.thumbnail((resize, resize))
         else:
             pass
         horc_data = pytesseract.image_to_pdf_or_hocr(img, extension='hocr', config=_config)
