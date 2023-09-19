@@ -75,7 +75,7 @@ def convert_pdf_to_image(pdf_file: str, dpi:int = 200, **kargs)-> list[Image]:
 
 
 def extract_bboxes_from_horc(images: list[Image], config: str ='--oem 1 --psm 1', 
-                             page_number:int =None, entry_id: str=None) -> dict:
+                             page_number:int =None, entry_id: str=None, resize: int = 32767) -> dict:
     """
     Extract bounding boxes for elements from hOCR document.
 
@@ -90,6 +90,9 @@ def extract_bboxes_from_horc(images: list[Image], config: str ='--oem 1 --psm 1'
         page number for the PDF file. Optional.
     entry_id: 
         id for entry (an entry identifies a group of files somehow related). Optional.
+    resize: int
+        maximun with or height allowed before resizing is enforced. Optional. This avoids to send images that are
+        too large to be processed by Tesseract. Default: 32767 pixels (current limite in Tessaract 5.3)
     
     Returns
     -------
@@ -102,6 +105,11 @@ def extract_bboxes_from_horc(images: list[Image], config: str ='--oem 1 --psm 1'
                     'bboxes': {'id1': [bbox], ... 'idn': [bbox] }, 
                     'text_bboxes': {'id1': [bbox], ... 'idn': [bbox] } 
         } }
+
+    Raises:
+    -------
+        ValueError, if resize is larger than 32767 pixels, the current limit in Tesseract 5.3
+        
     """
     _config = config + ' hocr'
 
@@ -113,7 +121,17 @@ def extract_bboxes_from_horc(images: list[Image], config: str ='--oem 1 --psm 1'
         page_counter = 1
         # use a counter to keep track of page number
     
+    if resize > 32767:
+        raise ValueError('resize must be less than 32767 pixels, the current limit in Tesseract 5.3')
+
     for img in images:
+        # print("extracting box for image: ", img)
+
+        # resize image if it is too large
+        if img.width > resize or img.height > resize:
+            img.thumbnail((resize, resize))
+        else:
+            pass
         horc_data = pytesseract.image_to_pdf_or_hocr(img, extension='hocr', config=_config)
         soup = BeautifulSoup(horc_data, 'html.parser')
         paragraphs = soup.find_all('p', class_='ocr_par')
