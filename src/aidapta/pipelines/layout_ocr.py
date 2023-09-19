@@ -12,6 +12,7 @@ import time
 import logging
 import typer
 import json
+import copy
 import aidapta.ocr as ocr
 from typing import Optional
 from pdfminer.high_level import extract_pages
@@ -195,21 +196,19 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
 
         # PROCESS SINGLE PDF 
         pdf_pages = extract_pages(pdf_document.location.full_path())
+        pages = []
 
         # this checks for malformed or corrupted PDF files
         ### ==================================== ###
         try:
-            len(list(pdf_pages))
-        except PDFSyntaxError as e:
-                logger.error("PDFSyntaxError. Couldn't read: " + pdf_document.location.file_path)    
-        ### ==================================== ###
-
-        pages = []
-        for page in tqdm(pdf_pages, desc="Sorting pages layout analysis", unit="pages"):
-            elements = sort_layout_elements(page, img_width=layout_settings["image"]["width"],
-                                            img_height = layout_settings["image"]["height"] 
-                                            )
-            pages.append(elements)
+            for page in tqdm(pdf_pages, desc="Sorting pages layout analysis", unit="pages"):
+                elements = sort_layout_elements(page, img_width=layout_settings["image"]["width"],
+                                                img_height = layout_settings["image"]["height"] 
+                                                )
+                pages.append( elements )
+            
+        except PDFSyntaxError:
+            logger.error("PDFSyntaxError. Couldn't read: " + pdf_document.location.file_path ) 
 
         no_image_pages = []
 
@@ -462,7 +461,7 @@ if __name__ == "__main__":
     
     # app()
 
-    pipeline("00376",
+    pipeline("00320",
             "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/pdf-issues/",
             "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/",
             "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/tmp/"
