@@ -206,9 +206,10 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
                                                 img_height = layout_settings["image"]["height"] 
                                                 )
                 pages.append( elements )
-            
-        except PDFSyntaxError:
+        except PDFSyntaxError: # skip malformed or corrupted PDF files
             logger.error("PDFSyntaxError. Couldn't read: " + pdf_document.location.file_path ) 
+        finally:
+            del elements # free memory
 
         no_image_pages = []
 
@@ -281,6 +282,10 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
                     logger.warning("PDF stream unsupported format,  image not saved:" + img.name)
                 except PIL.UnidentifiedImageError:
                     logger.warning("PIL.UnidentifiedImageError io.BytesIO,  image not saved:" + img.name)
+                except IndexError: # avoid decoding errors in PNG predictor for some images
+                    logger.warning("IndexError, png predictor/decoder failed:" + img.name)
+                except KeyError: # avoid decoding error of JBIG2 images
+                    logger.warning("KeyError, JBIG2Globals decoder failed:" + img.name)
                 else:
                     visual.set_location(FilePath( root_path=OUTPUT_DIR, file_path= entry_id + '/'  + pdf_file_name + '/' + image_file_name))
             
@@ -461,8 +466,9 @@ if __name__ == "__main__":
     
     # app()
 
-    pipeline("00320",
+    pipeline("00193",
             "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/pdf-issues/",
             "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/",
             "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/tmp/"
             )
+    
