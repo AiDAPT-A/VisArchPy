@@ -178,7 +178,7 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
     pdf_document_counter = 1
     start_processing_time = time.time()
     for pdf in PDF_FILES:
-        # print("--> Processing file:", pdf)
+        print("--> Processing file:", pdf)
         pdf_root = DATA_DIR
         pdf_file_path = os.path.basename(pdf).split("/")[-1] # file name with extension
         logger.info("Processing file: " + pdf_file_path)
@@ -208,7 +208,10 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
                 pages.append( elements )
         except PDFSyntaxError: # skip malformed or corrupted PDF files
             logger.error("PDFSyntaxError. Couldn't read: " + pdf_document.location.file_path ) 
-        finally:
+        except AssertionError as e:
+            logger.error("AssertionError. Unsupported font: " + pdf_document.location.file_path + str(e) )
+        else: 
+            # TODO: test this only happnes when no exception is raised
             del elements # free memory
 
         no_image_pages = []
@@ -428,7 +431,6 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
 
     # Copy MODS file and PDF files to output directory
     temp_entry_directory = create_output_dir( os.path.join(TMP_DIR, entry_id))
-    
 
     mods_file_name = pathlib.Path(MODS_FILE).stem + ".xml"
     if not os.path.exists(os.path.join(temp_entry_directory, mods_file_name)):
@@ -464,11 +466,11 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
   
 if __name__ == "__main__":
     
-    app()
+    # app()
 
-    # pipeline("00000",
-    #         "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/",
-    #         "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/",
-    #         "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/tmp/"
-    #         )
+    pipeline("01177",
+            "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/pdf-issues/",
+            "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/",
+            "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/tmp/"
+            )
     
