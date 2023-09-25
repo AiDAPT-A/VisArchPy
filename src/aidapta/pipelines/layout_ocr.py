@@ -198,23 +198,28 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
         pdf_pages = extract_pages(pdf_document.location.full_path())
         pages = []
 
-        # this checks for malformed or corrupted PDF files
+        no_image_pages = [] # collects pages where no images were found by layout analysis
+        # this checks for malformed or corrupted PDF files, and unsupported fonts and some bugs in pdfminer
         ### ==================================== ###
         try:
             for page in tqdm(pdf_pages, desc="Sorting pages layout analysis", unit="pages"):
                 elements = sort_layout_elements(page, img_width=layout_settings["image"]["width"],
                                                 img_height = layout_settings["image"]["height"] 
                                                 )
-                pages.append( elements )
+                
         except PDFSyntaxError: # skip malformed or corrupted PDF files
             logger.error("PDFSyntaxError. Couldn't read: " + pdf_document.location.file_path ) 
-        except AssertionError as e:
+        except AssertionError as e: # skip unsupported fonts
+            # no_image_pages.append(page) # pass page to OCR analysis
             logger.error("AssertionError. Unsupported font: " + pdf_document.location.file_path + str(e) )
+        except TypeError as e: # skip bug in pdfminer
+            # no_image_pages.append(page) # pass page to OCR analysis
+            logger.error("TypeError. Bug with Predictor: " + pdf_document.location.file_path + str(e) )
         else: 
+            pages.append( elements )
             # TODO: test this only happnes when no exception is raised
             del elements # free memory
 
-        no_image_pages = []
 
         # PROCESS PAGE USING LAYOUT ANALYSIS
         for page in tqdm(pages, desc="layout analysis", total=len(pages), 
@@ -266,7 +271,7 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
                         except Warning: # ignore warnings when caption is already set.
                             logger.warning("Caption already set for image: " + img.name)
                             pass
-                        
+
                 # rename image name to include page number
                 img.name =  str(entry_id) + "-page" + str(page["page_number"]) + "-" + img.name
                 # save image to file
@@ -468,7 +473,7 @@ if __name__ == "__main__":
     
     # app()
 
-    pipeline("01177",
+    pipeline("01306",
             "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/pdf-issues/",
             "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/",
             "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/tmp/"
