@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "aidapta"
-version = "0.2.4"
+version = "0.2.5"
 authors = [
     {name = "Manuel Garcia", email = "m.g.garciaalvarez@tudelft.nl"},
 ]
@@ -22,7 +22,7 @@ classifiers = ["Development Status :: 3 - Alpha",
 dependencies = [
     "Pillow",
     "requests",
-    "pdfminer.six",
+    "pdfminer.six[image]",
     "beautifulsoup4",
     "shapely",
     "pandas",

@@ -178,7 +178,7 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
     pdf_document_counter = 1
     start_processing_time = time.time()
     for pdf in PDF_FILES:
-        # print("--> Processing file:", pdf)
+        print("--> Processing file:", pdf)
         pdf_root = DATA_DIR
         pdf_file_path = os.path.basename(pdf).split("/")[-1] # file name with extension
         logger.info("Processing file: " + pdf_file_path)
@@ -198,7 +198,8 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
         pdf_pages = extract_pages(pdf_document.location.full_path())
         pages = []
 
-        # this checks for malformed or corrupted PDF files
+        no_image_pages = [] # collects pages where no images were found by layout analysis
+        # this checks for malformed or corrupted PDF files, and unsupported fonts and some bugs in pdfminer
         ### ==================================== ###
         try:
             for page in tqdm(pdf_pages, desc="Sorting pages layout analysis", unit="pages"):
@@ -206,12 +207,21 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
                                                 img_height = layout_settings["image"]["height"] 
                                                 )
                 pages.append( elements )
+                
         except PDFSyntaxError: # skip malformed or corrupted PDF files
             logger.error("PDFSyntaxError. Couldn't read: " + pdf_document.location.file_path ) 
-        finally:
+        except AssertionError as e: # skip unsupported fonts
+            # no_image_pages.append(page) # pass page to OCR analysis
+            logger.error("AssertionError. Unsupported font: " + pdf_document.location.file_path + str(e) )
+        except TypeError as e: # skip bug in pdfminer
+            # no_image_pages.append(page) # pass page to OCR analysis
+            logger.error("TypeError. Bug with Predictor: " + pdf_document.location.file_path + str(e) )
+        else: 
+            # continue
+            # pages.append( elements )
+            # TODO: test this only happnes when no exception is raised
             del elements # free memory
 
-        no_image_pages = []
 
         # PROCESS PAGE USING LAYOUT ANALYSIS
         for page in tqdm(pages, desc="layout analysis", total=len(pages), 
@@ -263,7 +273,7 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
                         except Warning: # ignore warnings when caption is already set.
                             logger.warning("Caption already set for image: " + img.name)
                             pass
-                        
+
                 # rename image name to include page number
                 img.name =  str(entry_id) + "-page" + str(page["page_number"]) + "-" + img.name
                 # save image to file
@@ -286,6 +296,8 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
                     logger.warning("IndexError, png predictor/decoder failed:" + img.name)
                 except KeyError: # avoid decoding error of JBIG2 images
                     logger.warning("KeyError, JBIG2Globals decoder failed:" + img.name)
+                except TypeError: # avoid filter error with PDFObjRef
+                    logger.warning("TypeError, filter error PDFObjRef:" + img.name)
                 else:
                     visual.set_location(FilePath( root_path=OUTPUT_DIR, file_path= entry_id + '/'  + pdf_file_name + '/' + image_file_name))
             
@@ -428,7 +440,6 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
 
     # Copy MODS file and PDF files to output directory
     temp_entry_directory = create_output_dir( os.path.join(TMP_DIR, entry_id))
-    
 
     mods_file_name = pathlib.Path(MODS_FILE).stem + ".xml"
     if not os.path.exists(os.path.join(temp_entry_directory, mods_file_name)):
@@ -466,8 +477,8 @@ if __name__ == "__main__":
     
     app()
 
-    # pipeline("00000",
-    #         "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/",
+    # pipeline("01960",
+    #         "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/pdf-issues/",
     #         "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/",
     #         "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/tmp/"
     #         )
