@@ -475,11 +475,11 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
   
 if __name__ == "__main__":
     
-    # app()
+    app()
 
-    pipeline("01960",
-            "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/pdf-issues/",
-            "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/",
-            "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/tmp/"
-            )
+    # pipeline("01960",
+    #         "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/pdf-issues/",
+    #         "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/",
+    #         "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/tmp/"
+    #         )
     
