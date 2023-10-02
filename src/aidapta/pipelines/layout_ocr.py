@@ -206,6 +206,7 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
                 elements = sort_layout_elements(page, img_width=layout_settings["image"]["width"],
                                                 img_height = layout_settings["image"]["height"] 
                                                 )
+                pages.append( elements )
                 
         except PDFSyntaxError: # skip malformed or corrupted PDF files
             logger.error("PDFSyntaxError. Couldn't read: " + pdf_document.location.file_path ) 
@@ -216,7 +217,8 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
             # no_image_pages.append(page) # pass page to OCR analysis
             logger.error("TypeError. Bug with Predictor: " + pdf_document.location.file_path + str(e) )
         else: 
-            pages.append( elements )
+            # continue
+            # pages.append( elements )
             # TODO: test this only happnes when no exception is raised
             del elements # free memory
 
@@ -294,6 +296,8 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
                     logger.warning("IndexError, png predictor/decoder failed:" + img.name)
                 except KeyError: # avoid decoding error of JBIG2 images
                     logger.warning("KeyError, JBIG2Globals decoder failed:" + img.name)
+                except TypeError: # avoid filter error with PDFObjRef
+                    logger.warning("TypeError, filter error PDFObjRef:" + img.name)
                 else:
                     visual.set_location(FilePath( root_path=OUTPUT_DIR, file_path= entry_id + '/'  + pdf_file_name + '/' + image_file_name))
             
@@ -473,7 +477,7 @@ if __name__ == "__main__":
     
     # app()
 
-    pipeline("01306",
+    pipeline("01960",
             "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/pdf-issues/",
             "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/",
             "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/tmp/"
