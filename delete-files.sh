@@ -1,6 +1,6 @@
 #!/bin/bash
 
-backup="/backup"
+backup="/backup" # directory where the backup is stored
 original="/original"
 
 for dir in $( find $backup -type d )
@@ -13,8 +13,6 @@ do
             if [ -e "$original/$filename" ]
             then    
                 rm "$original/$filename" 
-            else
-                echo "File $filename does not exist in $original"
             fi
         fi
     done
