@@ -46,4 +46,5 @@ addopts = [
 
 [project.scripts]
 aidapta = "aidapta.cli:app"
+dino = "aidapta.pipelines.dinov2:app"
 
