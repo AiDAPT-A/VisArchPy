@@ -9,9 +9,10 @@ import pickle
 import numpy as np
 import pandas as pd
 from torch import Tensor
+from typing import Dict
 from transformers import AutoImageProcessor, AutoModel
 from transformers.modeling_outputs import BaseModelOutputWithPooling 
-from PIL import Image
+from PIL import Image, UnidentifiedImageError
 
 
 def save_pickle_dinov2(pickle_filename: str, model_outputs: BaseModelOutputWithPooling) -> None:
@@ -103,7 +104,7 @@ def save_csv_dinov2(csv_filename: str, tensor:Tensor) -> None:
     return None
 
 
-def transform_to_dinov2(image_file: str, model_name: str) -> Tensor:
+def transform_to_dinov2(image_file: str, model_name: str = 'facebook/dinov2-small') -> Dict[Tensor, BaseModelOutputWithPooling]:
     """
     Extract features from an image using DINOv2 model.
 
@@ -116,11 +117,14 @@ def transform_to_dinov2(image_file: str, model_name: str) -> Tensor:
 
     Returns
     -------
-    outputs : Tensor 
-        Last hidden state of DINOv2 model. Dimension with size 1 are removed.
+    results : Dict
+        Last hidden state of DINOv2 model as squeezed tensor, and model outputs object.
     """
 
-    image = Image.open(image_file)
+    try:
+        image = Image.open(image_file)
+    except UnidentifiedImageError:
+        raise IOError(f"Invialid image file: {image_file}")
 
     processor = AutoImageProcessor.from_pretrained(model_name)
     model = AutoModel.from_pretrained(model_name)
@@ -133,7 +137,10 @@ def transform_to_dinov2(image_file: str, model_name: str) -> Tensor:
     # remove dimensions of size 1, i.e. squeeze tensor
     squeezed_tensor = torch.squeeze(output_tensor)
 
-    return squeezed_tensor
+    results = {'tensor': squeezed_tensor,
+               'object': outputs}
+
+    return results
 
 
 
