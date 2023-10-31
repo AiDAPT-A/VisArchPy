@@ -31,7 +31,11 @@ dependencies = [
     "pdf2image",
     "pytesseract",
     "matplotlib",
-    "typer"
+    "typer",
+    "transformers",
+    "torch==2.1.0+cpu",
+    "torchaudio==2.1.0+cpu",
+    "torchvision==0.16.0+cpu",
 ]
 
 [tool.pytest.ini_options]
@@ -42,4 +46,5 @@ addopts = [
 
 [project.scripts]
 aidapta = "aidapta.cli:app"
+dino = "aidapta.pipelines.dinov2:app"
 
