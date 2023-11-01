@@ -1,7 +1,6 @@
 
 # Environments
 venv/
-venv2/
 
 # Compiled source
 docs/build/
@@ -17,7 +16,7 @@ data/detect/
 data/ocr-test/
 
 img/
-data/
+./data/
 vector/
 *.html
 
