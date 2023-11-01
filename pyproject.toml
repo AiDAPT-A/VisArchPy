@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "aidapta"
-version = "0.3.0"
+version = "0.3.1"
 authors = [
     {name = "Manuel Garcia", email = "m.g.garciaalvarez@tudelft.nl"},
 ]
@@ -33,9 +33,6 @@ dependencies = [
     "matplotlib",
     "typer",
     "transformers",
-    "torch==2.1.0+cpu",
-    "torchaudio==2.1.0+cpu",
-    "torchvision==0.16.0+cpu",
 ]
 
 [tool.pytest.ini_options]

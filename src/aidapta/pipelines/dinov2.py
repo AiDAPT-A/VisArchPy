@@ -43,8 +43,9 @@ def from_dir(
     
     # results will be saved in a subdirectory named after the input directory
     # and with the output directory as parent directory
-    output_dir = os.path.join(output, os.path.basename(directory))
-    os.makedirs(output, exist_ok=True)
+
+    output_dir = os.path.join(output, os.path.basename(directory.rstrip('/')))
+    os.makedirs(output_dir, exist_ok=True)
     files = os.listdir(directory)
 
     for file in tqdm(files, desc="Extracting features", unit="images"):
@@ -60,11 +61,11 @@ def from_dir(
             continue
             # TODO: improve error handling for CLI
         else:
-            save_csv_dinov2(os.path.join(output, filename + '.csv'), results['tensor'])
+            save_csv_dinov2(os.path.join(output_dir, filename + '.csv'), results['tensor'])
         
             # save pickle file
             if pickle:
-                save_pickle_dinov2(os.path.join(output, filename + '.pickle'), results['object'])
+                save_pickle_dinov2(os.path.join(output_dir, filename + '.pickle'), results['object'])
     
     return None
 
