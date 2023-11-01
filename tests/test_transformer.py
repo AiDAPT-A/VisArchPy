@@ -3,7 +3,8 @@ Unit tests for dinov2/transformer.py
 """
 
 import pytest
-
+from transformers.modeling_outputs import BaseModelOutputWithPooling 
+from torch import Tensor
 from aidapta.dinov2.transformer import save_pickle_dinov2, load_pickle_dinov2, transform_to_dinov2
 
 
@@ -21,13 +22,24 @@ def dinov2_model():
     """
     return 'facebook/dinov2-small'
 
-    
-def test_transfor_to_dinov2(image_file, dinov2_model):
+def test_output_type(image_file, dinov2_model):
+    """
+    Test that the output is a dictionary containing a tensor and an python 
+    object (BaseModelOutputWithPooling)
+    """
+
+    outputs = transform_to_dinov2(image_file, dinov2_model)
+
+    assert isinstance(outputs, dict)
+    assert isinstance(outputs['tensor'], Tensor)
+    assert isinstance(outputs['object'], BaseModelOutputWithPooling)
+
+def test_output_tensor_dimmensions(image_file, dinov2_model):
     """
     Test that the output is a tensor with the correct number or dimensions (2)
     """
 
     outputs = transform_to_dinov2(image_file, dinov2_model)
 
-    assert outputs.ndim == 2
+    assert outputs['tensor'].ndim == 2
 
