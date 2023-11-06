@@ -105,24 +105,107 @@ def plot_bounding_boxes(image_paths: List[str], transparency: float =0.25) -> No
     plt.show()
 
 
+
+
+def plot_boxes(images: List, kmeans, transparency: float =0.25) -> None:
+    """
+    Plots the bounding boxes of a list of images overlapping on the same plot.
+
+    Parameters
+    ----------
+    image_paths: List[str]
+        A list of image file paths.
+    transparency: float
+        The transparency of drawing lines. A value between 0 and 1. Default is 0.25.
+
+    Returns
+    -------
+    None
+
+    :param image_paths: A list of image file paths.
+    """
+
+
+    # images = [] # list of PIL.Image objects
+    image_widths = []
+    image_heights = []
+    for image_ in images:
+        # Open the image file using Pillow
+        # image = Image.open(image_path)
+        image_widths.append(image_.width)
+        image_heights.append(image_.height)
+        
+
+    # Create a figure and axis object
+    fig, ax = plt.subplots()
+    
+    # Set the figure size to the maximum image dimensions
+    fig.set_figwidth(max(image_widths))
+    fig.set_figheight(max(image_heights))
+
+    # Plot a dummy point to set the axis limits
+    ax.plot([1, 1])
+
+    import matplotlib 
+    cmap = matplotlib.cm.get_cmap('cool')
+
+    # Loop through the image paths and bounding boxes
+    for image in images:
+        # Get the bounding box for the current image
+        bbox = image.getbbox() 
+        width = image.width
+        height = image.height
+        center = (image.width/2, image.height/2)
+
+        prediction = kmeans.predict([[width, height]])
+        norm_prediction = prediction[0]/(3 -0) # notmalize to 0-1
+        rgba = cmap(norm_prediction)
+
+        print("prediction:", prediction, norm_prediction)
+
+        # Create a rectangle patch for the bounding box
+        # Origin is set to drwaing concentric rectangles 
+        rect = patches.Rectangle((bbox[0] - 0.5*width, bbox[1] - 0.5*height), width, height, 
+                                 linewidth=2, edgecolor=rgba, 
+                                 facecolor='none')
+
+        # Plot the bounding box
+        ax.add_patch(rect)
+    # Show the plot
+    plt.show()
+    
+    # TODO: continue test with data from data pipeline
+
+    
+
+
 if __name__ == "__main__":
     
     from sklearn.cluster import KMeans
     import numpy as np
 
 
-    areas = []
+    dims = []
     img_paths = get_image_paths(directory = 'dinov2-test/data', extensions =['jpg'])
     
+    images = [] # list of PIL.Image objects
     for img in img_paths:
         image = Image.open(img) 
         width = image.width
         height = image.height
-        area = width * height
-        areas.append(area)
+        # area = width * height
+        dims.append([width, height])
+        images.append(image)
 
-    X = np.array(areas)
+    X = np.array(dims)
+    # X = X.reshape(-1, 1)
+    # print(X)
 
-    
-    # kmeans = KMeans(n_clusters=2, random_state=0).fit(X)
+    kmeans = KMeans(n_clusters=4, random_state=0, n_init='auto').fit(X)
+  
+
+    plot_boxes(images, kmeans, transparency=0.25)
+
+
+
 
