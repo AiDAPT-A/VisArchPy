@@ -45,7 +45,7 @@ def get_image_paths(directory: str, extensions: List[str] = None) -> List[str]:
 
 
 def plot_boxes(images: List[str], cmap: str ='cool', predictor: Any = None,
-               show: bool = True, save_to_file: str = None) -> None:
+               show: bool = True, size: int = 10, save_to_file: str = None) -> None:
     """
     Plots the bounding boxes of a list of images overlapping on the same plot.
 
@@ -62,12 +62,20 @@ def plot_boxes(images: List[str], cmap: str ='cool', predictor: Any = None,
         width and height, and 20 classes will be used.
     show: bool
         Shows plot. Default is True.
+    size: int
+        Size of the plot in inches. Default is 10. This value influences
+        resolution and size of saved plot.
     save_to_file: str
         Path to a PNG file to save the plot. If None, no file is saved.
 
     Returns
     -------
     None
+
+    Raises
+    ------
+
+    Killed: If size is too large and the system runs out of memory.
 
     """
 
@@ -84,22 +92,22 @@ def plot_boxes(images: List[str], cmap: str ='cool', predictor: Any = None,
     heights = []
     [ (widths.append(image.width), heights.append(image.height) ) for image in images ]  
     
-    # TODO: save to file fails if w or h is higher than 2^16. Restric size.
     max_width = max(widths)
     max_height = max(heights) 
+    ratio = max_width / max_height
 
     # Create a figure and axis object
     fig, ax = plt.subplots()
     
-    # Set the figure size to the maximum image dimensions
-    # fig.set_figwidth(max_width)
-    # fig.set_figheight(max_height)
+    # Set the figure to a size while keeping the aspect ratio
+    fig.set_figwidth( size * ratio )
+    fig.set_figheight( size / ratio )
 
     # make plot set the axis limits
     ax.plot()
 
     # create color map
-    cmap = matplotlib.colormaps[cmap]
+    _cmap = matplotlib.colormaps[cmap]
 
     # Sort the clusters so that labels are organized in increasing order
     # This makes sure that the colors are distributed along the 
@@ -131,7 +139,7 @@ def plot_boxes(images: List[str], cmap: str ='cool', predictor: Any = None,
 
         prediction = sorted_label[prediction] # trasforms predicted label to sorted label
         norm_prediction = prediction[0]/( max_sorted_label - min_sorted_label) # notmalize to 0-1
-        rgba = cmap(norm_prediction) # assignes color for rectangle
+        rgba = _cmap(norm_prediction) # assignes color for rectangle
 
         # Create a rectangle patch for the bounding box
         # Origin is set to center of drawing aread and
@@ -149,7 +157,8 @@ def plot_boxes(images: List[str], cmap: str ='cool', predictor: Any = None,
         del image 
 
     if save_to_file:
-         plt.savefig(save_to_file, dpi=400, bbox_inches='tight')  
+         plt.savefig(save_to_file, dpi=300, bbox_inches='tight')  
+         print(f'Plot saved to {save_to_file}')
 
     # Show the plot
     if show:
@@ -186,10 +195,7 @@ if __name__ == "__main__":
     lut[idx] = np.arange(k)
 
 
-    # print(type(kmeans))
-    # print((lut[kmeans.labels_[0]]))
-
-    plot_boxes(img_paths, predictor= kmeans, save_to_file='./cool-fig.png' )
+    plot_boxes(img_paths, predictor= kmeans, cmap='plasma_r', size=12, show=False, save_to_file='test.png')
 
 
 
