@@ -46,7 +46,7 @@ def get_image_paths(directory: str, extensions: List[str] = None) -> List[str]:
 
 
 
-def plot_bounding_boxes(image_paths: List[str], transparency: float =0.25) -> None:
+def plot_bounding_boxes(image_paths: List[str], transparency: float =0.25, cmap='') -> None:
     """
     Plots the bounding boxes of a list of images overlapping on the same plot.
 
@@ -91,10 +91,11 @@ def plot_bounding_boxes(image_paths: List[str], transparency: float =0.25) -> No
         bbox = image.getbbox() 
         width = image.width
         height = image.height
-        center = (image.width/2, image.height/2)
+        # center = (image.width/2, image.height/2)
 
         # Create a rectangle patch for the bounding box
-        # Origin is set to drwaing concentric rectangles 
+        # Origin is set to center of drawing aread and
+        # boxes are drawn concentrically.
         rect = patches.Rectangle((bbox[0] - 0.5*width, bbox[1] - 0.5*height), width, height, 
                                  linewidth=2, edgecolor=(1, 0, 0, transparency), 
                                  facecolor='none')
@@ -107,7 +108,7 @@ def plot_bounding_boxes(image_paths: List[str], transparency: float =0.25) -> No
 
 
 
-def plot_boxes(images: List, kmeans, transparency: float =0.25) -> None:
+def plot_boxes(images: List, kmeans) -> None:
     """
     Plots the bounding boxes of a list of images overlapping on the same plot.
 
@@ -147,37 +148,48 @@ def plot_boxes(images: List, kmeans, transparency: float =0.25) -> None:
     ax.plot([1, 1])
 
     import matplotlib 
-    cmap = matplotlib.cm.get_cmap('copper')
+    cmap = matplotlib.cm.get_cmap('cool')
 
+
+    # Sort the clusters so that labels are organized in increasing order
+    idx = np.argsort(kmeans.cluster_centers_.sum(axis=1))
+    lut = np.zeros_like(idx)
+    lut[idx] = np.arange(idx.shape[0])
+
+    predictions = [] # TODO: collect also image object to avoid computing predictions twice
+    for image in images:
+        pred = kmeans.predict([[image.width, image.height]])
+        predictions.append(pred)
+    
     # Loop through the image paths and bounding boxes
     for image in images:
         # Get the bounding box for the current image
         bbox = image.getbbox() 
-        width = image.width
-        height = image.height
-        center = (image.width/2, image.height/2)
+        # width = image.width
+        # height = image.height
+        # # center = (image.width/2, image.height/2)
 
-        # TODO: check if color ramp is normalized correctly. small boxes are same color as big boxes
-        prediction = kmeans.predict([[width, height]])
-        norm_prediction = prediction[0]/(9-0) # notmalize to 0-1
+        prediction = kmeans.predict([[image.width, image.height]])
+
+        prediction = lut[prediction] # trasforms predition cluster number to 
+        norm_prediction = prediction[0]/( max(predictions) - min(predictions)) # notmalize to 0-1
         rgba = cmap(norm_prediction)
 
-        # print("prediction:", prediction, norm_prediction)
+        # print("prediction:", prediction, norm_prediction, 'w/h:', width, height)
 
         # Create a rectangle patch for the bounding box
-        # Origin is set to drwaing concentric rectangles 
-        rect = patches.Rectangle((bbox[0] - 0.5*width, bbox[1] - 0.5*height), width, height, 
+        # Origin is set to center of drawing aread and
+        # boxes are drawn concentrically.
+        rect = patches.Rectangle((bbox[0] - 0.5 * image.width, bbox[1] - 0.5* image.height), 
+                                 image.width, image.height, 
                                  linewidth=2, edgecolor=rgba, 
-                                 facecolor='none')
+                                 facecolor='none'
+                                 )
 
         # Plot the bounding box
         ax.add_patch(rect)
     # Show the plot
     plt.show()
-    
-    # TODO: continue test with data from data pipeline
-
-    
 
 
 if __name__ == "__main__":
@@ -202,10 +214,18 @@ if __name__ == "__main__":
     # X = X.reshape(-1, 1)
     # print(X)
 
-    kmeans = KMeans(n_clusters=10, random_state=0, n_init='auto').fit(X)
-  
+    k = 10
+    kmeans = KMeans(n_clusters=k, random_state=0, n_init='auto').fit(X)
 
-    plot_boxes(images, kmeans, transparency=0.25)
+    idx = np.argsort(kmeans.cluster_centers_.sum(axis=1))
+    lut = np.zeros_like(idx)
+    lut[idx] = np.arange(k)
+
+
+    print(kmeans.labels_[0])
+    print((lut[kmeans.labels_[0]]))
+
+    plot_boxes(images, kmeans)
 
 
 
