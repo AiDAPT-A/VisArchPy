@@ -147,7 +147,7 @@ def plot_boxes(images: List, kmeans, transparency: float =0.25) -> None:
     ax.plot([1, 1])
 
     import matplotlib 
-    cmap = matplotlib.cm.get_cmap('cool')
+    cmap = matplotlib.cm.get_cmap('copper')
 
     # Loop through the image paths and bounding boxes
     for image in images:
@@ -157,11 +157,12 @@ def plot_boxes(images: List, kmeans, transparency: float =0.25) -> None:
         height = image.height
         center = (image.width/2, image.height/2)
 
+        # TODO: check if color ramp is normalized correctly. small boxes are same color as big boxes
         prediction = kmeans.predict([[width, height]])
-        norm_prediction = prediction[0]/(3 -0) # notmalize to 0-1
+        norm_prediction = prediction[0]/(9-0) # notmalize to 0-1
         rgba = cmap(norm_prediction)
 
-        print("prediction:", prediction, norm_prediction)
+        # print("prediction:", prediction, norm_prediction)
 
         # Create a rectangle patch for the bounding box
         # Origin is set to drwaing concentric rectangles 
@@ -186,7 +187,7 @@ if __name__ == "__main__":
 
 
     dims = []
-    img_paths = get_image_paths(directory = 'dinov2-test/data', extensions =['jpg'])
+    img_paths = get_image_paths(directory = '/home/manuel/Documents/devel/data/pdf-001')
     
     images = [] # list of PIL.Image objects
     for img in img_paths:
@@ -201,7 +202,7 @@ if __name__ == "__main__":
     # X = X.reshape(-1, 1)
     # print(X)
 
-    kmeans = KMeans(n_clusters=4, random_state=0, n_init='auto').fit(X)
+    kmeans = KMeans(n_clusters=10, random_state=0, n_init='auto').fit(X)
   
 
     plot_boxes(images, kmeans, transparency=0.25)
