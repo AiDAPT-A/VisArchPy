@@ -5,10 +5,10 @@ Author: M.G. Garcia
 
 import os
 from PIL import Image
-from typing import List
+from typing import List, Any
+import matplotlib 
 import matplotlib.patches as patches
 import matplotlib.pyplot as plt
-
 
 
 def get_image_paths(directory: str, extensions: List[str] = None) -> List[str]:
@@ -44,9 +44,8 @@ def get_image_paths(directory: str, extensions: List[str] = None) -> List[str]:
     return image_paths
 
 
-
-
-def plot_bounding_boxes(image_paths: List[str], transparency: float =0.25, cmap='') -> None:
+def plot_boxes(images: List[str], cmap: str ='cool', predictor: Any = None,
+               show: bool = True, save_to_file: str = None) -> None:
     """
     Plots the bounding boxes of a list of images overlapping on the same plot.
 
@@ -54,128 +53,85 @@ def plot_bounding_boxes(image_paths: List[str], transparency: float =0.25, cmap=
     ----------
     image_paths: List[str]
         A list of image file paths.
-    transparency: float
-        The transparency of drawing lines. A value between 0 and 1. Default is 0.25.
+    cmap: str
+        Name of the matplotlig color map to be used. Consult the matplotlib
+        documentation for valid values.
+    predictor: Kmeans
+        A clustering Kmeans trained model for assing a label and color to
+        each image bounding box. If None, a pretained model with features:
+        width and height, and 20 classes will be used.
+    show: bool
+        Shows plot. Default is True.
+    save_to_file: str
+        Path to a PNG file to save the plot. If None, no file is saved.
 
     Returns
     -------
     None
 
-    :param image_paths: A list of image file paths.
     """
 
+    images = [Image.open(image_path) for image_path in images] # list of PIL.Image objects
 
-    images = [] # list of PIL.Image objects
-    image_widths = []
-    image_heights = []
-    for image_path in image_paths:
-        # Open the image file using Pillow
-        image = Image.open(image_path)
-        image_widths.append(image.width)
-        image_heights.append(image.height)
-        images.append(image)
+    if predictor:
+        k_predictor = predictor
+    
+    # TODO: Train a store a model with the package.
+
+    # collect image widths and heights to determine
+    # image  maximum size
+    widths = []
+    heights = []
+    [ (widths.append(image.width), heights.append(image.height) ) for image in images ]  
+    
+    # TODO: save to file fails if w or h is higher than 2^16. Restric size.
+    max_width = max(widths)
+    max_height = max(heights) 
 
     # Create a figure and axis object
     fig, ax = plt.subplots()
     
     # Set the figure size to the maximum image dimensions
-    fig.set_figwidth(max(image_widths))
-    fig.set_figheight(max(image_heights))
+    # fig.set_figwidth(max_width)
+    # fig.set_figheight(max_height)
 
-    # Plot a dummy point to set the axis limits
-    ax.plot([1, 1])
+    # make plot set the axis limits
+    ax.plot()
 
-    # Loop through the image paths and bounding boxes
-    for image in images:
-        # Get the bounding box for the current image
-        bbox = image.getbbox() 
-        width = image.width
-        height = image.height
-        # center = (image.width/2, image.height/2)
-
-        # Create a rectangle patch for the bounding box
-        # Origin is set to center of drawing aread and
-        # boxes are drawn concentrically.
-        rect = patches.Rectangle((bbox[0] - 0.5*width, bbox[1] - 0.5*height), width, height, 
-                                 linewidth=2, edgecolor=(1, 0, 0, transparency), 
-                                 facecolor='none')
-
-        # Plot the bounding box
-        ax.add_patch(rect)
-    # Show the plot
-    plt.show()
-
-
-
-
-def plot_boxes(images: List, kmeans) -> None:
-    """
-    Plots the bounding boxes of a list of images overlapping on the same plot.
-
-    Parameters
-    ----------
-    image_paths: List[str]
-        A list of image file paths.
-    transparency: float
-        The transparency of drawing lines. A value between 0 and 1. Default is 0.25.
-
-    Returns
-    -------
-    None
-
-    :param image_paths: A list of image file paths.
-    """
-
-
-    # images = [] # list of PIL.Image objects
-    image_widths = []
-    image_heights = []
-    for image_ in images:
-        # Open the image file using Pillow
-        # image = Image.open(image_path)
-        image_widths.append(image_.width)
-        image_heights.append(image_.height)
-        
-
-    # Create a figure and axis object
-    fig, ax = plt.subplots()
-    
-    # Set the figure size to the maximum image dimensions
-    fig.set_figwidth(max(image_widths))
-    fig.set_figheight(max(image_heights))
-
-    # Plot a dummy point to set the axis limits
-    ax.plot([1, 1])
-
-    import matplotlib 
-    cmap = matplotlib.cm.get_cmap('cool')
-
+    # create color map
+    cmap = matplotlib.colormaps[cmap]
 
     # Sort the clusters so that labels are organized in increasing order
-    idx = np.argsort(kmeans.cluster_centers_.sum(axis=1))
-    lut = np.zeros_like(idx)
-    lut[idx] = np.arange(idx.shape[0])
-
-    predictions = [] # TODO: collect also image object to avoid computing predictions twice
-    for image in images:
-        pred = kmeans.predict([[image.width, image.height]])
-        predictions.append(pred)
+    # This makes sure that the colors are distributed along the 
+    # color map in the right order
+    idx = np.argsort(k_predictor.cluster_centers_.sum(axis=1))
+    sorted_label = np.zeros_like(idx)
+    sorted_label[idx] = np.arange(idx.shape[0])
     
-    # Loop through the image paths and bounding boxes
-    for image in images:
+    # Collect prediction values and images in preparation for
+    # plotting. This ensures the predict function is called
+    # only once.
+    predictions = []
+    pil_images = []
+    [ ( predictions.append( k_predictor.predict( [[ image.width, image.height ]] )),
+        pil_images.append(image) ) 
+        for image in images
+    ]
+
+    # This is used to strech the colors
+    # in the color map using the range of
+    # values in the prediction
+    max_sorted_label = max(sorted_label[predictions])
+    min_sorted_label = min(sorted_label[predictions])
+
+    # plot bounding boxes
+    for prediction, image in zip(predictions, pil_images):
         # Get the bounding box for the current image
         bbox = image.getbbox() 
-        # width = image.width
-        # height = image.height
-        # # center = (image.width/2, image.height/2)
 
-        prediction = kmeans.predict([[image.width, image.height]])
-
-        prediction = lut[prediction] # trasforms predition cluster number to 
-        norm_prediction = prediction[0]/( max(predictions) - min(predictions)) # notmalize to 0-1
-        rgba = cmap(norm_prediction)
-
-        # print("prediction:", prediction, norm_prediction, 'w/h:', width, height)
+        prediction = sorted_label[prediction] # trasforms predicted label to sorted label
+        norm_prediction = prediction[0]/( max_sorted_label - min_sorted_label) # notmalize to 0-1
+        rgba = cmap(norm_prediction) # assignes color for rectangle
 
         # Create a rectangle patch for the bounding box
         # Origin is set to center of drawing aread and
@@ -188,8 +144,16 @@ def plot_boxes(images: List, kmeans) -> None:
 
         # Plot the bounding box
         ax.add_patch(rect)
+
+        # free some memory. It is convenient with many or large inputs
+        del image 
+
+    if save_to_file:
+         plt.savefig(save_to_file, dpi=400, bbox_inches='tight')  
+
     # Show the plot
-    plt.show()
+    if show:
+        plt.show()
 
 
 if __name__ == "__main__":
@@ -214,7 +178,7 @@ if __name__ == "__main__":
     # X = X.reshape(-1, 1)
     # print(X)
 
-    k = 10
+    k = 20
     kmeans = KMeans(n_clusters=k, random_state=0, n_init='auto').fit(X)
 
     idx = np.argsort(kmeans.cluster_centers_.sum(axis=1))
@@ -222,10 +186,10 @@ if __name__ == "__main__":
     lut[idx] = np.arange(k)
 
 
-    print(kmeans.labels_[0])
-    print((lut[kmeans.labels_[0]]))
+    # print(type(kmeans))
+    # print((lut[kmeans.labels_[0]]))
 
-    plot_boxes(images, kmeans)
+    plot_boxes(img_paths, predictor= kmeans, save_to_file='./cool-fig.png' )
 
 
 
