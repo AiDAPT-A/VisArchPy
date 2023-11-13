@@ -5,13 +5,16 @@ Author: M.G. Garcia
 
 import os
 import pickle
-from tqdm import tqdm
-from PIL import Image, ImageFile
-from typing import List, Any
 import matplotlib 
 import numpy as np
 import matplotlib.patches as patches
 import matplotlib.pyplot as plt
+from tqdm import tqdm
+from PIL import Image, ImageFile
+from typing import List, Any
+from matplotlib.colors import Normalize
+from matplotlib.cm import ScalarMappable
+
     
 # This is needed to avoid errors when loading images with
 # truncated data (images missing data). Use with caution.
@@ -57,6 +60,7 @@ def plot_boxes(images: List[str],
                show: bool = True, 
                size: int = 10, 
                scale_factor: float = 1.0,
+               max_image_size: int = 89478485,
                save_to_file: str = None) -> None:
     """
     Plots the bounding boxes of a list of images overlapping on the same plot.
@@ -82,6 +86,10 @@ def plot_boxes(images: List[str],
         images will be plotted at their original size. Values larger than
         1.0 will increase the image size and values smaller than 1.0 will
         decrease the image size.
+    max_image_size: int
+        Maximum size of an image in pixels. Images larger than this value
+        will not be plotted. Default is 89478485, which is the maximum
+        size of an image in pixels that can be stored in a 32-bit system.
     save_to_file: str
         Path to a PNG file to save the plot. If None, no file is saved.
 
@@ -93,7 +101,10 @@ def plot_boxes(images: List[str],
     ------
 
     Warning: If an image has no bounding box in the alpha channel.
-    Killed: If size is too large and the system runs out of memory.
+    Warning: Decompression Bomb. If an image is larger than the maximum
+            maximum size allowed for a 32-bit system.
+    Killed: If system runs out of memory during plotting. Adjusting the
+            `max_image_size` and `scale_factor` parameters may help.
 
     """
 
@@ -107,15 +118,15 @@ def plot_boxes(images: List[str],
     ax.set_xlabel('Image Width (px)')
     ax.set_ylabel('Image Height (px)')
     ax.set_title('Bounding Box Plot')
-
-    from matplotlib.colors import Normalize
-    from matplotlib.cm import ScalarMappable
+    label_fontsize = 8
+    # Set the axis tick label size
+    ax.tick_params(labelsize=label_fontsize)
 
     # create color map
     _cmap = matplotlib.colormaps[cmap]
 
     images = [ Image.open(image_path)  for image_path in images if 
-              Image.open(image_path).size != 0] # list of PIL.Image objects
+              Image.open(image_path).size != 0 and Image.open(image_path).size[0]*Image.open(image_path).size[1] <=max_image_size ] # list of PIL.Image objects
 
     if predictor:
         k_predictor = predictor
@@ -209,8 +220,17 @@ def plot_boxes(images: List[str],
     # plots colorbar after normalizing the values of he sorted prediction labels
     norm = Normalize(vmin=min_sorted_label, vmax=max_sorted_label)
     scalar_mappable = ScalarMappable(norm=norm, cmap=_cmap)
-    color_bar = plt.colorbar(scalar_mappable, ax=ax, label='Relative Size')
-    color_bar.set_ticks([])
+    color_bar = plt.colorbar(scalar_mappable, ax=ax)
+    color_bar.set_label('Image size (w x h)', fontsize=label_fontsize)
+
+    color_bar.ax.tick_params(labelsize=label_fontsize)
+    # remove ticks and add labels
+    min_size_label = str( min(box_tracker.keys() ) )
+    max_size_label = str( max(box_tracker.keys() ) )
+    color_bar.set_ticks(
+        [min_sorted_label[0], max_sorted_label[0]], 
+        labels=[min_size_label, max_size_label]) 
+    
 
     if save_to_file:
          plt.savefig(save_to_file, dpi=300, bbox_inches='tight')  
@@ -222,6 +242,6 @@ def plot_boxes(images: List[str],
 
 if __name__ == "__main__":
 
-    img_plot = get_image_paths(directory = '/home/manuel/Documents/devel/data/plot')
+    img_plot = get_image_paths(directory = '/home/manuel/Documents/devel/data/pdf-001')
 
-    plot_boxes(img_plot, cmap='plasma_r', size=12)
+    plot_boxes(img_plot, cmap='cool', size=10, show=False ,save_to_file='./all-plot.png')
