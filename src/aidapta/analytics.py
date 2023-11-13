@@ -96,7 +96,8 @@ def plot_boxes(images: List[str],
 
     """
 
-    images = [ Image.open(image_path)  for image_path in images if Image.open(image_path).size != 0] # list of PIL.Image objects
+    images = [ Image.open(image_path)  for image_path in images if 
+              Image.open(image_path).size != 0] # list of PIL.Image objects
 
     if predictor:
         k_predictor = predictor
@@ -108,7 +109,8 @@ def plot_boxes(images: List[str],
     # image  maximum size
     widths = []
     heights = []
-    [ (widths.append(image.width * scale_factor ), heights.append(image.height * scale_factor) ) for image in images ]  
+    [ (widths.append(image.width * scale_factor ), heights.append(image.height * scale_factor) ) 
+     for image in images ]  
     
     max_width = max(widths) 
     max_height = max(heights) 
@@ -174,8 +176,8 @@ def plot_boxes(images: List[str],
             rec_height = image.height * scale_factor
             rec_x = bbox[0] * scale_factor
             rec_y = bbox[1] * scale_factor
-            rect = patches.Rectangle((bbox[0] - 0.5 * image.width, bbox[1] - 0.5* image.height), 
-                                    image.width, image.height, 
+            rect = patches.Rectangle((rec_x - 0.5 * rec_width, rec_y - 0.5* rec_height), 
+                                    rec_width, rec_height, 
                                     linewidth=2, edgecolor=rgba, 
                                     facecolor='none'
                                     )
@@ -209,5 +211,5 @@ if __name__ == "__main__":
 
     img_plot = get_image_paths(directory = '/home/manuel/Documents/devel/data/plot')
 
-    plot_boxes(img_plot, cmap='plasma_r', size=12, show=False, save_to_file='plot.png')
+    plot_boxes(img_plot, cmap='plasma_r', size=12, show=False, scale_factor=0.5, save_to_file='plot.png')
 
