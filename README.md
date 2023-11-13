@@ -2,11 +2,16 @@
 
 Pipelines for the extraction and processing of visuals from PDFs.
 
+Processing pipelines for the extraction of architectural visual from PDF documens. It also include tools to explore the outputs of extraction pipelines (images), and
+ fucntionaly for image feature extaction using the DinoV2 model.
+
+
 ## Requirements
 
 - Python 3.10 or newer 
 - PIL
-- [Tesseract v.4.0](https://tesseract-ocr.github.io/)
+- [Tesseract v4.0](https://tesseract-ocr.github.io/)
+- [PyTorch v2.1 or recent](https://pytorch.org/get-started/locally/)
 
 ## Installing the AiDAT-A library
 
