@@ -4,11 +4,17 @@ Author: M.G. Garcia
 """
 
 import os
-from PIL import Image
+import pickle
+from PIL import Image, ImageFile
 from typing import List, Any
 import matplotlib 
+import numpy as np
 import matplotlib.patches as patches
 import matplotlib.pyplot as plt
+    
+# This is needed to avoid errors when loading images with
+# truncated data (images missing data). Use with caution.
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 
 def get_image_paths(directory: str, extensions: List[str] = None) -> List[str]:
@@ -44,8 +50,13 @@ def get_image_paths(directory: str, extensions: List[str] = None) -> List[str]:
     return image_paths
 
 
-def plot_boxes(images: List[str], cmap: str ='cool', predictor: Any = None,
-               show: bool = True, size: int = 10, save_to_file: str = None) -> None:
+def plot_boxes(images: List[str], 
+               cmap: str ='cool', 
+               predictor: Any = None,
+               show: bool = True, 
+               size: int = 10, 
+               scale_factor: float = 1.0,
+               save_to_file: str = None) -> None:
     """
     Plots the bounding boxes of a list of images overlapping on the same plot.
 
@@ -57,7 +68,7 @@ def plot_boxes(images: List[str], cmap: str ='cool', predictor: Any = None,
         Name of the matplotlig color map to be used. Consult the matplotlib
         documentation for valid values.
     predictor: Kmeans
-        A clustering Kmeans trained model for assing a label and color to
+        A clustering Kmeans (Scikit Learn) trained model for assing a label and color to
         each image bounding box. If None, a pretained model with features:
         width and height, and 20 classes will be used.
     show: bool
@@ -65,6 +76,11 @@ def plot_boxes(images: List[str], cmap: str ='cool', predictor: Any = None,
     size: int
         Size of the plot in inches. Default is 10. This value influences
         resolution and size of saved plot.
+    scale_factor: float
+        Scale factor for the image size. Default is 1.0, which means that
+        images will be plotted at their original size. Values larger than
+        1.0 will increase the image size and values smaller than 1.0 will
+        decrease the image size.
     save_to_file: str
         Path to a PNG file to save the plot. If None, no file is saved.
 
@@ -75,24 +91,26 @@ def plot_boxes(images: List[str], cmap: str ='cool', predictor: Any = None,
     Raises
     ------
 
+    Warning: If an image has no bounding box in the alpha channel.
     Killed: If size is too large and the system runs out of memory.
 
     """
 
-    images = [Image.open(image_path) for image_path in images] # list of PIL.Image objects
+    images = [ Image.open(image_path)  for image_path in images if Image.open(image_path).size != 0] # list of PIL.Image objects
 
     if predictor:
         k_predictor = predictor
-    
-    # TODO: Train a store a model with the package.
+    else:
+        with open('./src/aidapta/models/kmeans20.pkl', 'rb') as f: 
+            k_predictor = pickle.load(f)
 
     # collect image widths and heights to determine
     # image  maximum size
     widths = []
     heights = []
-    [ (widths.append(image.width), heights.append(image.height) ) for image in images ]  
+    [ (widths.append(image.width * scale_factor ), heights.append(image.height * scale_factor) ) for image in images ]  
     
-    max_width = max(widths)
+    max_width = max(widths) 
     max_height = max(heights) 
     ratio = max_width / max_height
 
@@ -135,26 +153,38 @@ def plot_boxes(images: List[str], cmap: str ='cool', predictor: Any = None,
     # plot bounding boxes
     for prediction, image in zip(predictions, pil_images):
         # Get the bounding box for the current image
-        bbox = image.getbbox() 
+        # This throws an TypeError if image has an alpha channel by no pixels in 
+        # in that channel. This is the default as of Pillow 10.3.0
+        # See: https://pillow.readthedocs.io/en/stable/reference/Image.html#PIL.Image.Image.getbbox
+        bbox = image.getbbox() # Will return None if alpha channel is empty
 
         prediction = sorted_label[prediction] # trasforms predicted label to sorted label
         norm_prediction = prediction[0]/( max_sorted_label - min_sorted_label) # notmalize to 0-1
         rgba = _cmap(norm_prediction) # assignes color for rectangle
+        
+        if bbox is None: 
+            # Skip creating an rectangle image has no bounding box (read issues with alpha channel above)
+            Warning(f'Image {image.filename} has no bounding box. Skipping.')
+            continue
+        else:
+            # Create a rectangle patch for the bounding box
+            # Origin is set to center of drawing aread and
+            # boxes are drawn concentrically.
+            rec_width = image.width * scale_factor
+            rec_height = image.height * scale_factor
+            rec_x = bbox[0] * scale_factor
+            rec_y = bbox[1] * scale_factor
+            rect = patches.Rectangle((bbox[0] - 0.5 * image.width, bbox[1] - 0.5* image.height), 
+                                    image.width, image.height, 
+                                    linewidth=2, edgecolor=rgba, 
+                                    facecolor='none'
+                                    )
 
-        # Create a rectangle patch for the bounding box
-        # Origin is set to center of drawing aread and
-        # boxes are drawn concentrically.
-        rect = patches.Rectangle((bbox[0] - 0.5 * image.width, bbox[1] - 0.5* image.height), 
-                                 image.width, image.height, 
-                                 linewidth=2, edgecolor=rgba, 
-                                 facecolor='none'
-                                 )
+            # Plot the bounding box
+            ax.add_patch(rect)
 
-        # Plot the bounding box
-        ax.add_patch(rect)
-
-        # free some memory. It is convenient with many or large inputs
-        del image 
+            # free some memory. It is convenient with many or large inputs
+            del image 
 
     if save_to_file:
          plt.savefig(save_to_file, dpi=300, bbox_inches='tight')  
@@ -167,36 +197,17 @@ def plot_boxes(images: List[str], cmap: str ='cool', predictor: Any = None,
 
 if __name__ == "__main__":
     
-    from sklearn.cluster import KMeans
-    import numpy as np
+    # from sklearn.cluster import KMeans
+    # import numpy as np
 
+    # import PIL.Image
+    # PIL.Image.MAX_IMAGE_PIXELS = None
 
-    dims = []
+    # dims = []
     img_paths = get_image_paths(directory = '/home/manuel/Documents/devel/data/pdf-001')
-    
-    images = [] # list of PIL.Image objects
-    for img in img_paths:
-        image = Image.open(img) 
-        width = image.width
-        height = image.height
-        # area = width * height
-        dims.append([width, height])
-        images.append(image)
-
-    X = np.array(dims)
-    # X = X.reshape(-1, 1)
-    # print(X)
-
-    k = 20
-    kmeans = KMeans(n_clusters=k, random_state=0, n_init='auto').fit(X)
-
-    idx = np.argsort(kmeans.cluster_centers_.sum(axis=1))
-    lut = np.zeros_like(idx)
-    lut[idx] = np.arange(k)
 
 
-    plot_boxes(img_paths, predictor= kmeans, cmap='plasma_r', size=12, show=False, save_to_file='test.png')
+    img_plot = get_image_paths(directory = '/home/manuel/Documents/devel/data/plot')
 
-
-
+    plot_boxes(img_plot, cmap='plasma_r', size=12, show=False, save_to_file='plot.png')
 
