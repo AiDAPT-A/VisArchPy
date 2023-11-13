@@ -5,6 +5,7 @@ Author: M.G. Garcia
 
 import os
 import pickle
+from tqdm import tqdm
 from PIL import Image, ImageFile
 from typing import List, Any
 import matplotlib 
@@ -105,6 +106,13 @@ def plot_boxes(images: List[str],
     # Set the axis labels
     ax.set_xlabel('Image Width (px)')
     ax.set_ylabel('Image Height (px)')
+    ax.set_title('Bounding Box Plot')
+
+    from matplotlib.colors import Normalize
+    from matplotlib.cm import ScalarMappable
+
+    # create color map
+    _cmap = matplotlib.colormaps[cmap]
 
     images = [ Image.open(image_path)  for image_path in images if 
               Image.open(image_path).size != 0] # list of PIL.Image objects
@@ -129,9 +137,7 @@ def plot_boxes(images: List[str],
     fig.set_figwidth( size * ratio )
     fig.set_figheight( size / ratio )
 
-    # create color map
-    _cmap = matplotlib.colormaps[cmap]
-
+    
     # Sort the clusters so that labels are organized in increasing order
     # This makes sure that the colors are distributed along the 
     # color map in the right order
@@ -157,7 +163,7 @@ def plot_boxes(images: List[str],
 
     box_tracker = {} # keeps track of size and count of boxes already plotted
     # plot bounding boxes
-    for prediction, image in zip(predictions, pil_images):
+    for prediction, image in tqdm( zip(predictions, pil_images), desc='Plotting...', unit='bboxes'):
         # Get the bounding box for the current image
         # This throws an TypeError if image has an alpha channel by no pixels in 
         # in that channel. This is the default as of Pillow 10.3.0
@@ -187,7 +193,7 @@ def plot_boxes(images: List[str],
                 rec_y = bbox[1] * scale_factor
                 rect = patches.Rectangle((rec_x - 0.5 * rec_width, rec_y - 0.5* rec_height), 
                                         rec_width, rec_height, 
-                                        linewidth=2, edgecolor=rgba, 
+                                        linewidth=1, edgecolor=rgba, 
                                         facecolor='none'
                                         )
 
@@ -200,11 +206,12 @@ def plot_boxes(images: List[str],
             box_tracker[image.size] = box_tracker.get(image.size) + 1
 
     # add plot legend
-    # ax.legend(loc="upper right")
-    
-    # fig.colorbar()
-    
-    print ('Boxes plotted:', box_tracker)
+    # plots colorbar after normalizing the values of he sorted prediction labels
+    norm = Normalize(vmin=min_sorted_label, vmax=max_sorted_label)
+    scalar_mappable = ScalarMappable(norm=norm, cmap=_cmap)
+    color_bar = plt.colorbar(scalar_mappable, ax=ax, label='Relative Size')
+    color_bar.set_ticks([])
+
     if save_to_file:
          plt.savefig(save_to_file, dpi=300, bbox_inches='tight')  
          print(f'Plot saved to {save_to_file}')
@@ -217,4 +224,4 @@ if __name__ == "__main__":
 
     img_plot = get_image_paths(directory = '/home/manuel/Documents/devel/data/plot')
 
-    plot_boxes(img_plot, cmap='plasma_r', size=12, show=False, save_to_file='plot.png')
+    plot_boxes(img_plot, cmap='plasma_r', size=12)
