@@ -196,20 +196,8 @@ def plot_boxes(images: List[str],
     if show:
         plt.show()
 
-
 if __name__ == "__main__":
-    
-    # from sklearn.cluster import KMeans
-    # import numpy as np
-
-    # import PIL.Image
-    # PIL.Image.MAX_IMAGE_PIXELS = None
-
-    # dims = []
-    img_paths = get_image_paths(directory = '/home/manuel/Documents/devel/data/pdf-001')
-
 
     img_plot = get_image_paths(directory = '/home/manuel/Documents/devel/data/plot')
 
     plot_boxes(img_plot, cmap='plasma_r', size=12, show=False, scale_factor=0.5, save_to_file='plot.png')
-
