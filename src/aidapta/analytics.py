@@ -96,6 +96,16 @@ def plot_boxes(images: List[str],
 
     """
 
+    # Plot/Figure settings and metadata
+        # Create a figure and axis object
+    fig, ax = plt.subplots()
+    fig.set_dpi(300) # set resolution
+    # make plot set the axis limits
+    ax.plot()
+    # Set the axis labels
+    ax.set_xlabel('Image Width (px)')
+    ax.set_ylabel('Image Height (px)')
+
     images = [ Image.open(image_path)  for image_path in images if 
               Image.open(image_path).size != 0] # list of PIL.Image objects
 
@@ -115,16 +125,9 @@ def plot_boxes(images: List[str],
     max_width = max(widths) 
     max_height = max(heights) 
     ratio = max_width / max_height
-
-    # Create a figure and axis object
-    fig, ax = plt.subplots()
-    
     # Set the figure to a size while keeping the aspect ratio
     fig.set_figwidth( size * ratio )
     fig.set_figheight( size / ratio )
-
-    # make plot set the axis limits
-    ax.plot()
 
     # create color map
     _cmap = matplotlib.colormaps[cmap]
@@ -152,42 +155,56 @@ def plot_boxes(images: List[str],
     max_sorted_label = max(sorted_label[predictions])
     min_sorted_label = min(sorted_label[predictions])
 
+    box_tracker = {} # keeps track of size and count of boxes already plotted
     # plot bounding boxes
     for prediction, image in zip(predictions, pil_images):
         # Get the bounding box for the current image
         # This throws an TypeError if image has an alpha channel by no pixels in 
         # in that channel. This is the default as of Pillow 10.3.0
         # See: https://pillow.readthedocs.io/en/stable/reference/Image.html#PIL.Image.Image.getbbox
-        bbox = image.getbbox() # Will return None if alpha channel is empty
 
-        prediction = sorted_label[prediction] # trasforms predicted label to sorted label
-        norm_prediction = prediction[0]/( max_sorted_label - min_sorted_label) # notmalize to 0-1
-        rgba = _cmap(norm_prediction) # assignes color for rectangle
-        
-        if bbox is None: 
-            # Skip creating an rectangle image has no bounding box (read issues with alpha channel above)
-            Warning(f'Image {image.filename} has no bounding box. Skipping.')
-            continue
-        else:
-            # Create a rectangle patch for the bounding box
-            # Origin is set to center of drawing aread and
-            # boxes are drawn concentrically.
-            rec_width = image.width * scale_factor
-            rec_height = image.height * scale_factor
-            rec_x = bbox[0] * scale_factor
-            rec_y = bbox[1] * scale_factor
-            rect = patches.Rectangle((rec_x - 0.5 * rec_width, rec_y - 0.5* rec_height), 
-                                    rec_width, rec_height, 
-                                    linewidth=2, edgecolor=rgba, 
-                                    facecolor='none'
-                                    )
+        if image.size not in box_tracker:
+            box_tracker[image.size] = 1 # initialize box count
 
-            # Plot the bounding box
-            ax.add_patch(rect)
+            bbox = image.getbbox() # Will return None if alpha channel is empty
 
+            prediction = sorted_label[prediction] # trasforms predicted label to sorted label
+            norm_prediction = prediction[0]/( max_sorted_label - min_sorted_label) # notmalize to 0-1
+            rgba = _cmap(norm_prediction) # assignes color for rectangle
+            
+            if bbox is None: 
+                # Skip creating an rectangle image has no bounding box (read issues with alpha channel above)
+                Warning(f'Image {image.filename} has no bounding box. Skipping.')
+                continue
+            else:
+                # Create a rectangle patch for the bounding box
+                # Origin is set to center of drawing aread and
+                # boxes are drawn concentrically.
+                rec_width = image.width * scale_factor
+                rec_height = image.height * scale_factor
+
+                rec_x = bbox[0] * scale_factor
+                rec_y = bbox[1] * scale_factor
+                rect = patches.Rectangle((rec_x - 0.5 * rec_width, rec_y - 0.5* rec_height), 
+                                        rec_width, rec_height, 
+                                        linewidth=2, edgecolor=rgba, 
+                                        facecolor='none'
+                                        )
+
+                # Plot the bounding box
+                ax.add_patch(rect)
             # free some memory. It is convenient with many or large inputs
             del image 
 
+        else:
+            box_tracker[image.size] = box_tracker.get(image.size) + 1
+
+    # add plot legend
+    # ax.legend(loc="upper right")
+    
+    # fig.colorbar()
+    
+    print ('Boxes plotted:', box_tracker)
     if save_to_file:
          plt.savefig(save_to_file, dpi=300, bbox_inches='tight')  
          print(f'Plot saved to {save_to_file}')
@@ -200,4 +217,4 @@ if __name__ == "__main__":
 
     img_plot = get_image_paths(directory = '/home/manuel/Documents/devel/data/plot')
 
-    plot_boxes(img_plot, cmap='plasma_r', size=12, show=False, scale_factor=0.5, save_to_file='plot.png')
+    plot_boxes(img_plot, cmap='plasma_r', size=12, show=False, save_to_file='plot.png')
