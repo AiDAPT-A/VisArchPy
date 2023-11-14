@@ -1,6 +1,8 @@
 """
 A library for the extraction of images from a PDF file that performs 
-document layout analysis using PDFMiner
+document layout analysis using PDFMiner.
+The layout analysis check the type of elements in a PDF page recursively
+and returns the elements that are images, texts, and vectors (not implemented).
 Author: M.G. Garcia
 """
 import os
