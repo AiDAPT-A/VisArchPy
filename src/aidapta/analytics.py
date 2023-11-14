@@ -54,7 +54,7 @@ def get_image_paths(directory: str, extensions: List[str] = None) -> List[str]:
     return image_paths
 
 
-def plot_boxes(images: List[str], 
+def plot_bboxes(images: List[str], 
                cmap: str ='cool', 
                predictor: Any = None,
                show: bool = True, 
