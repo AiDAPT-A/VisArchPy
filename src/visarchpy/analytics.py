@@ -13,7 +13,8 @@ from tqdm import tqdm
 from PIL import Image, ImageFile
 from typing import List, Any
 from matplotlib.colors import Normalize
-from matplotlib.cm import ScalarMappable
+from matplotlib.cm import ScalarMappable 
+from visarchpy.models import KmeansBbox20
 
     
 # This is needed to avoid errors when loading images with
@@ -135,9 +136,9 @@ def plot_bboxes(images: List[str],
 
     if predictor:
         k_predictor = predictor
-    else:
-        with open('./src/aidapta/models/kmeans20.pkl', 'rb') as f: 
-            k_predictor = pickle.load(f)
+    else: 
+        model = KmeansBbox20() # loads model
+        k_predictor = model() # gets predictor
 
     # collect image widths and heights to determine
     # image  maximum size
@@ -246,9 +247,12 @@ def plot_bboxes(images: List[str],
         plt.show()
 
 if __name__ == "__main__":
+    
 
-    # img_plot = get_image_paths(directory = '/home/manuel/Documents/devel/data/pdf-001')
+    # my_pred = kmeans_bbox20
 
-    # plot_bboxes(img_plot, cmap='gist_heat_r', size=10, show=True, resolution=300)
+    img_plot = get_image_paths(directory = '/home/manuel/Documents/devel/data/plot')
 
-    pass
+
+    plot_bboxes(img_plot, cmap='gist_heat_r', size=10, show=True, resolution=300)
+
