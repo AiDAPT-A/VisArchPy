@@ -247,6 +247,6 @@ def plot_bboxes(images: List[str],
 
 if __name__ == "__main__":
 
-    img_plot = get_image_paths(directory = '/home/manuel/Documents/devel/data/pdf-001')
+    # img_plot = get_image_paths(directory = '/home/manuel/Documents/devel/data/pdf-001')
 
-    plot_boxes(img_plot, cmap='gist_heat_r', size=10, show=True, resolution=300)
+    # plot_bboxes(img_plot, cmap='gist_heat_r', size=10, show=True, resolution=300)
