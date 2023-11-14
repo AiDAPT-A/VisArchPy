@@ -6,7 +6,7 @@ import typer
 from tqdm import tqdm
 from typing import Optional
 from typing_extensions import Annotated
-from aidapta.dinov2.transformer import transform_to_dinov2, save_csv_dinov2, save_pickle_dinov2
+from visarchpy.dinov2.transformer import transform_to_dinov2, save_csv_dinov2, save_pickle_dinov2
 
 app = typer.Typer(help="Extract features from images using dinov2 model",
     context_settings={"help_option_names": ["-h", "--help"]},

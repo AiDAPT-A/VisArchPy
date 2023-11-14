@@ -4,7 +4,7 @@ Pytest will automatically run all functions that start with test_ in this file.
 """
 
 
-from aidapta import analytics
+from visarchpy import analytics
 import pytest
 import os
 

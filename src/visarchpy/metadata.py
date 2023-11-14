@@ -408,7 +408,7 @@ class Metadata:
     
 
 def main() -> None:
-    from aidapta.utils import extract_mods_metadata
+    from visarchpy.utils import extract_mods_metadata
 
     meta_blob = extract_mods_metadata('/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/00002_mods.xml')
     

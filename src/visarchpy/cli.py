@@ -2,7 +2,7 @@ import typer
 from typing import Optional
 # import aidapta.pipelines.layout as layout
 # import aidapta.pipelines.ocr as ocr
-import aidapta.pipelines.layout_ocr as layout_ocr
+import visarchpy.pipelines.layout_ocr as layout_ocr
 
 
 

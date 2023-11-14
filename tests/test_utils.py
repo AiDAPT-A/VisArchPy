@@ -2,7 +2,7 @@
 Units tests for utils.py
 Pytest will automatically run all functions that start with test_ in this file.
 """
-from aidapta import utils
+from visarchpy import utils
 import pytest
 
 

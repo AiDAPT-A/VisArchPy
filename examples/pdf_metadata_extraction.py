@@ -4,7 +4,7 @@ to extract metadata from an HTML page, and
 download PDF files from the website of the
 thesis repository at TU Delft
 """
-from aidapta import metadata
+from visarchpy import metadata
 
 # EXTRACTING METADATA as a dictionary
 print(">>> extracting metadata ...")

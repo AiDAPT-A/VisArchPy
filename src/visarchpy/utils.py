@@ -8,7 +8,7 @@ from bs4 import BeautifulSoup
 
 
 
-from aidapta.metadata import Person, Faculty, Department
+from visarchpy.metadata import Person, Faculty, Department
 
 def create_output_dir(base_path: str, path="") -> str:
     """

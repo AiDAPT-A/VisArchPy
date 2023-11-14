@@ -7,7 +7,7 @@ import os
 import pathlib
 # from PyPDF2 import PdfReader
 from pdfminer.high_level import extract_pages
-from aidapta.utils import create_output_dir
+from visarchpy.utils import create_output_dir
 from pdfminer.layout import (
     LTPage, 
     LTItem, 
@@ -126,7 +126,7 @@ def sort_layout_elements(page:LTPage, img_width:int = None, img_height:int = Non
 
                     
 if __name__ == "__main__":
-    from aidapta.captions import find_caption_by_text, find_caption_by_distance
+    from visarchpy.captions import find_caption_by_text, find_caption_by_distance
 
     pdf_2 ="data-pipelines/data/4563050_AmberLuesink_P5Report_TheRevivaloftheJustCity.pdf"
     # has 158283 figure elements
