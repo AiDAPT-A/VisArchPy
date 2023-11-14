@@ -1,13 +1,15 @@
 """
 A library for the extraction of images from a PDF file that performs 
-document layout analysis using PDFMiner
+document layout analysis using PDFMiner.
+The layout analysis check the type of elements in a PDF page recursively
+and returns the elements that are images, texts, and vectors (not implemented).
 Author: M.G. Garcia
 """
 import os
 import pathlib
-from PyPDF2 import PdfReader
+# from PyPDF2 import PdfReader
 from pdfminer.high_level import extract_pages
-from aidapta.utils import create_output_dir
+from visarchpy.utils import create_output_dir
 from pdfminer.layout import (
     LTPage, 
     LTItem, 
@@ -19,52 +21,51 @@ from pdfminer.layout import (
     LTCurve
 )
 
-# From https://pypdf2.readthedocs.io/en/latest/user/extract-images.html
 
-
-def extract_images(pdf_file: str, output_dir: str) -> None:
-    """
-    extracts image from a PDF file
+# TODO: test if this code can be removed. It belongs to the old version of the code
+# def extract_images(pdf_file: str, output_dir: str) -> None:
+#     """
+#     extracts image from a PDF file
     
-    Parameters
-    ----------
-    pdf_file: str
-        path to the PDF file
-    output_dir: str 
-        path to directory to extract images. Outputs
-        are organized in folder based on the name of the input PDF
+#     Parameters
+#     ----------
+#     pdf_file: str
+#         path to the PDF file
+#     output_dir: str 
+#         path to directory to extract images. Outputs
+#         are organized in folder based on the name of the input PDF
     
-    Returns
-    -------
-    None
-    """
+#     Returns
+#     -------
+#     None
+#     """
     
-    # open PDF document
-    reader = PdfReader(pdf_file)
+#     # open PDF document
+#     reader = PdfReader(pdf_file)
 
-    # prepare output directory
-    pdf_file_name = pathlib.Path(pdf_file).stem
-    output_directory = create_output_dir(output_dir, pdf_file_name)
+#     # prepare output directory
+#     pdf_file_name = pathlib.Path(pdf_file).stem
+#     output_directory = create_output_dir(output_dir, pdf_file_name)
 
-    for page_index in range(0,len(reader.pages)):
-        page = reader.pages[page_index]
+#     for page_index in range(0,len(reader.pages)):
+#         page = reader.pages[page_index]
 
-        # TODO: fix issue with ValueError: not enough data in PIL
-        try:
-            count=1
-            print('page/img index', page_index, count)
+#         # TODO: fix issue with ValueError: not enough data in PIL
+#         try:
+#             count=1
+#             print('page/img index', page_index, count)
        
-            for image_file_object in page.images:
-                print(image_file_object)
+#             for image_file_object in page.images:
+#                 print(image_file_object)
                 
-                with open(str(output_directory)+'/' + 'page' +str(page_index) +'-'+str(count) + 
-                          image_file_object.name, "wb") as fp:
-                    fp.write(image_file_object.data)
-                    count += 1
-        except ValueError:
-            print("error")
+#                 with open(str(output_directory)+'/' + 'page' +str(page_index) +'-'+str(count) + 
+#                           image_file_object.name, "wb") as fp:
+#                     fp.write(image_file_object.data)
+#                     count += 1
+#         except ValueError:
+#             print("error")
 
-    return None
+#     return None
 
 
 def sort_layout_elements(page:LTPage, img_width:int = None, img_height:int = None)-> dict:
@@ -127,7 +128,7 @@ def sort_layout_elements(page:LTPage, img_width:int = None, img_height:int = Non
 
                     
 if __name__ == "__main__":
-    from aidapta.captions import find_caption_by_text, find_caption_by_distance
+    from visarchpy.captions import find_caption_by_text, find_caption_by_distance
 
     pdf_2 ="data-pipelines/data/4563050_AmberLuesink_P5Report_TheRevivaloftheJustCity.pdf"
     # has 158283 figure elements

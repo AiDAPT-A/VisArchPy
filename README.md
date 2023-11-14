@@ -1,15 +1,14 @@
-# Data Pipelines
+# VisArchPy
 
-Pipelines for the extraction and processing of visuals from PDFs.
+Data pipelines for extraction and analysis of architectural visuals in Python.
 
-Processing pipelines for the extraction of architectural visual from PDF documens. It also include tools to explore the outputs of extraction pipelines (images), and
- fucntionaly for image feature extaction using the DinoV2 model.
+- [x] Extraction of architectural visuals from PDF documents.
+- [x] Extraction of features from images using the DinoV2 model.
+- [x] Analytics for exploring results.
 
-
-## Requirements
+## Requiremtns
 
 - Python 3.10 or newer 
-- PIL
 - [Tesseract v4.0](https://tesseract-ocr.github.io/)
 - [PyTorch v2.1 or recent](https://pytorch.org/get-started/locally/)
 

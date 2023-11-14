@@ -13,17 +13,17 @@ import logging
 import typer
 import json
 import copy
-import aidapta.ocr as ocr
+import visarchpy.ocr as ocr
 from typing import Optional
 from pdfminer.high_level import extract_pages
 from pdfminer.image import ImageWriter
 from pdfminer.pdfparser import PDFSyntaxError
 from tqdm import tqdm
-from aidapta.utils import extract_mods_metadata, get_entry_number_from_mods
-from aidapta.captions import find_caption_by_distance, find_caption_by_text, BoundingBox
-from aidapta.layout import sort_layout_elements, create_output_dir
-from aidapta.metadata import Document, Metadata, Visual, FilePath
-from aidapta.captions import OffsetDistance
+from visarchpy.utils import extract_mods_metadata, get_entry_number_from_mods
+from visarchpy.captions import find_caption_by_distance, find_caption_by_text, BoundingBox
+from visarchpy.layout import sort_layout_elements, create_output_dir
+from visarchpy.metadata import Document, Metadata, Visual, FilePath
+from visarchpy.captions import OffsetDistance
 from typing_extensions import Annotated 
 from pdfminer.pdftypes import PDFNotImplementedError
 
@@ -31,8 +31,9 @@ from pdfminer.pdftypes import PDFNotImplementedError
 import PIL.Image
 PIL.Image.MAX_IMAGE_PIXELS = None
 
-
-app = typer.Typer()
+app = typer.Typer(help="Extract visuals from PDF files using layout and OCR analysis.",
+    context_settings={"help_option_names": ["-h", "--help"]},
+                   add_completion=False)
 
 @app.command()
 def run(entry_range: str = typer.Argument(help="Range of entries to process. e.g.: 1-10"),

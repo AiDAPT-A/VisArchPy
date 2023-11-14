@@ -2,7 +2,7 @@
 Units tests for captions.py
 Pytest will automatically run all functions that start with test_ in this file.
 """
-from aidapta import captions
+from visarchpy import captions
 import pytest
 from typing import List, Tuple
 

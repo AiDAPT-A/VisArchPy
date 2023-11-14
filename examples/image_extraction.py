@@ -3,7 +3,7 @@ This example shows how to extract
 images from a PDF file to a directory
 """
 
-from aidapta import image
+from visarchpy import image
 
 # PDF file to be process
 pdf_file = "./data/4563050_AmberLuesink_P5Report_TheRevivaloftheJustCity.pdf"

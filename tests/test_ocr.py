@@ -4,7 +4,7 @@ Test for OCR pipeline
 
 import PIL
 import pytest
-import aidapta.ocr as ocr 
+import visarchpy.ocr as ocr 
 
 
 def test_convert_pdf_to_images():

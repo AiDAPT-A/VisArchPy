@@ -8,7 +8,7 @@ from bs4 import BeautifulSoup
 
 
 
-from aidapta.metadata import Person, Faculty, Department
+from visarchpy.metadata import Person, Faculty, Department
 
 def create_output_dir(base_path: str, path="") -> str:
     """
@@ -304,6 +304,7 @@ def get_entry_number_from_mods(mods_file_path: str) -> str:
 
 
 if __name__ == '__main__':
-    mods_file = "data-pipelines/data/actual-data/00001_mods.xml"
-    meta = extract_mods_metadata(mods_file)
-    print(meta)
+    # mods_file = "data-pipelines/data/actual-data/00001_mods.xml"
+    # meta = extract_mods_metadata(mods_file)
+    # print(meta)
+    pass

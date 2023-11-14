@@ -4,7 +4,7 @@ Test for metadata pakcage
 
 import pytest
 import os
-import aidapta.metadata as metadata
+import visarchpy.metadata as metadata
 
 
 @pytest.fixture(scope="module")

@@ -1,12 +1,11 @@
-""" data pipeline to convert images to features using dinov2 model """
-
+""" CLI for the transformer module. """
 
 import os
 import typer
 from tqdm import tqdm
-from typing import Optional
+# from typing import Optional
 from typing_extensions import Annotated
-from aidapta.dinov2.transformer import transform_to_dinov2, save_csv_dinov2, save_pickle_dinov2
+from visarchpy.dinov2.transformer import transform_to_dinov2, save_csv_dinov2, save_pickle_dinov2
 
 app = typer.Typer(help="Extract features from images using dinov2 model",
     context_settings={"help_option_names": ["-h", "--help"]},
@@ -16,7 +15,7 @@ app = typer.Typer(help="Extract features from images using dinov2 model",
 def from_file(
     file: str = typer.Argument(help="Path to image file"),
     output: Annotated[str, typer.Argument(help="Path to output directory")] = './dinov2',
-    model: Annotated[str, typer.Argument(help="Name of model to use")] = 'facebook/dinov2-small',
+    model: Annotated[str, typer.Argument(help="pretrained model to be used")] = 'facebook/dinov2-small',
     pickle: Annotated[bool, typer.Option(help="Save all model features as pickle file", is_flag=True)] = True
         ) -> None:
     
@@ -37,7 +36,7 @@ def from_file(
 def from_dir(
     directory: str = typer.Argument(help="Path to directory containing image files"),
     output: Annotated[str, typer.Argument(help="Path to parent output directory.")] = './dinov2',
-    model: Annotated[str, typer.Argument(help="Name of model to use")] = 'facebook/dinov2-small',
+    model: Annotated[str, typer.Argument(help="pretrained model to be used")] = 'facebook/dinov2-small',
     pickle: Annotated[bool, typer.Option(help="Save all model features as pickle file", is_flag=True)] = True
         ) -> None:
     
