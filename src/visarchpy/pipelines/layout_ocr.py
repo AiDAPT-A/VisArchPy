@@ -31,8 +31,9 @@ from pdfminer.pdftypes import PDFNotImplementedError
 import PIL.Image
 PIL.Image.MAX_IMAGE_PIXELS = None
 
-
-app = typer.Typer()
+app = typer.Typer(help="Extract visuals from PDF files using layout and OCR analysis.",
+    context_settings={"help_option_names": ["-h", "--help"]},
+                   add_completion=False)
 
 @app.command()
 def run(entry_range: str = typer.Argument(help="Range of entries to process. e.g.: 1-10"),
