@@ -59,11 +59,14 @@ def plot_boxes(images: List[str],
                predictor: Any = None,
                show: bool = True, 
                size: int = 10, 
+               resolution: int = 300,
                scale_factor: float = 1.0,
                max_image_size: int = 89478485,
                save_to_file: str = None) -> None:
     """
-    Plots the bounding boxes of a list of images overlapping on the same plot.
+    Creates a plot of the bounding boxes organize concentrically for the given images. 
+    This type of plot is useful for visualizing the distribution sizes and shapes of
+    the given images.
 
     Parameters
     ----------
@@ -79,8 +82,10 @@ def plot_boxes(images: List[str],
     show: bool
         Shows plot. Default is True.
     size: int
-        Size of the plot in inches. Default is 10. This value influences
-        resolution and size of saved plot.
+        Size of the figure plot in inches. Default is 10. This value influences
+        the quality of the plot when saving to a file.
+    resolution: int
+        Resolution of the plot  and figure in dots per inch (dpi). Default is 300.
     scale_factor: float
         Scale factor for the image size. Default is 1.0, which means that
         images will be plotted at their original size. Values larger than
@@ -111,7 +116,7 @@ def plot_boxes(images: List[str],
     # Plot/Figure settings and metadata
         # Create a figure and axis object
     fig, ax = plt.subplots()
-    fig.set_dpi(300) # set resolution
+    fig.set_dpi(resolution) # set resolution
     # make plot set the axis limits
     ax.plot()
     # Set the axis labels
@@ -233,7 +238,7 @@ def plot_boxes(images: List[str],
     
 
     if save_to_file:
-         plt.savefig(save_to_file, dpi=300, bbox_inches='tight')  
+         plt.savefig(save_to_file, dpi=resolution, bbox_inches='tight')  
          print(f'Plot saved to {save_to_file}')
 
     # Show the plot
@@ -244,4 +249,4 @@ if __name__ == "__main__":
 
     img_plot = get_image_paths(directory = '/home/manuel/Documents/devel/data/pdf-001')
 
-    plot_boxes(img_plot, cmap='cool', size=10, show=False ,save_to_file='./all-plot.png')
+    plot_boxes(img_plot, cmap='gist_heat_r', size=10, show=True, resolution=300)
