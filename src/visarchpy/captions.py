@@ -7,7 +7,7 @@ from pdfminer.layout import LTTextContainer, LTImage, LTFigure
 from typing import List
 from shapely.geometry import Polygon
 from dataclasses import dataclass, field
-from aidapta.utils import convert_mm_to_point, convert_dpi_to_point
+from visarchpy.utils import convert_mm_to_point, convert_dpi_to_point
 from typing import Optional
 
 
