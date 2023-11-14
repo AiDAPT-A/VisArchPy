@@ -424,7 +424,6 @@ if __name__ == '__main__':
 
     text_elements = []
 
-    import geopandas as gpd
     from matplotlib import pyplot as plt
     from shapely.geometry import Polygon
     img = BoundingBox((100, 100, 500, 500), unit=200)
@@ -474,25 +473,3 @@ if __name__ == '__main__':
 
     plt.show()
     
-
-
-
-    # print (b)
-    print(b)
-    print(b.bbox())
-    # for page_layout in extract_pages(pdf_2):
-
-    #     for element in page_layout:
-    #         if isinstance(element, LTTextContainer):
-    #             text_elements.append(element)
-
-
-    # for e in text_elements:
-    #     # print(e.get_text())
-    #     print(e.bbox)
-    #     match = find_caption_by_text(e, keywords=["Figure", "caption", "figuur" ])
-    #     print(match)
-    #     if match is not False:
-    #         print( match)
-    #         print("===========================")
-
