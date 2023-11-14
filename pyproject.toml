@@ -3,8 +3,8 @@ requires = ["setuptools>=64.0.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "aidapta"
-version = "0.3.1"
+name = "visarchpy"
+version = "0.4.0"
 authors = [
     {name = "Manuel Garcia", email = "m.g.garciaalvarez@tudelft.nl"},
 ]
@@ -42,6 +42,5 @@ addopts = [
 ]
 
 [project.scripts]
-aidapta = "aidapta.cli:app"
-dino = "aidapta.pipelines.dinov2:app"
+visarch = "visarchpy.cli:app"
 
