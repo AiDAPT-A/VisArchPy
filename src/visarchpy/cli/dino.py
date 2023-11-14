@@ -1,5 +1,4 @@
-""" data pipeline to convert images to features using dinov2 model """
-
+""" CLI for the transformer module. """
 
 import os
 import typer
