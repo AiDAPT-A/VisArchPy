@@ -3,7 +3,7 @@
 import os
 import typer
 from tqdm import tqdm
-from typing import Optional
+# from typing import Optional
 from typing_extensions import Annotated
 from visarchpy.dinov2.transformer import transform_to_dinov2, save_csv_dinov2, save_pickle_dinov2
 
