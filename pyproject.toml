@@ -33,6 +33,7 @@ dependencies = [
     "matplotlib",
     "typer",
     "transformers",
+    "scikit-learn",
 ]
 
 [tool.pytest.ini_options]
