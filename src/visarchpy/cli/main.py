@@ -19,7 +19,7 @@ app = typer.Typer(help="VisArchPy: data pipelines for extraction and analysis of
 # app.add_typer(layout.app, name="layout")
 # app.add_typer(ocr.app, name="ocr")
 app.add_typer(layout_ocr.app, name="layout-ocr")
-app.add_typer(dino.app, name="dinov2")
+app.add_typer(dino.app, name="dino")
 
 
 if __name__ == "__main__":
