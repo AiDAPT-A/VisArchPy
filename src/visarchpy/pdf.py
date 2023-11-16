@@ -1,28 +1,26 @@
 """
-A library for the extraction of images from a PDF file that performs 
+A library for the extraction of images from a PDF file that performs
 document layout analysis using PDFMiner.
 The layout analysis check the type of elements in a PDF page recursively
 and returns the elements that are images, texts, and vectors (not implemented).
 Author: M.G. Garcia
 """
-import os
-import pathlib
-# from PyPDF2 import PdfReader
+
 from pdfminer.high_level import extract_pages
-from visarchpy.utils import create_output_dir
 from pdfminer.layout import (
-    LTPage, 
-    LTItem, 
+    LTPage,
+    LTItem,
     LTTextBox,
     LTText,
-    LTContainer, 
-    LTImage, 
+    LTContainer,
+    LTImage,
     LTFigure,
     LTCurve
 )
 
 
-# TODO: test if this code can be removed. It belongs to the old version of the code
+# TODO: test if this code can be removed. It belongs to the old version of
+# the code
 # def extract_images(pdf_file: str, output_dir: str) -> None:
 #     """
 #     extracts image from a PDF file
@@ -58,7 +56,8 @@ from pdfminer.layout import (
 #             for image_file_object in page.images:
 #                 print(image_file_object)
                 
-#                 with open(str(output_directory)+'/' + 'page' +str(page_index) +'-'+str(count) + 
+#                 with open(str(output_directory)+'/' + 'page' + 
+#                   str(page_index) +'-'+str(count) + 
 #                           image_file_object.name, "wb") as fp:
 #                     fp.write(image_file_object.data)
 #                     count += 1
@@ -68,10 +67,14 @@ from pdfminer.layout import (
 #     return None
 
 
-def sort_layout_elements(page:LTPage, img_width:int = None, img_height:int = None)-> dict:
+def sort_layout_elements(
+        page: LTPage,
+        img_width: int = None,
+        img_height: int = None) -> dict:
     """
-    sorts LTTextContainer, LTImage, LTFigure, and LTCurve elements from a single PDF 
-    page using PDFMiner.six
+    sorts elements by type (LTTextContainer,
+    LTImage, LTFigure, and LTCurve) on a
+    single PDF page using PDFMiner.six
 
     Parameters
     ----------
@@ -80,11 +83,11 @@ def sort_layout_elements(page:LTPage, img_width:int = None, img_height:int = Non
     img_width: int
         minimum width of image to be extracted. If
         None,  a value of 0 will be used
-    img_height: int 
+    img_height: int
         minimum height of image to be extracted. If
         None, img_width will be used
 
-    Returns    
+    Returns
     -------
     dict
         dictionary with LTTextContainer, LTImage, and LTCurve elements
@@ -94,7 +97,6 @@ def sort_layout_elements(page:LTPage, img_width:int = None, img_height:int = Non
         img_width = 0
     if img_height is None:
         img_height = img_width
-    
     page_number = page.pageid  # page number on the PDF file, starts at 1
     # This is not the same as the index in the document
 
@@ -110,7 +112,6 @@ def sort_layout_elements(page:LTPage, img_width:int = None, img_height:int = Non
         elif isinstance(item, LTText):
             pass
         if isinstance(item, LTTextBox):
-            # TODO: check how using text boxes affects the results of caption extraction
             text_elements.append(item)
         elif isinstance(item, LTFigure) or isinstance(item, LTCurve):
             vector_elements.append(item)
@@ -123,14 +124,13 @@ def sort_layout_elements(page:LTPage, img_width:int = None, img_height:int = Non
 
     render(page)
 
-    return {"page_number": page_number, "texts": text_elements, "images": image_elements, 
+    return {"page_number": page_number, "texts": text_elements,
+            "images": image_elements,
             "vectors": vector_elements}
 
-                    
-if __name__ == "__main__":
-    from visarchpy.captions import find_caption_by_text, find_caption_by_distance
 
-    pdf_2 ="data-pipelines/data/4563050_AmberLuesink_P5Report_TheRevivaloftheJustCity.pdf"
+if __name__ == "__main__":
+    from visarchpy.captions import find_caption_by_distance
     # has 158283 figure elements
     pdf_3 = "data-pipelines/data/caption-tests/multi-image-caption.pdf"
 

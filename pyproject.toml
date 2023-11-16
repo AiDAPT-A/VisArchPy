@@ -43,5 +43,5 @@ addopts = [
 ]
 
 [project.scripts]
-visarch = "visarchpy.cli:app"
+visarch = "visarchpy.cli.main:app"
 

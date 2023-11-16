@@ -4,18 +4,19 @@ Pytest will automatically run all functions that start with test_ in this file.
 """
 from visarchpy import captions
 import pytest
-from typing import List, Tuple
 
 
 @pytest.fixture(scope="class")
 def bbox_():
     """Fixture for BoundingBox"""
-    return captions.BoundingBox( (1, 2, 3, 4), "mm")
+    return captions.BoundingBox((1, 2, 3, 4), "mm")
+
 
 @pytest.fixture(scope="class")
 def bbox_dpi():
     """Fixture for BoundingBox"""
-    return captions.BoundingBox( (1, 2, 3, 4), 200)
+    return captions.BoundingBox((1, 2, 3, 4), 200)
+
 
 class TestBoundingBox:
     """ Test BoundingBox class"""
@@ -31,29 +32,23 @@ class TestBoundingBox:
         """ Test BoundingBox with mm units
         returns a tupple with units in points
         """
-        assert bbox_.bbox() == (pytest.approx(2.8346456693), 
-                                pytest.approx(5.6692913386), 
-                                pytest.approx(8.5039370079), 
+        assert bbox_.bbox() == (pytest.approx(2.8346456693),
+                                pytest.approx(5.6692913386),
+                                pytest.approx(8.5039370079),
                                 pytest.approx(11.3385826772)
-        )
+                                )
 
     def test_bbox_dpi(self, bbox_dpi):
         """ Test BoundingBox with dpi units
         returns a tupple with units in points
         """
 
-        assert bbox_dpi.bbox() == (pytest.approx(0.36), 
-                                pytest.approx(0.72), 
-                                pytest.approx(1.08), 
-                                pytest.approx(1.44)
-        )
-
+        assert bbox_dpi.bbox() == (pytest.approx(0.36),
+                                   pytest.approx(0.72),
+                                   pytest.approx(1.08),
+                                   pytest.approx(1.44)
+                                   )
 
     def test_bbox(self, bbox_):
         """Test BoundingBox bbox property"""
         assert len(bbox_.bbox()) == 4
-
-
-        
-
-
