@@ -2,6 +2,8 @@
 Units tests for utils.py
 Pytest will automatically run all functions that start with test_ in this file.
 """
+
+import warnings
 from visarchpy import utils
 import pytest
 
@@ -19,6 +21,7 @@ def test_convert_mm_to_point():
     assert utils.convert_mm_to_point(9) == pytest.approx(25.5118110236)
     assert utils.convert_mm_to_point(10) == pytest.approx(28.3464566929)
 
+
 def test_convert_dpi_to_point():
     """Test convert_dpi_to_point function"""
 
@@ -27,6 +30,13 @@ def test_convert_dpi_to_point():
     assert utils.convert_dpi_to_point(1, 3) == pytest.approx(24)
     assert utils.convert_dpi_to_point(1, 4) == pytest.approx(18)
     assert utils.convert_dpi_to_point(1, 5) == pytest.approx(14.4)
-    
 
 
+def test_extract_mods_metadata():
+    """Test extract_mods_metadata function"""
+
+    results = utils.extract_mods_metadata("tests/data/sample-mods.xml")
+    with pytest.warns(UserWarning):
+        warnings.warn("No identifiers found in MODS file", UserWarning)
+
+    assert isinstance(results, dict)
