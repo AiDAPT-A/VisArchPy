@@ -16,7 +16,7 @@ from pdfminer.image import ImageWriter
 from tqdm import tqdm
 from visarchpy.utils import extract_mods_metadata, get_entry_number_from_mods
 from visarchpy.captions import find_caption_by_distance, find_caption_by_text
-from visarchpy.layout import sort_layout_elements, create_output_dir
+from visarchpy.pdf import sort_layout_elements, create_output_dir
 from visarchpy.metadata import Document, Metadata, Visual, FilePath
 
 
