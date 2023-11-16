@@ -110,7 +110,7 @@ def extract_bboxes_from_horc(images: list[Image],
         nothing is detected by the OCR, it returns an empty dictionary.
         Example:
 
-        {'pageId': {'img': pageImage, 
+        {'pageId': {'img': pageImage,
                     'bboxes': {'id1': [bbox], ... 'idn': [bbox] },
                     'text_bboxes': {'id1': [bbox], ... 'idn': [bbox] }
         } }
@@ -126,18 +126,16 @@ def extract_bboxes_from_horc(images: list[Image],
     hocr_results = {}
 
     if isinstance(page_number, int):
-        page_counter = None 
-    else: 
+        page_counter = None
+    else:
         page_counter = 1
         # use a counter to keep track of page number
-    
+
     if resize > 32767:
-        raise ValueError('resize must be less than 32767 pixels, the current\
+        raise ValueError('resize must be less than 32767 pixels, the\
                          limit in Tesseract 5.3')
 
     for img in images:
-        # print("extracting box for image: ", img)
-
         # resize image if it is too large
         if img.width > resize or img.height > resize:
             img.thumbnail((resize, resize))
@@ -149,11 +147,8 @@ def extract_bboxes_from_horc(images: list[Image],
         paragraphs = soup.find_all('p', class_='ocr_par')
         non_text_bboxes = {}
         text_bboxes = {}
-        # paragraphs_ids = []
-        # paragraph_confidence_scores = []
-        # boxed_paragraphs = []
+
         for paragraph in paragraphs:
-            # print('para',paragraph)
             title = paragraph.get('title')
             id = paragraph.get('id')
             # use to check if paragraph contains text
@@ -189,7 +184,7 @@ def extract_bboxes_from_horc(images: list[Image],
                     'text_bboxes': text_bboxes
                 }
     # hocr results may be empty if no parragraphs are recognized
-    # during the OCR analysis. 
+    # during the OCR analysis.
 
     return hocr_results
 
@@ -197,7 +192,7 @@ def extract_bboxes_from_horc(images: list[Image],
 def crop_images_to_bbox(hocr_results: dict, output_dir: str,
                         filter_size: int = 50) -> None:
     """
-    Crop images based on bounding boxes. Croped images are saved to output 
+    Crop images based on bounding boxes. Croped images are saved to output
     directory as PNG files.
 
     Parameters
@@ -474,13 +469,9 @@ def filter_bbox_contained(bboxes: dict) -> dict:
     [comparisons.append(permutation) for permutation in
      itertools.permutations(unique_bboxes, 2)]
 
-    # for permutation in itertools.permutations(unique_bboxes, 2):
-    #     comparisons.append(permutation)
-
     no_contained_boxes = copy.deepcopy(unique_bboxes)
     # check if a bbox is contained by another bbox
     for comparison in comparisons:
-        # print('comparison', comparison)
         if is_contained(unique_bboxes[comparison[0]],
                         unique_bboxes[comparison[1]]):  # retuns True if box 0
             # is contained in box 1
@@ -495,7 +486,7 @@ def filter_bbox_contained(bboxes: dict) -> dict:
                 no_contained_boxes[comparison[0]] = unique_bboxes[
                     comparison[0]
                     ]
-                pass  # ignore value error when the box has already 
+                pass  # ignore value error when the box has already
                 # been removed
         else:
             continue
@@ -505,7 +496,7 @@ def filter_bbox_contained(bboxes: dict) -> dict:
 
 if __name__ == '__main__':
 
-    PDF_FILE = 'data-pipelines/data/caption-tests/multi-image-caption.pdf'
+    PDF_FILE = 'tests/data/multi-image-caption.pdf'
     # registry 1
     # PDF_FILE='data-pipelines/data/design-data100/00001_P5_Yilin_Zhou.pdf'
     # regisry 2
@@ -515,17 +506,16 @@ if __name__ == '__main__':
     # PDF_FILE = 'data-pipelines/data/design-data100/00003/00003_Report_Giorgio_Larcher_vol.1.pdf'
     # PDF_FILE = 'data-pipelines/data/design-data100/00003/00003_Report_Giorgio_Larcher_vol.2.pdf'
     # PDF_FILE = 'data-pipelines/data/design-data100/00003/00003_Report_Giorgio_Larcher_vol.3.pdf'    
-    OUTPUT_DIR = 'data-pipelines/data/ocr-test/00002/vol2-psm3-oem1'
+    OUTPUT_DIR = 'tests/data'
     images = convert_pdf_to_image(PDF_FILE, dpi=200)
 
-    print(images[0])
+    # print(images[0])
 
     region = [1000, 500, 2000, 1000]
 
-    result = region_to_string(images[0], region )
+    # result = region_to_string(images[0], region)
 
-    print(result)
-
+    # print(result)
 
     results = extract_bboxes_from_horc(images, config='--psm 3 --oem 1')
     # key_ = next(iter(results))
@@ -535,16 +525,13 @@ if __name__ == '__main__':
     # boxes = {'id1':[0, 0, 100, 100], 'id2': [200, 300, 350, 400], 'id3': [10, 20, 90, 90],
     #          'id4':[10, 10, 90, 90], 'id5': [10, 10, 90, 90], 'id6': [10, 10, 15, 20],
     #            'id7':  [1000, 1000, 1200, 1200], 'id8': [200, 300, 350, 400], 'id9': [200, 300, 350, 400],}
-    
 
     boxes2 = {'id1':[0, 0, 100, 210], 'id2': [80, 300, 350, 400], 
                'id7':  [1000, 1000, 1200, 1200]}
     
     # print(filter_bbox_by_size(boxes, min_width=100, min_height=100))
     # print(filter_bbox_largest(boxes))
-
-
     # print(filter_bbox_contained(boxes2))
- 
-    # mark_bounding_boxes(results, OUTPUT_DIR, filter_size=100)
+
+    mark_bounding_boxes(results, OUTPUT_DIR, filter_size=100)
     # crop_images_to_bbox(results, OUTPUT_DIR, filter_size=100)
