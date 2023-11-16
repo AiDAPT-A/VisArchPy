@@ -5,24 +5,22 @@ The layout analysis check the type of elements in a PDF page recursively
 and returns the elements that are images, texts, and vectors (not implemented).
 Author: M.G. Garcia
 """
-import os
-import pathlib
-# from PyPDF2 import PdfReader
+
 from pdfminer.high_level import extract_pages
-from visarchpy.utils import create_output_dir
 from pdfminer.layout import (
-    LTPage, 
-    LTItem, 
+    LTPage,
+    LTItem,
     LTTextBox,
     LTText,
-    LTContainer, 
-    LTImage, 
+    LTContainer,
+    LTImage,
     LTFigure,
     LTCurve
 )
 
 
-# TODO: test if this code can be removed. It belongs to the old version of the code
+# TODO: test if this code can be removed. It belongs to the old version of
+# the code
 # def extract_images(pdf_file: str, output_dir: str) -> None:
 #     """
 #     extracts image from a PDF file
@@ -58,7 +56,8 @@ from pdfminer.layout import (
 #             for image_file_object in page.images:
 #                 print(image_file_object)
                 
-#                 with open(str(output_directory)+'/' + 'page' +str(page_index) +'-'+str(count) + 
+#                 with open(str(output_directory)+'/' + 'page' + 
+#                   str(page_index) +'-'+str(count) + 
 #                           image_file_object.name, "wb") as fp:
 #                     fp.write(image_file_object.data)
 #                     count += 1
@@ -129,11 +128,9 @@ def sort_layout_elements(
             "images": image_elements,
             "vectors": vector_elements}
 
-                    
-if __name__ == "__main__":
-    from visarchpy.captions import find_caption_by_text, find_caption_by_distance
 
-    pdf_2 ="data-pipelines/data/4563050_AmberLuesink_P5Report_TheRevivaloftheJustCity.pdf"
+if __name__ == "__main__":
+    from visarchpy.captions import find_caption_by_distance
     # has 158283 figure elements
     pdf_3 = "data-pipelines/data/caption-tests/multi-image-caption.pdf"
 
