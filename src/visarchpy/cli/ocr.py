@@ -2,14 +2,16 @@
 
 import typer
 
-app = typer.Typer(help="Extract visuals from PDF files using layout analysis.",
-    context_settings={"help_option_names": ["-h", "--help"]},
-                   add_completion=False)
+app = typer.Typer(
+    help="Extract visuals from PDF files using layout analysis.",
+    context_settings={
+        "help_option_names": ["-h", "--help"]
+        },
+    add_completion=False)
 
 
 @app.command(help="Extract visuals from a single PDF file.")
-def from_file(
-    ) -> None:
+def from_file() -> None:
 
     # TODO: implement extraction of visuals from a single PDF file.
     pass
