@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mods xmlns="http://www.loc.gov/mods/v3"
+  xmlns:xlink="http://www.w3.org/1999/xlink"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="3.6" xsi:schemaLocation="http://www.loc.gov/mods/v3 http://www.loc.gov/standards/mods/v3/mods-3-6.xsd">
+  <abstract>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc porta odio ipsum, non semper tellus hendrerit eu. Morbi ac tincidunt est, in tristique odio. Nunc feugiat ornare tellus pretium bibendum. Nam vel enim vitae purus blandit vestibulum et vitae dui. Morbi ut erat ultrices, cursus est a, porttitor dolor. Etiam nisl ex, placerat id semper at, tempus ut odio. Phasellus lacinia massa id imperdiet molestie. Duis dolor dui, lacinia sed facilisis nec, commodo sit amet sem. Ut pellentesque ante ac lectus fermentum, non sodales lectus faucibus. Vestibulum eros diam, convallis sit amet interdum at, facilisis ac turpis. Ut luctus nulla sit amet tortor molestie porttitor. Maecenas posuere ipsum vitae leo porta, vel dapibus diam porta.</abstract>
+  <accessCondition>(c) 2018 Boers, T.</accessCondition>
+  <genre>master thesis</genre>
+  <language>
+    <languageTerm authority="rfc3066" type="code">nl</languageTerm>
+  </language>
+  <name type="personal">
+    <role>
+      <roleTerm authority="marcrelator" type="text">author</roleTerm>
+    </role>
+    <namePart type="given">T.</namePart>
+    <namePart type="family">Boers</namePart>
+    <nameIdentifier type="studentNumber">00000</nameIdentifier>
+  </name>
+  <name type="personal">
+    <role>
+      <roleTerm authority="marcrelator" type="text">mentor</roleTerm>
+    </role>
+    <namePart type="given">C.</namePart>
+    <namePart type="family">van Orange</namePart>
+  </name>
+  <name type="personal">
+    <role>
+      <roleTerm authority="marcrelator" type="text">mentor</roleTerm>
+    </role>
+    <namePart type="given">S.</namePart>
+    <namePart type="family">Veldkamp</namePart>
+  </name>
+  <name type="personal">
+    <role>
+      <roleTerm authority="marcrelator" type="text">mentor</roleTerm>
+    </role>
+    <namePart type="given">M.</namePart>
+    <namePart type="family">Jansen</namePart>
+  </name>
+  <name type="personal">
+    <role>
+      <roleTerm authority="marcrelator" type="text">mentor</roleTerm>
+    </role>
+    <namePart type="given">M.</namePart>
+    <namePart type="family">Proef</namePart>
+  </name>
+  <note type="faculty">Architecture and The Built Environment</note>
+  <note type="department">Management in the Built Environment</note>
+  <note type="emailAddress">name@gmail.com</note>
+  <originInfo>
+    <dateIssued>2018-08-01</dateIssued>
+  </originInfo>
+  <subject>
+    <topic>Eigenaarschap</topic>
+  </subject>
+  <subject>
+    <topic>personaliseren</topic>
+  </subject>
+  <subject>
+    <topic>individualiseren</topic>
+  </subject>
+  <subject>
+    <topic>(voortgezet) onderwijs</topic>
+  </subject>
+  <subject>
+    <topic>gebruikers</topic>
+  </subject>
+  <subject>
+    <topic>onderwijs</topic>
+  </subject>
+  <subject>
+    <topic>psychologie</topic>
+  </subject>
+  <titleInfo>
+    <title>The title of the thesis</title>
+    <subTitle>Discrete subtitle of the thesis</subTitle>
+  </titleInfo>
+  <typeOfResource>text</typeOfResource>
+</mods>
