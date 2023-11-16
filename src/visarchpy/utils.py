@@ -19,7 +19,7 @@ def create_output_dir(base_path: str, path="") -> str:
     name: str
         name or path for the new directory, parent directories are
         created if they don't exists
-    
+
     Returns
     -------
     Pathlib object
@@ -152,12 +152,11 @@ def extract_mods_metadata(mods_file: str) -> dict:
 
         # Language
         languages = []  # MODS allows multiple languages
-        
         [languages.append(
             {"code": language.code, "authority": language.authority}
             ) for language in record.language]
         meta["language"] = languages
-        
+
         # Identifiers
         if record.identifiers:  # some MODS files don't have identifiers
             meta["identifiers"] = record.identifiers[0].text  # MODS allows
@@ -179,7 +178,6 @@ def extract_mods_metadata(mods_file: str) -> dict:
 
         corp_names = []  # MODS allows multiple corporate names
         # we collect the name and the role of each corporate name
-
         [corp_names.append(
             {"name": corp_name.text, "role": corp_name.role.text}
             ) for corp_name in record.get_corp_names]
@@ -200,7 +198,7 @@ def extract_mods_metadata(mods_file: str) -> dict:
 
 
 def extract_metadata_from_html(reference_url: str) -> dict:
-    """ Extracts metadata from HTML pages from the Thesis repository, 
+    """ Extracts metadata from HTML pages from the Thesis repository,
     TU Delft Library.
 
     Parameters
@@ -261,7 +259,7 @@ def download_PDF(download_url: str, destination: str) -> None:
     """
 
     response = requests.get(download_url, stream=True)
-    # get file name 
+    # get file name
     dis = response.headers['content-disposition']
     file_name = re.findall("filename=(.+)", dis)[0]
 
