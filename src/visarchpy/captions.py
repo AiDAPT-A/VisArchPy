@@ -3,7 +3,7 @@ Extracts captions from PDF pages
 """
 
 import re
-from pdfminer.layout import LTTextContainer, LTImage, LTFigure
+from pdfminer.layout import LTTextContainer, LTImage
 from typing import List
 from shapely.geometry import Polygon
 from dataclasses import dataclass, field
@@ -61,7 +61,7 @@ class BoundingBox:
         """
 
         if isinstance(self.unit, int):
-            return self.coords 
+            return self.coords
         else:
             raise TypeError(f"only units with DPI can be converted to\
                             pixels (px). Got {self.unit} instead.")
@@ -127,7 +127,7 @@ def find_caption_by_text(text_element: LTTextContainer,
                          at least one keyword")
     else:
         # constructs regular expression to match
-        # textboxes that start with 
+        # textboxes that start with
         words = []
         separator = '|'
         for word in keywords:
@@ -249,7 +249,7 @@ def find_caption_by_distance(image_object: LTImage | BoundingBox,
         |  +              +  |
         |  +              +  |
         |  ++++++++++++++++  |
-        |____________________| 
+        |____________________|
 
         '''
 
@@ -332,7 +332,7 @@ def find_caption_by_distance(image_object: LTImage | BoundingBox,
         + image bbox   + e |
         +              + a |
         +              + r |
-        ++++++++++++++++ --  
+        ++++++++++++++++ --
 
         '''
         search_area = Polygon([
@@ -354,7 +354,7 @@ def find_caption_by_distance(image_object: LTImage | BoundingBox,
         | e + image bbox   +
         | a +              +
         | r +              +
-         -- ++++++++++++++++ 
+         -- ++++++++++++++++
 
         '''
         search_area = Polygon((
@@ -397,7 +397,7 @@ def find_caption_by_distance(image_object: LTImage | BoundingBox,
                             (image_coords[0], image_coords[1] -
                              offset_distance)
         ))
- 
+
     if direction == "up-left":
 
         '''
@@ -408,7 +408,7 @@ def find_caption_by_distance(image_object: LTImage | BoundingBox,
          |  + image bbox   +
          |  +              +
          |  +              +
-         ---++++++++++++++++ 
+         ---++++++++++++++++
 
         '''
         search_area = Polygon((
