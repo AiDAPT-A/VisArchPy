@@ -21,7 +21,7 @@ from pdfminer.pdfparser import PDFSyntaxError
 from tqdm import tqdm
 from visarchpy.utils import extract_mods_metadata
 from visarchpy.captions import find_caption_by_distance, find_caption_by_text, BoundingBox
-from visarchpy.pdf import sort_layout_elements, create_output_dir
+# from visarchpy.pdf import sort_layout_elements, create_output_dir
 from visarchpy.metadata import Document, Metadata, Visual, FilePath
 from visarchpy.captions import Offset
 from typing_extensions import Annotated 
@@ -38,52 +38,66 @@ PIL.Image.MAX_IMAGE_PIXELS = None
 class Pipeline(ABC):
     """Abstract base class for all pipelines."""
 
-    def __init__(self) -> None:
-        super().__init__()
-
-        self.data_directory: str
-        self.output_directory: str
-        self.metadata_file: str = None
-        self.temp_directory: str = None
-
-    @property
-    def set_settings(self, settings: dict) -> None:
-        """Sets the settings for the pipeline."""
+    def __init__(self, data_directory: str, output_directory: str,
+                 settings: dict = None, metadata_file: str = None,
+                 temp_directory: str = None) -> None:
+        """Initialises the pipeline."""
+        self.data_directory = data_directory
+        self.output_directory = output_directory
         self.settings = settings
-
-    @property
-    def set_metadat_file(self, metadata_file: str) -> None:
-        """Sets the path to the metadata file.
-        """
         self.metadata_file = metadata_file
-
-    @property
-    def set_temp_directory(self, temp_directory: str) -> None:
-        """Sets the path to the temporary directory.
-        """
         self.temp_directory = temp_directory
 
     @property
-    def get_settings(self) -> dict:
-        """Returns the settings for the pipeline."""
-        return self.settings
+    def settings(self):
+        """Gets settings for the pipeline."""
+        return self._settings
+    
+    @settings.setter
+    def settings(self, settings: dict) -> None:
+        """Sets the settings for the pipeline."""
+        self._settings = settings
 
     @property
-    def get_metadata_file(self) -> str:
-        """Returns the path to the metadata file.
+    def metadata_file(self) -> None:
+        """Gets the path to the metadata file.
         """
-        return self.metadata_file
+        return self._metadata_file
+
+    @metadata_file.setter
+    def metadata_file(self, metadata_file: str) -> None:
+        """Sets the path to the metadata file.
+        """
+        self._metadata_file = metadata_file
 
     @property
-    def get_temp_directory(self) -> str:
-        """Returns the path to the temporary directory.
+    def temp_directory(self) -> None:
+        """Gets the path to the temporary directory.
         """
-        return self.temp_directory
+        return self._temp_directory
+
+    @temp_directory.setter
+    def temp_directory(self, temp_directory: str) -> None:
+        """Sets the path to the temporary directory.
+        """
+        self._temp_directory = temp_directory
 
     @abstractmethod
     def run(self):
         """Run the pipeline."""
         pass
+
+    def __str__(self) -> str:
+        """Returns a string representation of the pipeline."""
+        return str((self.__class__.__name__, {
+                    "data_directory": self.data_directory,
+                    "output_directory": self.output_directory,
+                    "settings": self.settings,
+                    "metadata_file": self.metadata_file,
+                    "temp_directory": self.temp_directory
+                    }))
+
+
 
 
 
@@ -111,6 +125,21 @@ class Pipeline(ABC):
 #                  data_directory,
 #                  output_directory,
 #                  temp_directory)
+
+
+class LayoutPipeline(Pipeline):
+    """A pipeline for extracting metadata and visuals from PDF
+      files using a layout analysis. Layout analysis recursively
+      checks elements in the PDF file and sorts them into images,
+      text, and other elements.
+    """
+
+    def run(self):
+        """Run the pipeline."""
+        print("Running layout analysis pipeline")
+
+class LayoutOCR(Pipeline):
+    pass
 
 
 def pipeline(data_directory: str, output_directory: str,
@@ -548,10 +577,21 @@ def pipeline(data_directory: str, output_directory: str,
     total_time = end_time - start_time
     logger.info("Total time: " + str(total_time))
     print("total time", total_time)
-  
+
+
 if __name__ == "__main__":
     
-    app()
+    data_dir = '/data/'
+    output_dir = '/output/'
+
+    s = {'setting1': 'value1', 'setting2': 'value2'}
+
+
+    p = LayoutPipeline(data_directory=data_dir, output_directory=output_dir)
+
+    print(p)
+
+    # app()
 
     # pipeline("01960",
     #         "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/pdf-issues/",
