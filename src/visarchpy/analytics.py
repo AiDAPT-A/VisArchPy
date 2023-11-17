@@ -186,7 +186,8 @@ def plot_bboxes(images: List[str],
         # Get the bounding box for the current image
         # This throws an TypeError if image has an alpha channel by no pixels
         # in that channel. This is the default as of Pillow 10.3.0
-        # See: https://pillow.readthedocs.io/en/stable/reference/Image.html#PIL.Image.Image.getbbox
+        # See: https://pillow.readthedocs.io/en/stable/reference/Image.html
+        # #PIL.Image.Image.getbbox
 
         if image.size not in box_tracker:
             box_tracker[image.size] = 1  # initialize box count
