@@ -19,7 +19,7 @@ from visarchpy.captions import find_caption_by_distance, find_caption_by_text
 from visarchpy.pdf import sort_layout_elements, create_output_dir
 from visarchpy.metadata import Document, Metadata, Visual, FilePath
 from omegaconf import DictConfig
-from visarchpy.captions import OffsetDistance
+from visarchpy.captions import Offset
 
 # TODO: modify pipeline to use the new OCR analysis
 @hydra.main(version_base=None, config_path="", config_name="config")
@@ -71,7 +71,7 @@ def main(cfg: DictConfig) -> None:
     base_url = "http://resolver.tudelft.nl/" 
     entry.add_web_url(base_url)
 
-    offset_dist = OffsetDistance ( cfg.layout.caption_settings.offset[0], cfg.layout.caption_settings.offset[1])
+    offset_dist = Offset ( cfg.layout.caption_settings.offset[0], cfg.layout.caption_settings.offset[1])
     print ("offset distance", offset_dist)
 
     # PROCESS PDF FILES
