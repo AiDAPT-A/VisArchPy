@@ -12,63 +12,136 @@ import time
 import logging
 import typer
 import json
-import copy
+# import copy
 import visarchpy.ocr as ocr
 from typing import Optional
 from pdfminer.high_level import extract_pages
 from pdfminer.image import ImageWriter
 from pdfminer.pdfparser import PDFSyntaxError
 from tqdm import tqdm
-from visarchpy.utils import extract_mods_metadata, get_entry_number_from_mods
+from visarchpy.utils import extract_mods_metadata
 from visarchpy.captions import find_caption_by_distance, find_caption_by_text, BoundingBox
-from visarchpy.layout import sort_layout_elements, create_output_dir
+from visarchpy.pdf import sort_layout_elements, create_output_dir
 from visarchpy.metadata import Document, Metadata, Visual, FilePath
-from visarchpy.captions import OffsetDistance
+from visarchpy.captions import Offset
 from typing_extensions import Annotated 
 from pdfminer.pdftypes import PDFNotImplementedError
+from abc import ABC, abstractmethod
 
 # Disable PIL image size limit
 import PIL.Image
 PIL.Image.MAX_IMAGE_PIXELS = None
 
-app = typer.Typer(help="Extract visuals from PDF files using layout and OCR analysis.",
-    context_settings={"help_option_names": ["-h", "--help"]},
-                   add_completion=False)
+# Common interface for all pipelines
 
-@app.command()
-def run(entry_range: str = typer.Argument(help="Range of entries to process. e.g.: 1-10"),
-               data_directory: str = typer.Argument( help="path to directory containing MODS and pdf files"),
-               output_directory: str = typer.Argument( help="path to directory where results will be saved"),
-               temp_directory: Annotated[Optional[str], typer.Argument(help="temporary directory")] = None
-               ) -> None:
-    """Extracts metadata from MODS files and images from PDF files
-      using layout and OCR analysis."""
+
+class Pipeline(ABC):
+    """Abstract base class for all pipelines."""
+
+    def __init__(self) -> None:
+        super().__init__()
+
+        self.data_directory: str
+        self.output_directory: str
+        self.metadata_file: str = None
+        self.temp_directory: str = None
+
+    @property
+    def set_settings(self, settings: dict) -> None:
+        """Sets the settings for the pipeline."""
+        self.settings = settings
+
+    @property
+    def set_metadat_file(self, metadata_file: str) -> None:
+        """Sets the path to the metadata file.
+        """
+        self.metadata_file = metadata_file
+
+    @property
+    def set_temp_directory(self, temp_directory: str) -> None:
+        """Sets the path to the temporary directory.
+        """
+        self.temp_directory = temp_directory
+
+    @property
+    def get_settings(self) -> dict:
+        """Returns the settings for the pipeline."""
+        return self.settings
+
+    @property
+    def get_metadata_file(self) -> str:
+        """Returns the path to the metadata file.
+        """
+        return self.metadata_file
+
+    @property
+    def get_temp_directory(self) -> str:
+        """Returns the path to the temporary directory.
+        """
+        return self.temp_directory
+
+    @abstractmethod
+    def run(self):
+        """Run the pipeline."""
+        pass
+
+
+
+
+# app = typer.Typer(help="Extract visuals from PDF files using layout and OCR analysis.",
+#     context_settings={"help_option_names": ["-h", "--help"]},
+#                    add_completion=False)
+
+# @app.command()
+# def run(entry_range: str = typer.Argument(help="Range of entries to process. e.g.: 1-10"),
+#                data_directory: str = typer.Argument( help="path to directory containing MODS and pdf files"),
+#                output_directory: str = typer.Argument( help="path to directory where results will be saved"),
+#                temp_directory: Annotated[Optional[str], typer.Argument(help="temporary directory")] = None
+#                ) -> None:
+#     """Extracts metadata from MODS files and images from PDF files
+#       using layout and OCR analysis."""
     
-    start_id = int(entry_range.split("-")[0])
-    end_id = int(entry_range.split("-")[1])
+#     start_id = int(entry_range.split("-")[0])
+#     end_id = int(entry_range.split("-")[1])
 
-    for id in range(start_id, end_id+1):
-        str_id = str(id).zfill(5)
+#     for id in range(start_id, end_id+1):
+#         str_id = str(id).zfill(5)
 
-        pipeline(str_id,
-                 data_directory,
-                 output_directory,
-                 temp_directory)
+#         pipeline(str_id,
+#                  data_directory,
+#                  output_directory,
+#                  temp_directory)
 
 
-def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_directory: str = None) -> None:
-    """A pipeline for extracting metadata from MODS files and imges from PDF files
-      using layout and OCR analysis.
-      
+def pipeline(data_directory: str, output_directory: str,
+             metadata_file: str = None, temp_directory: str = None) -> None:
+    """A pipeline for extracting metadata from MODS files and visuals from PDF
+      files using layout and OCR analysis.
+
     Parameters
     ----------
 
-    entry_id : str
-        The entry id, which is the same as the MODS file name without the extension.
     data_directory : str
-        The path to the directory containing the MODS and PDF files.
+        The path to a directory containing the PDF files to be processed.
     output_directory : str
-        The path to the directory where the results will be saved.
+        The path to a directory where the results will be saved.
+    metadata_file : str
+        path to a MODS file containing metadata to be associated to the
+        extracted images. If no file is provided, the fields in the output
+        metadata file will be empty.
+    temp_directory : str
+        If provided PDF files in the data directory will be copied to this
+        directory. This is useful for data management purposes, and it was
+        introduced to manage the TU Delft dataset. Defaults to None.
+
+    Returns
+    -------
+    None
+
+    Raises
+    ------
+
+
       """
     
     start_time = time.time()
@@ -77,29 +150,32 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
     DATA_DIR = data_directory
 
     # SELECT OUTPUT DIRECTORY
-    # if run multiple times to the same output directory, the images will be duplicated and 
-    # metadata will be overwritten
+    # if run multiple times to the same output directory, the images will be
+    # duplicated and metadata will be overwritten
     # This will become the root path for a Visual object
-    OUTPUT_DIR = output_directory # an absolute path is recommended   
+    OUTPUT_DIR = output_directory  # an absolute path is recommended
     # SET MODS FILE
-    entry_id = entry_id
-    MODS_FILE = os.path.join(DATA_DIR, entry_id+"_mods.xml")
+
+    if metadata_file:
+        MODS_FILE = metadata_file
+        entry_id = pathlib.Path(MODS_FILE).stem.split("_")[0]
+    else:
+        entry_id = '00000'  # a default entry id is used if
+        # no MODS file is provided
 
     # TEMPORARY DIRECTORY
-    # this directory is used to store temporary files. PDF files are copied to this directory
-
+    # this directory is used to store temporary files.
     if temp_directory:
         TMP_DIR = temp_directory
     else:
         TMP_DIR = os.path.join("./tmp")
 
     # LAYOUT ANALYSIS SETTINGS
-    
     layout_settings = {
         "caption": {
             "offset": [4, "mm"],
             "direction": "down",
-            "keywords": ['figure', 'caption', 'figuur'] 
+            "keywords": ['figure', 'caption', 'figuur']
             },
         "image": {
             "width": 120,
@@ -108,7 +184,6 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
     }
 
     # OCR ANALYSIS SETTINGS
-
     ocr_settings = {
         "caption": {
             "offset": [50, "px"],
@@ -169,10 +244,10 @@ def pipeline(entry_id:str, data_directory: str, output_directory: str, temp_dire
     base_url = "http://resolver.tudelft.nl/" 
     entry.add_web_url(base_url)
 
-    layout_offset_dist = OffsetDistance (layout_settings["caption"]["offset"][0], 
+    layout_offset_dist = Offset (layout_settings["caption"]["offset"][0], 
                                          layout_settings["caption"]["offset"][1])
 
-    ocr_offset_dist = OffsetDistance (ocr_settings["caption"]["offset"][0], 
+    ocr_offset_dist = Offset (ocr_settings["caption"]["offset"][0], 
                                          ocr_settings["caption"]["offset"][1])
 
     # PROCESS PDF FILES
