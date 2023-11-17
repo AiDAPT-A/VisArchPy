@@ -10,6 +10,7 @@ import pathlib
 import shutil
 import time
 import logging
+from logging import Logger
 import typer
 import json
 # import copy
@@ -19,9 +20,9 @@ from pdfminer.high_level import extract_pages
 from pdfminer.image import ImageWriter
 from pdfminer.pdfparser import PDFSyntaxError
 from tqdm import tqdm
-from visarchpy.utils import extract_mods_metadata
+from visarchpy.utils import extract_mods_metadata, create_output_dir
 from visarchpy.captions import find_caption_by_distance, find_caption_by_text, BoundingBox
-# from visarchpy.pdf import sort_layout_elements, create_output_dir
+from visarchpy.pdf import sort_layout_elements
 from visarchpy.metadata import Document, Metadata, Visual, FilePath
 from visarchpy.captions import Offset
 from typing_extensions import Annotated 
@@ -41,7 +42,24 @@ class Pipeline(ABC):
     def __init__(self, data_directory: str, output_directory: str,
                  settings: dict = None, metadata_file: str = None,
                  temp_directory: str = None) -> None:
-        """Initialises the pipeline."""
+        """"
+        Parameters
+        ----------
+
+        data_directory : str
+            The path to a directory containing the PDF files to be processed.
+        output_directory : str
+            The path to a directory where the results will be saved.
+        metadata_file : str
+            path to a MODS file containing metadata to be associated to the
+            extracted images. If no file is provided, the fields in the output
+            metadata file will be empty.
+        temp_directory : str
+            If provided PDF files in the data directory will be copied to this
+            directory. This is useful for data management purposes, and it was
+            introduced to manage the TU Delft dataset. Defaults to None.
+
+        """
         self.data_directory = data_directory
         self.output_directory = output_directory
         self.settings = settings
@@ -52,7 +70,7 @@ class Pipeline(ABC):
     def settings(self):
         """Gets settings for the pipeline."""
         return self._settings
-    
+
     @settings.setter
     def settings(self, settings: dict) -> None:
         """Sets the settings for the pipeline."""
@@ -85,21 +103,12 @@ class Pipeline(ABC):
     @abstractmethod
     def run(self):
         """Run the pipeline."""
-        pass
+        raise NotImplementedError
 
     def __str__(self) -> str:
         """Returns a string representation of the pipeline."""
-        return str((self.__class__.__name__, {
-                    "data_directory": self.data_directory,
-                    "output_directory": self.output_directory,
-                    "settings": self.settings,
-                    "metadata_file": self.metadata_file,
-                    "temp_directory": self.temp_directory
-                    }))
-
-
-
-
+        properties = vars(self)
+        return f'{self.__class__.__name__} Pipeline: {properties}'
 
 
 # app = typer.Typer(help="Extract visuals from PDF files using layout and OCR analysis.",
@@ -127,7 +136,7 @@ class Pipeline(ABC):
 #                  temp_directory)
 
 
-class LayoutPipeline(Pipeline):
+class Layout(Pipeline):
     """A pipeline for extracting metadata and visuals from PDF
       files using a layout analysis. Layout analysis recursively
       checks elements in the PDF file and sorts them into images,
@@ -138,8 +147,97 @@ class LayoutPipeline(Pipeline):
         """Run the pipeline."""
         print("Running layout analysis pipeline")
 
+        start_time = time.time()
+        # INPUT DIRECTORY
+        DATA_DIR = self.data_directory
+        # OUTPUT DIRECTORY
+        # if run multiple times to the same output directory, the images will be
+        # duplicated and metadata will be overwritten
+        # This will become the root path for a Visual object
+        OUTPUT_DIR = self.output_directory  # an absolute path is recommended
+        # SET MODS FILE
+        if self.metadata_file:
+            MODS_FILE = self.metadata_file
+            entry_id = pathlib.Path(MODS_FILE).stem.split("_")[0]
+        else:
+            entry_id = '00000'  # a default entry id is used if
+            # no MODS file is provided
+        
+        # TEMPORARY DIRECTORY
+        # this directory is used to store temporary files.
+        if self.temp_directory:
+            TMP_DIR = self.temp_directory
+
+        # Create output directory for the entry
+        entry_directory = create_output_dir(OUTPUT_DIR, entry_id)
+
+        # start logging
+        logger = start_logging('layout', os.path.join(OUTPUT_DIR, entry_id,
+                                                      entry_id + '.log'),
+                               entry_id)
+
+        # TODO: continue here
+
+
+def start_logging(name: str, log_file: str, entry_id: str) -> Logger:
+    """Starts logging to a file.
+    
+    Parameters
+    ----------
+    name : str
+        Name of the logger.
+    log_file : str
+        Path to the log file.
+    entry_id : str
+        Identifier of the entry being processed.
+    
+    Returns
+    -------
+        Logger
+
+    """
+    logger = logging.getLogger(name)
+    # Set the logging level to INFO (or any other desired level)
+    logger.setLevel(logging.INFO)
+    # Create a file handler to save log messages to a file
+    file_handler = logging.FileHandler(log_file)
+    # Create a formatter to specify the log message format
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s -\
+                                  %(message)s')
+    file_handler.setFormatter(formatter)
+    # Add the file handler to the logger
+    logger.addHandler(file_handler)
+    logger.info(f"Starting {name} pipeline for entry: " + entry_id)
+
+    return logger
+
+
+
+class OCR(Pipeline):
+    """A pipeline for extracting metadata and visuals from PDF
+        files using OCR analysis. OCR analysis extracts images
+        from PDF files using Tesseract OCR.
+        """
+
+    def run(self):
+        """Run the pipeline."""
+        print("Running OCR analysis pipeline")
+
+
+
+
 class LayoutOCR(Pipeline):
-    pass
+    """A pipeline for extracting metadata and visuals from PDF
+        files that combines layout and OCR analysis. Layout analysis
+        recursively checks elements in the PDF file and sorts them into images,
+        text, and other elements. OCR analysis extracts images using
+        Tesseract OCR.
+        """
+
+    def run(self):
+        """Run the pipeline."""
+        print("Running layout+OCR analysis pipeline")
+
 
 
 def pipeline(data_directory: str, output_directory: str,
@@ -175,6 +273,7 @@ def pipeline(data_directory: str, output_directory: str,
     
     start_time = time.time()
     #SETTINGS                              
+    
     # SELECT INPUT DIRECTORY
     DATA_DIR = data_directory
 
@@ -233,24 +332,21 @@ def pipeline(data_directory: str, output_directory: str,
     
     # start logging
     logger = logging.getLogger('layout_ocr')
-
     # Set the logging level to INFO (or any other desired level)
     logger.setLevel(logging.INFO)
-
     # Create a file handler to save log messages to a file
     log_file = os.path.join(OUTPUT_DIR, entry_id, entry_id + '.log')
     file_handler = logging.FileHandler(log_file)
-
     # Create a formatter to specify the log message format
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     file_handler.setFormatter(formatter)
-
     # Add the file handler to the logger
     logger.addHandler(file_handler)
-    
     logger.info("Starting Layout+OCR pipeline for entry: " + entry_id)
 
     # logging.info("Image settings: " + str(cfg.layout.image_settings))
+
+
 
     # EXTRACT METADATA FROM MODS FILE
     meta_blob = extract_mods_metadata(MODS_FILE)
@@ -583,13 +679,16 @@ if __name__ == "__main__":
     
     data_dir = '/data/'
     output_dir = '/output/'
+    tmp_dir = '/tmp/'
 
     s = {'setting1': 'value1', 'setting2': 'value2'}
 
 
-    p = LayoutPipeline(data_directory=data_dir, output_directory=output_dir)
+    p = Layout(data_directory=data_dir, output_directory=output_dir)
 
     print(p)
+
+    p.run()
 
     # app()
 
