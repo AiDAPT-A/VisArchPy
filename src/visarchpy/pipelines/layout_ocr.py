@@ -347,6 +347,161 @@ def extract_visuals_by_layout(pdf: str, metadata: Metadata, data_dir: str, outpu
     return {'no_images_pages': no_image_pages, "metadata": metadata}
 
 
+def extract_visuals_by_ocr(pdf: str, metadata: Metadata, data_dir: str, output_dir: str,
+                        pdf_file_dir: str, logger: Logger, entry_id: str = None,
+                        ocr_settings: dict = None, image_pages: list = None) -> dict:
+    """Extract visuals from a PDF file using OCR analysis to
+    a directory.
+
+    """
+    
+    pdf_root = data_dir
+    pdf_file_path = os.path.basename(pdf).split("/")[-1]  # file name
+    # with extension
+    logger.info("Processing file: " + pdf_file_path)
+
+    # create document object
+    pdf_formatted_path = FilePath(root_path=pdf_root, file_path=pdf_file_path)
+    pdf_document = Document(pdf_formatted_path)
+    metadata.add_document(pdf_document)
+
+    # PREPARE OUTPUT DIRECTORY
+    # a directory is created for each PDF file
+    entry_directory = os.path.join(output_dir, entry_id)
+    image_directory = create_output_dir(entry_directory, pdf_file_dir)  # returns a
+    # pathlib object
+    # PROCESS PDF
+    pdf_pages = extract_pages(pdf_document.location.full_path())
+    no_image_pages = []  # collects pages where no images were found
+
+    # PROCESS PAGE USING OCR ANALYSIS
+    logger.info("OCR input image resolution (DPI): " + str(
+        ocr_settings["resolution"]))
+    
+    if image_pages:
+        pdf_pages = image_pages
+    else:
+        pdf_pages = extract_pages(metadata.pdf_location)
+
+    for page in tqdm(pdf_pages, desc="OCR analysis", total=len(pdf_pages), unit="OCR pages"):
+
+        page_image = ocr.convert_pdf_to_image( # returns a list with one element
+            metadata.pdf_location, 
+            dpi= ocr_settings["resolution"], 
+            first_page=page["page_number"], 
+            last_page=page["page_number"],
+            )
+
+        ocr_results = ocr.extract_bboxes_from_horc(
+            page_image, config='--psm 3 --oem 1', 
+            entry_id=entry_id, 
+            page_number=page["page_number"],
+            resize=ocr_settings["resize"]
+            )
+        
+        if ocr_results:  # skips pages with no results
+            page_key = ocr_results.keys()
+            page_id = list(page_key)[0]
+
+            # FILTERING OCR RESULTS
+            # filter by bbox size
+            filtered_width_height = ocr.filter_bbox_by_size(
+                                                    ocr_results[page_id]["bboxes"],
+                                                    min_width= ocr_settings["image"]["width"],
+                                                    min_height= ocr_settings["image"]["height"],
+                                                    )
+            
+            ocr_results[page_id]["bboxes"] = filtered_width_height
+
+            # # filter bboxes that are extremely horizontally long 
+            filtered_ratio = ocr.filter_bbox_by_size(
+                                                    ocr_results[page_id]["bboxes"],
+                                                    aspect_ratio = (20/1, ">")
+                                                    )
+            ocr_results[page_id]["bboxes"]= filtered_ratio      
+
+            # filter boxes with extremely vertically long
+            filtered_ratio = ocr.filter_bbox_by_size(ocr_results[page_id]["bboxes"],
+                                                    aspect_ratio = (1/20, "<")
+                                                    )
+            ocr_results[page_id]["bboxes"]= filtered_ratio              
+    
+            # filter boxes contained by larger boxes
+            filtered_contained = ocr.filter_bbox_contained(ocr_results[page_id]["bboxes"])
+            ocr_results[page_id]["bboxes"]= filtered_contained
+
+            # print("OCR text boxes: ", ocr_results[page_id]["text_bboxes"])
+
+            # exclude pages with no bboxes (a.k.a. no inner images)
+            # print("searching ocr captions")
+            if len (ocr_results[page_id]["bboxes"]) > 0:
+                for bbox_id in ocr_results[page_id]["bboxes"]: # loop over image boxes
+
+                    bbox_cords = ocr_results[page_id]["bboxes"][bbox_id] # bbox of image in page
+
+                    visual = Visual(document=pdf_document,
+                                    document_page=page["page_number"],
+                                    bbox=bbox_cords, bbox_units="px")
+                    
+                    # Search for captions using proximity to image
+                    # This may generate multiple matches
+                    bbox_matches =[]
+                    bbox_object = BoundingBox(tuple(bbox_cords), ocr_settings["resolution"])
+
+                    # print('searching for caption for: ', bbox_id)
+                    for text_box in ocr_results[page_id]["text_bboxes"].items():
+
+                        # print("text box: ", text_box)
+
+                        text_cords = text_box[1]
+                        text_object = BoundingBox(tuple(text_cords), ocr_settings["resolution"])
+                        match = find_caption_by_distance(
+                            bbox_object, 
+                            text_object, 
+                            offset= ocr_settings["caption"]["offset"],
+                            direction= ocr_settings["caption"]["direction"]
+                        )
+                        if match:
+                            bbox_matches.append(match)
+                            # print('matched text id: ', text_box[0])
+                            # print(match)
+                    
+                    # print('found matches: ', len(bbox_matches))
+
+                    # print(bbox_matches)
+                    # caption = None
+                    if len(bbox_matches) == 0: # if more than one bbox matches, move to text analysis
+                        pass
+                    else:
+                        # get text from image   
+                        for match in bbox_matches:
+                            # print(match.bbox_px())
+                            ########################
+                            # TODO: decode text from strings. Tests with multiple image files.
+
+                            ocr_caption = ocr.region_to_string(page_image[0], match.bbox_px(), config='--psm 3 --oem 1')
+                            # print('ocr box: ', match.bbox_px())
+                            # print('orc caption: ', ocr_caption)
+                    
+                            if ocr_caption:
+                                try:
+                                    visual.set_caption(ocr_caption)
+                                except Warning: # ignore warnings when caption is already set.
+                                    logger.warning("Caption already set for: " + str(match.bbox()))
+                
+
+                    visual.set_location(FilePath(root_path=output_dir, file_path= entry_id + '/'
+                                                 + pdf_file_dir + '/' + f'{page_id}-{bbox_id}.png'))
+
+                    # visual.set_location(FilePath(str(image_directory), f'{page_id}-{bbox_id}.png' ))
+
+                    metadata.add_visual(visual)
+
+        ocr.crop_images_to_bbox(ocr_results, image_directory)         
+        del page_image # free memory
+
+    return {'no_images_pages': no_image_pages, "metadata": metadata}
+
 
 
 
@@ -445,96 +600,6 @@ def find_pdf_files(directory: str, prefix: str = None) -> list:
     return pdf_files
 
 
-class Layout(Pipeline):
-    """A pipeline for extracting metadata and visuals from PDF
-      files using a layout analysis. Layout analysis recursively
-      checks elements in the PDF file and sorts them into images,
-      text, and other elements.
-    """
-
-    def run(self) -> None:
-        """Run the pipeline."""
-        print("Running layout analysis pipeline")
-        
-        start_time = time.time()
-        # INPUT DIRECTORY
-        DATA_DIR = self.data_directory
-        # OUTPUT DIRECTORY
-        # if run multiple times to the same output directory, the images will
-        # be duplicated and metadata will be overwritten
-        # This will become the root path for a Visual object
-        OUTPUT_DIR = self.output_directory  # an absolute path is recommended
-        # SET MODS FILE
-        if self.metadata_file:
-            MODS_FILE = self.metadata_file
-            entry_id = pathlib.Path(MODS_FILE).stem.split("_")[0]
-        else:
-            entry_id = None  # a default entry id is used if
-            # no MODS file is provided
-
-        # TEMPORARY DIRECTORY
-        # this directory is used to store temporary files.
-        if self.temp_directory:
-            TMP_DIR = self.temp_directory
-
-        # Create output directory for the entry
-        entry_directory = create_output_dir(OUTPUT_DIR, entry_id)
-
-        # start logging
-        logger = start_logging('layout', os.path.join(OUTPUT_DIR, entry_id,
-                                                      entry_id + '.log'),
-                               entry_id)
-
-        # EXTRACT METADATA FROM MODS FILE
-        meta_blob = extract_mods_metadata(MODS_FILE)
-        # initialize metdata object
-        entry = Metadata()
-        # add metadata from MODS file
-        entry.set_metadata(meta_blob)
-        # print('meta blob', meta_blob)
-        # set web url. This is not part of the MODS file
-        base_url = "http://resolver.tudelft.nl/"
-        entry.add_web_url(base_url)
-
-        if self.settings is None:
-            # use default settings
-            layout_offset_dist = Offset(4.0, 'mm')
-            ocr_offset_dist = Offset(50, 'px')
-        else:
-            # use settings provided by user
-            layout_offset_dist = Offset(self.settings["caption"]
-                                        ["offset"][0],
-                                        self.settings["caption"]
-                                        ["offset"][1])
-
-            ocr_offset_dist = Offset(self.settings["caption"]
-                                     ["offset"][0],
-                                     self.settings["caption"]
-                                     ["offset"][1])
-        
-        # FIND PDF FILES in data directory
-        PDF_FILES = find_pdf_files(DATA_DIR, prefix=entry_id)
-        logger.info("PDF files in entry: " + str(len(PDF_FILES)))
-
-           # PROCESS PDF FILES
-        pdf_document_counter = 1
-        for pdf in PDF_FILES:
-
-            print("--> Processing file:", pdf)
-            pdf_file_dir = 'pdf-' + str(pdf_document_counter).zfill(3)
-        
-            extract_visuals_by_layout(pdf, entry, DATA_DIR, OUTPUT_DIR,
-                                      pdf_file_dir, logger, entry_id,
-                                      layout_settings)
-
-            pdf_document_counter += 1
-        
-        end_time = time.time()
-        processing_time = end_time - start_time
-        logger.info("Processing time: " + str(processing_time) + " seconds")
-
-
-
 def start_logging(name: str, log_file: str, entry_id: str) -> Logger:
     """Starts logging to a file.
     
@@ -566,6 +631,120 @@ def start_logging(name: str, log_file: str, entry_id: str) -> Logger:
     logger.info(f"Starting {name} pipeline for entry: " + entry_id)
 
     return logger
+
+
+
+
+
+class Layout(Pipeline):
+    """A pipeline for extracting metadata and visuals from PDF
+      files using a layout analysis. Layout analysis recursively
+      checks elements in the PDF file and sorts them into images,
+      text, and other elements.
+    """
+
+    def run(self) -> dict:
+        """Run the pipeline."""
+        print("Running layout analysis pipeline")
+        
+        start_time = time.time()
+        # INPUT DIRECTORY
+        DATA_DIR = self.data_directory
+        # OUTPUT DIRECTORY
+        # if run multiple times to the same output directory, the images will
+        # be duplicated and metadata will be overwritten
+        # This will become the root path for a Visual object
+        OUTPUT_DIR = self.output_directory  # an absolute path is recommended
+        # SET MODS FILE
+        if self.metadata_file:
+            MODS_FILE = self.metadata_file
+            entry_id = pathlib.Path(MODS_FILE).stem.split("_")[0]
+        else:
+            entry_id = None  # a default entry id is used if
+            # no MODS file is provided
+
+        # TEMPORARY DIRECTORY
+        # this directory is used to store temporary files.
+        if self.temp_directory:
+            TMP_DIR = self.temp_directory
+
+        # Create output directory for the entry
+        entry_directory = create_output_dir(OUTPUT_DIR, entry_id)
+
+        # start logging
+        logger = start_logging('layout', os.path.join(OUTPUT_DIR, entry_directory,
+                                                      entry_id + '.log'),
+                               entry_id)
+
+        # EXTRACT METADATA FROM MODS FILE
+        meta_blob = extract_mods_metadata(MODS_FILE)
+        # initialize metdata object
+        meta_entry = Metadata()
+        # add metadata from MODS file
+        meta_entry.set_metadata(meta_blob)
+        # print('meta blob', meta_blob)
+        # set web url. This is not part of the MODS file
+        base_url = "http://resolver.tudelft.nl/"
+        meta_entry.add_web_url(base_url)
+
+        # TODO: setting should be passed as a dictionary to extract_visuals_by_layout()
+        if self.settings is None:
+            # use default settings
+            layout_offset_dist = Offset(4.0, 'mm')
+            ocr_offset_dist = Offset(50, 'px')
+        else:
+            # use settings provided by user
+            layout_offset_dist = Offset(self.settings["caption"]
+                                        ["offset"][0],
+                                        self.settings["caption"]
+                                        ["offset"][1])
+
+            ocr_offset_dist = Offset(self.settings["caption"]
+                                     ["offset"][0],
+                                     self.settings["caption"]
+                                     ["offset"][1])
+        
+        # FIND PDF FILES in data directory
+        PDF_FILES = find_pdf_files(DATA_DIR, prefix=entry_id)
+        logger.info("PDF files in entry: " + str(len(PDF_FILES)))
+
+           # PROCESS PDF FILES
+        pdf_document_counter = 1
+        results = {}
+        for pdf in PDF_FILES:
+
+            print("--> Processing file:", pdf)
+            pdf_file_dir = 'pdf-' + str(pdf_document_counter).zfill(3)
+        
+            results = extract_visuals_by_layout(pdf, meta_entry, DATA_DIR, OUTPUT_DIR,
+                                      pdf_file_dir, logger, entry_id,
+                                      layout_settings)
+
+            pdf_document_counter += 1
+        
+        end_time = time.time()
+        processing_time = end_time - start_time
+        logger.info("Processing time: " + str(processing_time) + " seconds")
+
+        logger.info("Extracted visuals: " + str(meta_entry.total_visuals))
+
+        # SAVE METADATA TO files
+        csv_file = str(os.path.join(entry_directory, entry_id) + "-metadata.csv")
+        json_file = str(os.path.join(entry_directory, entry_id) + "-metadata.json")
+        meta_entry.save_to_csv(csv_file)
+        meta_entry.save_to_json(json_file)
+
+        if not meta_entry.uuid:
+            logger.warning("No identifier found in MODS file")
+
+        # SAVE settings to json file
+        settings_file = str(os.path.join(entry_directory, entry_id) + "-settings.json")
+        with open(settings_file, 'w') as f:
+            json.dump({"layout": layout_settings}, f, indent=4)
+        
+
+        return results
+
 
 
 
@@ -876,16 +1055,11 @@ def pipeline(data_directory: str, output_directory: str,
         del pages # free memory
 
 
-        def extract_visuals_by_ocr(pdf: str, metadata: Metadata, data_dir: str, output_dir: str,
-                              pdf_file_dir: str, logger: Logger, entry_id: str = None,
-                              ocr_settings: dict = None) -> dict:
-            """Extract visuals from a PDF file using OCR analysis to
-            a directory.
 
-            """
-
-            
         
+
+
+
 
 
         # PROCESS PAGE USING OCR ANALYSIS
@@ -1019,6 +1193,7 @@ def pipeline(data_directory: str, output_directory: str,
         # and images are saved to subdirectories in the entry direct, subdirectory name is the pdf file name
         # e.g.:  00001/00001/page1-00001.png, 00001/00001/page2-00001.png
 
+    # TODO: move this to a function
     # Copy MODS file and PDF files to output directory
     temp_entry_directory = create_output_dir( os.path.join(TMP_DIR, entry_id))
 
