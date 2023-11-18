@@ -33,9 +33,9 @@ from abc import ABC, abstractmethod
 import PIL.Image
 PIL.Image.MAX_IMAGE_PIXELS = None
 
+
+
 # Common interface for all pipelines
-
-
 class Pipeline(ABC):
     """Abstract base class for all pipelines."""
 
@@ -111,6 +111,245 @@ class Pipeline(ABC):
         return f'{self.__class__.__name__} Pipeline: {properties}'
 
 
+
+def extract_visuals_by_layout(pdf: str, metadata: Metadata, data_dir: str, output_dir: str,
+                              pdf_file_dir: str, logger: Logger, entry_id: str = None,
+                              layout_settings: dict = None) -> dict:
+    """Extract visuals from a PDF file using layout analysis to
+    a directory.
+
+    Parameters
+    ----------
+    pdf : str
+        Path to the PDF file as returned by find_pdf_files().
+    data_dir : str
+        Path to the input directory containing the PDF file.
+    output_dir : str
+        Path to the output directory where visuals will be saved.
+    pdf_file_dir : str
+        Name of a directory where the results will be saved. This
+        directory will be created inside the output directory.
+    logger : Logger
+        A logger object.
+    entry_id : str
+        Identifier of the entry being processed.
+    layout_settings : dict
+        A dictionary containing the settings for the layout analysis.
+        
+    Returns
+    -------
+
+    dict
+        A dictionary containing the extracted visuals.
+        example:
+
+        ```python
+        {'no_images_pages': <list of pages where no images were found by layout analysis>, 
+        "metadata": <Metadata object>}
+        ```
+
+    Raises
+    ------
+    Warning PDFSyntaxError 
+        If the PDF file is malformed or corrupted.
+    Warning AssertionError
+        If the PDF file contains an unsupported font.
+    Warning TypeError 
+        If PDF file encounters a bug with pdfminer.
+    Warning ValueError 
+        If image writer cannot save MCYK images with 4 bits per pixel.
+        Issue: https://github.com/pdfminer/pdfminer.six/pull/854
+    Warning UnboundLocalError 
+        If image writer's decoder doesn't support image stream.
+    Warning PDFNotImplementedError
+        If image writer encounters that PDF stream has an unsupported format.
+    Warning PIL.UnidentifiedImageError 
+        If image writer encounters an error with io.BytesIO.
+    Warning IndexError 
+        If image writer encounters an error with PNG predictor for some image.
+    Warning KeyError
+        If image writer encounters an error with JBIG2Globals decoder.
+    Warning TypeError
+        If image writer encounters an error with PDFObjRef filter.
+    """
+
+    pdf_root = data_dir
+    pdf_file_path = os.path.basename(pdf).split("/")[-1]  # file name
+    # with extension
+    logger.info("Processing file: " + pdf_file_path)
+
+    # create document object
+    pdf_formatted_path = FilePath(root_path=pdf_root, file_path=pdf_file_path)
+    pdf_document = Document(pdf_formatted_path)
+    metadata.add_document(pdf_document)
+
+    # PREPARE OUTPUT DIRECTORY
+    # a directory is created for each PDF file
+    entry_directory = os.path.join(output_dir, entry_id)
+    image_directory = create_output_dir(entry_directory, pdf_file_dir)  # returns a
+    # pathlib object
+    # PROCESS PDF
+    pdf_pages = extract_pages(pdf_document.location.full_path())
+    pages = []
+    no_image_pages = []  # collects pages where no images were found
+    # by layout analysis
+    # this checks for malformed or corrupted PDF files, and
+    # unsupported fonts and some bugs in pdfminer
+    ### ==================================== ###
+    try:
+        for page in tqdm(pdf_pages, desc="Sorting pages layout\
+                            analysis", unit="pages"):
+            elements = sort_layout_elements(
+                page,
+                img_width=layout_settings["image"]["width"],
+                img_height=layout_settings["image"]["height"]
+            )
+            pages.append(elements)
+            
+    except PDFSyntaxError:  # skip malformed or corrupted PDF files
+        logger.error("PDFSyntaxError. Couldn't read: " +
+                        pdf_document.location.file_path)
+        Warning("PDFSyntaxError. Couldn't read: " +
+                pdf_document.location.file_path)
+    except AssertionError as e:  # skip unsupported fonts
+        logger.error("AssertionError. Unsupported font: " +
+                        pdf_document.location.file_path + str(e))
+        Warning("AssertionError. Unsupported font: " +
+                pdf_document.location.file_path + str(e))
+    except TypeError as e:  # skip bug in pdfminer
+        # no_image_pages.append(page) # pass page to OCR analysis
+        logger.error("TypeError. Bug with Predictor: " +
+                        pdf_document.location.file_path + str(e))
+        Warning("TypeError. Bug with Predictor: " +
+                pdf_document.location.file_path + str(e))
+    else:
+        # TODO: test this only happnes when no exception is raised
+        del elements  # free memory
+
+    layout_offset_dist = Offset(layout_settings["caption"]["offset"][0],
+                                layout_settings["caption"]["offset"][1])
+    
+    # PROCESS PAGE USING LAYOUT ANALYSIS
+    for page in tqdm(pages,
+                        desc="layout analysis", total=len(pages),
+                        unit="sorted pages"):
+
+        iw = ImageWriter(image_directory)
+
+        if page["images"] == []:  # collects pages where no images
+            # were found by layout analysis # TODO: fix this
+            no_image_pages.append(page)
+        for img in page["images"]:
+            visual = Visual(document_page=page["page_number"],
+                            document=pdf_document,
+                            bbox=img.bbox, bbox_units="pt")
+            # Search for captions using proximity to image
+            # This may generate multiple matches
+            bbox_matches = []
+            for _text in page["texts"]:
+                match = find_caption_by_distance(
+                    img,
+                    _text,
+                    offset=layout_offset_dist,
+                    direction=layout_settings["caption"]["direction"]
+                    )
+                if match:
+                    bbox_matches.append(match)
+            # Search for captions using proximity (offset) and text
+            # analyses (keywords)
+            if len(bbox_matches) == 0:
+                pass  # don't set any caption
+            elif len(bbox_matches) == 1:
+                caption = ""
+                for text_line in bbox_matches[0]:
+                    caption += text_line.get_text().strip() 
+                visual.set_caption(caption)  # TODO: fix this
+            else:  # more than one matches in bbox_matches
+                for _text in bbox_matches:
+                    text_match = find_caption_by_text(
+                        _text,
+                        keywords=layout_settings["caption"]["keywords"]
+                        )
+                if text_match:
+                    caption = ""
+                    for text_line in bbox_matches[0]:
+                        caption += text_line.get_text().strip()
+                # Set the caption to the first text match.
+                # All other matches will be ignored.
+                # This may introduce errors, but it is better than
+                # having multiple captions
+                    try:
+                        visual.set_caption(caption)  # TODO: fix this
+                    except Warning:  # ignore warnings when caption is
+                        # already set.
+                        logger.warning("Caption already set for image: "+img.name)
+                        Warning("Caption already set for image: "+img.name)
+                        pass
+
+            # rename image name to include page number
+            img.name = str(entry_id)+"-page"+str(
+                page["page_number"])
+            +"-"+img.name
+            # save image to file
+            try:
+                image_file_name = iw.export_image(img)
+                # returns image file name,
+                # which last part is automatically generated by
+                # pdfminer to guarantee uniqueness
+                # print("image file name", image_file_name)
+            except ValueError:
+                # issue with MCYK images with 4 bits per pixel
+                # https://github.com/pdfminer/pdfminer.six/pull/854
+                logger.warning("Image with unsupported format wasn't\
+                                saved:" + img.name)
+                Warning("Image with unsupported format wasn't saved:" + img.name)
+            except UnboundLocalError:
+                logger.warning("Decocder doesn't support image stream,\
+                                therefore not saved:" + img.name)
+                Warning("Decocder doesn't support image stream,\
+                                therefore not saved:" + img.name)
+            except PDFNotImplementedError:
+                logger.warning("PDF stream unsupported format,  image\
+                                not saved:" + img.name)
+                Warning("PDF stream unsupported format,  image\
+                                not saved:" + img.name)
+            except PIL.UnidentifiedImageError:
+                logger.warning("PIL.UnidentifiedImageError io.BytesIO,\
+                                image not saved:" + img.name)
+                Warning("PIL.UnidentifiedImageError io.BytesIO,\
+                                image not saved:" + img.name)
+            except IndexError:  # avoid decoding errors in PNG
+                # predictor for some images
+                logger.warning("IndexError, png predictor/decoder\
+                                failed:" + img.name)
+                Warning("IndexError, png predictor/decoder\
+                                failed:" + img.name)
+            except KeyError:  # avoid decoding error of JBIG2 images
+                logger.warning("KeyError, JBIG2Globals decoder failed:"
+                                + img.name)
+                Warning("KeyError, JBIG2Globals decoder failed:"
+                                + img.name)
+            except TypeError:  # avoid filter error with PDFObjRef
+                logger.warning("TypeError, filter error PDFObjRef:"
+                                + img.name)
+                Warning("TypeError, filter error PDFObjRef:"
+                                + img.name)
+            else:
+                visual.set_location(FilePath(root_path=output_dir,
+                                                file_path=entry_id
+                                                + '/' + pdf_file_dir
+                                                + '/' + image_file_name))
+        
+                # add visual to entry
+                metadata.add_visual(visual)
+    del pages  # free memory
+
+    return {'no_images_pages': no_image_pages, "metadata": metadata}
+
+
+
+
+
 # app = typer.Typer(help="Extract visuals from PDF files using layout and OCR analysis.",
 #     context_settings={"help_option_names": ["-h", "--help"]},
 #                    add_completion=False)
@@ -136,6 +375,76 @@ class Pipeline(ABC):
 #                  temp_directory)
 
 
+### ==================================== ###
+# Default SETTINGS                        #
+### ==================================== ##
+
+# LAYOUT ANALYSIS SETTINGS
+layout_settings = {
+        "caption": {
+            "offset": [4, "mm"],
+            "direction": "down",
+            "keywords": ['figure', 'caption', 'figuur']
+            },
+        "image": {
+            "width": 120,
+            "height": 120,
+        }
+    }
+
+# OCR ANALYSIS SETTINGS
+ocr_settings = {
+        "caption": {
+            "offset": [50, "px"],
+            "direction": "down",
+            "keywords": ['figure', 'caption', 'figuur']
+            },
+        "image": {
+            "width": 120,
+            "height": 120,
+        },
+        "resolution": 250,  # dpi, default for ocr analysis,
+        "resize": 30000,  # px, if image is larger than this, it will be
+        # resized before performing OCR,
+        # this affect the quality of output images
+    }
+
+### ==================================== ###
+
+
+def find_pdf_files(directory: str, prefix: str = None) -> list:
+    """
+    Finds PDF files that match a given prefix.
+
+    Parameters
+    ----------
+    directory : str
+        Path to the directory where the PDF files are located.
+    prefix : str
+        sequence of characters to be be matched to the file name.
+        If no prefix is provided, all PDF files in the
+        data directory will be returned.
+
+    Returns
+    -------
+    list
+        List of paths to PDF files. Resulting path is a combination of the
+        directory path and the file name.
+    """
+
+    pdf_files = []
+    for f in tqdm(os.listdir(directory), desc="Collecting PDF files",
+                  unit="files"):
+        if prefix:
+            if f.startswith(prefix) and f.endswith(".pdf"):
+                pdf_files.append(directory+f)
+        else:
+            if f.endswith(".pdf"):
+                pdf_files.append(directory+f)
+
+    return pdf_files
+
+
 class Layout(Pipeline):
     """A pipeline for extracting metadata and visuals from PDF
       files using a layout analysis. Layout analysis recursively
@@ -143,16 +452,16 @@ class Layout(Pipeline):
       text, and other elements.
     """
 
-    def run(self):
+    def run(self) -> None:
         """Run the pipeline."""
         print("Running layout analysis pipeline")
-
+        
         start_time = time.time()
         # INPUT DIRECTORY
         DATA_DIR = self.data_directory
         # OUTPUT DIRECTORY
-        # if run multiple times to the same output directory, the images will be
-        # duplicated and metadata will be overwritten
+        # if run multiple times to the same output directory, the images will
+        # be duplicated and metadata will be overwritten
         # This will become the root path for a Visual object
         OUTPUT_DIR = self.output_directory  # an absolute path is recommended
         # SET MODS FILE
@@ -160,9 +469,9 @@ class Layout(Pipeline):
             MODS_FILE = self.metadata_file
             entry_id = pathlib.Path(MODS_FILE).stem.split("_")[0]
         else:
-            entry_id = '00000'  # a default entry id is used if
+            entry_id = None  # a default entry id is used if
             # no MODS file is provided
-        
+
         # TEMPORARY DIRECTORY
         # this directory is used to store temporary files.
         if self.temp_directory:
@@ -176,7 +485,54 @@ class Layout(Pipeline):
                                                       entry_id + '.log'),
                                entry_id)
 
-        # TODO: continue here
+        # EXTRACT METADATA FROM MODS FILE
+        meta_blob = extract_mods_metadata(MODS_FILE)
+        # initialize metdata object
+        entry = Metadata()
+        # add metadata from MODS file
+        entry.set_metadata(meta_blob)
+        # print('meta blob', meta_blob)
+        # set web url. This is not part of the MODS file
+        base_url = "http://resolver.tudelft.nl/"
+        entry.add_web_url(base_url)
+
+        if self.settings is None:
+            # use default settings
+            layout_offset_dist = Offset(4.0, 'mm')
+            ocr_offset_dist = Offset(50, 'px')
+        else:
+            # use settings provided by user
+            layout_offset_dist = Offset(self.settings["caption"]
+                                        ["offset"][0],
+                                        self.settings["caption"]
+                                        ["offset"][1])
+
+            ocr_offset_dist = Offset(self.settings["caption"]
+                                     ["offset"][0],
+                                     self.settings["caption"]
+                                     ["offset"][1])
+        
+        # FIND PDF FILES in data directory
+        PDF_FILES = find_pdf_files(DATA_DIR, prefix=entry_id)
+        logger.info("PDF files in entry: " + str(len(PDF_FILES)))
+
+           # PROCESS PDF FILES
+        pdf_document_counter = 1
+        for pdf in PDF_FILES:
+
+            print("--> Processing file:", pdf)
+            pdf_file_dir = 'pdf-' + str(pdf_document_counter).zfill(3)
+        
+            extract_visuals_by_layout(pdf, entry, DATA_DIR, OUTPUT_DIR,
+                                      pdf_file_dir, logger, entry_id,
+                                      layout_settings)
+
+            pdf_document_counter += 1
+        
+        end_time = time.time()
+        processing_time = end_time - start_time
+        logger.info("Processing time: " + str(processing_time) + " seconds")
+
 
 
 def start_logging(name: str, log_file: str, entry_id: str) -> Logger:
@@ -224,8 +580,6 @@ class OCR(Pipeline):
         print("Running OCR analysis pipeline")
 
 
-
-
 class LayoutOCR(Pipeline):
     """A pipeline for extracting metadata and visuals from PDF
         files that combines layout and OCR analysis. Layout analysis
@@ -237,7 +591,6 @@ class LayoutOCR(Pipeline):
     def run(self):
         """Run the pipeline."""
         print("Running layout+OCR analysis pipeline")
-
 
 
 def pipeline(data_directory: str, output_directory: str,
@@ -360,14 +713,14 @@ def pipeline(data_directory: str, output_directory: str,
     logger.info("PDF files in entry: " + str(len(PDF_FILES)))
 
     # INITIALISE METADATA OBJECT
-    entry = Metadata()
+    meta_ = Metadata()
     # add metadata from MODS file
-    entry.set_metadata(meta_blob)
+    meta_.set_metadata(meta_blob)
 
     # print('meta blob', meta_blob)
     # set web url. This is not part of the MODS file
-    base_url = "http://resolver.tudelft.nl/" 
-    entry.add_web_url(base_url)
+    base_url = "http://resolver.tudelft.nl/"
+    meta_.add_web_url(base_url)
 
     layout_offset_dist = Offset (layout_settings["caption"]["offset"][0], 
                                          layout_settings["caption"]["offset"][1])
@@ -379,21 +732,35 @@ def pipeline(data_directory: str, output_directory: str,
     pdf_document_counter = 1
     start_processing_time = time.time()
     for pdf in PDF_FILES:
+
+        pdf_file_dir = 'pdf-' + str(pdf_document_counter).zfill(3)
+        
+        
+
+        pdf_document_counter += 1
+
         print("--> Processing file:", pdf)
+        
         pdf_root = DATA_DIR
-        pdf_file_path = os.path.basename(pdf).split("/")[-1] # file name with extension
+        pdf_file_path = os.path.basename(pdf).split("/")[-1]  # file name with extension
         logger.info("Processing file: " + pdf_file_path)
+        
+        
         # create document object
         pdf_formatted_path = FilePath(root_path=pdf_root, file_path=pdf_file_path)
         pdf_document = Document(pdf_formatted_path)
-        entry.add_document(pdf_document)
+        meta_.add_document(pdf_document)
 
         # PREPARE OUTPUT DIRECTORY
-        pdf_file_name = 'pdf-' + str(pdf_document_counter).zfill(3)
+        pdf_file_dir = 'pdf-' + str(pdf_document_counter).zfill(3)
         image_directory = create_output_dir(entry_directory, 
-                                            pdf_file_name) # returns a pathlib object
+                                            pdf_file_dir) # returns a pathlib object
                
         # ocr_directory = create_output_dir(image_directory, "ocr")
+
+
+
+        
 
         # PROCESS SINGLE PDF 
         pdf_pages = extract_pages(pdf_document.location.full_path())
@@ -407,7 +774,7 @@ def pipeline(data_directory: str, output_directory: str,
                 elements = sort_layout_elements(page, img_width=layout_settings["image"]["width"],
                                                 img_height = layout_settings["image"]["height"] 
                                                 )
-                pages.append( elements )
+                pages.append(elements)
                 
         except PDFSyntaxError: # skip malformed or corrupted PDF files
             logger.error("PDFSyntaxError. Couldn't read: " + pdf_document.location.file_path ) 
@@ -500,13 +867,26 @@ def pipeline(data_directory: str, output_directory: str,
                 except TypeError: # avoid filter error with PDFObjRef
                     logger.warning("TypeError, filter error PDFObjRef:" + img.name)
                 else:
-                    visual.set_location(FilePath( root_path=OUTPUT_DIR, file_path= entry_id + '/'  + pdf_file_name + '/' + image_file_name))
+                    visual.set_location(FilePath( root_path=OUTPUT_DIR, file_path= entry_id + '/'  + pdf_file_dir + '/' + image_file_name))
             
                     # add visual to entry
-                    entry.add_visual(visual)
+                    meta_.add_visual(visual)
 
         pdf_document_counter += 1
         del pages # free memory
+
+
+        def extract_visuals_by_ocr(pdf: str, metadata: Metadata, data_dir: str, output_dir: str,
+                              pdf_file_dir: str, logger: Logger, entry_id: str = None,
+                              ocr_settings: dict = None) -> dict:
+            """Extract visuals from a PDF file using OCR analysis to
+            a directory.
+
+            """
+
+            
+        
+
 
         # PROCESS PAGE USING OCR ANALYSIS
         logger.info("OCR input image resolution (DPI): " + str(ocr_settings["resolution"]))
@@ -621,11 +1001,11 @@ def pipeline(data_directory: str, output_directory: str,
                                         logger.warning("Caption already set for: " + str(match.bbox()))
                     
 
-                        visual.set_location(FilePath(root_path=OUTPUT_DIR, file_path= entry_id + '/'  + pdf_file_name + '/' + f'{page_id}-{bbox_id}.png'))
+                        visual.set_location(FilePath(root_path=OUTPUT_DIR, file_path= entry_id + '/'  + pdf_file_dir + '/' + f'{page_id}-{bbox_id}.png'))
 
                         # visual.set_location(FilePath(str(image_directory), f'{page_id}-{bbox_id}.png' ))
 
-                        entry.add_visual(visual)
+                        meta_.add_visual(visual)
 
             ocr.crop_images_to_bbox(ocr_results, image_directory)         
             del page_image # free memory
@@ -652,15 +1032,15 @@ def pipeline(data_directory: str, output_directory: str,
             if not os.path.exists(os.path.join(temp_entry_directory, os.path.basename(pdf) )):
                 shutil.copy2(pdf, temp_entry_directory)
         
-    logger.info("Extracted visuals: " + str(entry.total_visuals))
+    logger.info("Extracted visuals: " + str(meta_.total_visuals))
 
     # SAVE METADATA TO files
     csv_file = str(os.path.join(entry_directory, entry_id) + "-metadata.csv")
     json_file = str(os.path.join(entry_directory, entry_id) + "-metadata.json")
-    entry.save_to_csv(csv_file)
-    entry.save_to_json(json_file)
+    meta_.save_to_csv(csv_file)
+    meta_.save_to_json(json_file)
 
-    if not entry.uuid:
+    if not meta_.uuid:
         logger.warning("No identifier found in MODS file")
 
     # SAVE settings to json file
