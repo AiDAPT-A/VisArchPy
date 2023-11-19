@@ -584,7 +584,7 @@ def start_logging(name: str, log_file: str, entry_id: str) -> Logger:
 def manage_input_files(pdf_files: list, destination_dir: str,
                        mods_file: str = None) -> None:
     """copy MODS and PDF files to a directory.
-   
+
     Parameters
     ----------
     pdf_files : list
