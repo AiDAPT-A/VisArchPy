@@ -190,7 +190,7 @@ def extract_visuals_by_layout(pdf: str, metadata: Metadata, data_dir: str,
     # by layout analysis
     # this checks for malformed or corrupted PDF files, and
     # unsupported fonts and some bugs in pdfminer
-    ### ==================================== ###
+
     try:
         for page in tqdm(pdf_pages, desc="Sorting pages layout\
                             analysis", unit="pages"):
@@ -457,10 +457,7 @@ def extract_visuals_by_ocr(pdf: str, metadata: Metadata, data_dir: str,
             filtered_contained = ocr.filter_bbox_contained(ocr_results[page_id]["bboxes"])
             ocr_results[page_id]["bboxes"] = filtered_contained
 
-            # print("OCR text boxes: ", ocr_results[page_id]["text_bboxes"])
-
             # exclude pages with no bboxes (a.k.a. no inner images)
-            # print("searching ocr captions")
             if len(ocr_results[page_id]["bboxes"]) > 0:
                 # loop over imageboxes
                 for bbox_id in ocr_results[page_id]["bboxes"]:
@@ -477,10 +474,8 @@ def extract_visuals_by_ocr(pdf: str, metadata: Metadata, data_dir: str,
                     bbox_object = BoundingBox(tuple(bbox_cords),
                                               ocr_settings["resolution"])
 
-                    # print('searching for caption for: ', bbox_id)
                     for text_box in ocr_results[page_id]["text_bboxes"].items():
 
-                        # print("text box: ", text_box)
                         text_cords = text_box[1]
                         text_object = BoundingBox(tuple(text_cords),
                                                   ocr_settings["resolution"])
@@ -495,13 +490,7 @@ def extract_visuals_by_ocr(pdf: str, metadata: Metadata, data_dir: str,
                         )
                         if match:
                             bbox_matches.append(match)
-                            # print('matched text id: ', text_box[0])
-                            # print(match)
 
-                    # print('found matches: ', len(bbox_matches))
-
-                    # print(bbox_matches)
-                    # caption = None
                     if len(bbox_matches) == 0:  # if more than one bbox 
                         # matches, skip and do text analysis
                         pass
@@ -515,8 +504,6 @@ def extract_visuals_by_ocr(pdf: str, metadata: Metadata, data_dir: str,
                             ocr_caption = ocr.region_to_string(page_image[0],
                                                                match.bbox_px(),
                                                                config='--psm 3 --oem 1')
-                            # print('ocr box: ', match.bbox_px())
-                            # print('orc caption: ', ocr_caption)
 
                             if ocr_caption:
                                 try:
@@ -530,8 +517,6 @@ def extract_visuals_by_ocr(pdf: str, metadata: Metadata, data_dir: str,
                                                  file_path=entry_id + '/'
                                                  + pdf_file_dir + '/'
                                                  + f'{page_id}-{bbox_id}.png'))
-
-                    # visual.set_location(FilePath(str(image_directory), f'{page_id}-{bbox_id}.png' ))
 
                     metadata.add_visual(visual)
 
@@ -685,13 +670,9 @@ class Layout(Pipeline):
         meta_entry = Metadata()
         # add metadata from MODS file
         meta_entry.set_metadata(meta_blob)
-        # print('meta blob', meta_blob)
         # set web url. This is not part of the MODS file
         base_url = "http://resolver.tudelft.nl/"
         meta_entry.add_web_url(base_url)
-
-        # TODO: setting should be passed as a dictionary to
-        # extract_visuals_by_layout()
 
         # FIND PDF FILES in data directory
         PDF_FILES = find_pdf_files(DATA_DIR, prefix=entry_id)
@@ -743,10 +724,11 @@ class Layout(Pipeline):
             temp_entry_directory = create_output_dir(
                 os.path.join(TMP_DIR, entry_id)
             )
-            logger.info("Managing file and copying to:" + str(temp_entry_directory))
+            logger.info("Managing file and copying to: " + str(temp_entry_directory))
             manage_input_files(PDF_FILES, temp_entry_directory, MODS_FILE)
             logger.info("Done managing files")
 
+        logger.info("Done")
         return results
 
 
@@ -783,7 +765,7 @@ class OCR(Pipeline):
         entry_directory = create_output_dir(OUTPUT_DIR, entry_id)
 
         # start logging
-        logger = start_logging('layout',
+        logger = start_logging('OCR',
                                os.path.join(entry_directory,
                                             entry_id + '.log'),
                                entry_id)
@@ -798,9 +780,6 @@ class OCR(Pipeline):
         # set web url. This is not part of the MODS file
         base_url = "http://resolver.tudelft.nl/"
         meta_entry.add_web_url(base_url)
-
-        # TODO: setting should be passed as a dictionary to
-        # extract_visuals_by_layout()
 
         # FIND PDF FILES in data directory
         PDF_FILES = find_pdf_files(DATA_DIR, prefix=entry_id)
@@ -852,18 +831,12 @@ class OCR(Pipeline):
             temp_entry_directory = create_output_dir(
                 os.path.join(TMP_DIR, entry_id)
             )
-            logger.info("Managing file and copying to:" + str(temp_entry_directory))
+            logger.info("Managing file and copying to: " + str(temp_entry_directory))
             manage_input_files(PDF_FILES, temp_entry_directory, MODS_FILE)
             logger.info("Done managing files")
-
+        
+        logger.info("Done")
         return results
-
-
-
-
-
-
-
 
 
 class LayoutOCR(Pipeline):
@@ -874,13 +847,17 @@ class LayoutOCR(Pipeline):
         Tesseract OCR.
 
         It applyes image search and analysis based  in two steps:
-        First, it analyses the layout of the PDF file using the pdfminer.six library.
-        Second, it applies OCR to the pages where no images were found by layout analysis.
+        First, it analyses the layout of the PDF file using the pdfminer.six
+        library.
+        Second, it applies OCR to the pages where no images were found by
+        layout analysis.
         """
 
     def run(self):
         """Run the pipeline."""
         print("Running layout+OCR analysis pipeline")
+
+        # TODO: combine code in layout and OCR pipelines
 
 
 def pipeline(data_directory: str, output_directory: str,
@@ -1364,10 +1341,10 @@ if __name__ == "__main__":
         # this affect the quality of output images
     }
 
-    # p = Layout(data_directory=data_dir, output_directory=output_dir, metadata_file=metadata_file, settings=layout_settings, temp_directory=tmp_dir)
+    p = Layout(data_directory=data_dir, output_directory=output_dir, metadata_file=metadata_file, settings=layout_settings, temp_directory=tmp_dir)
 
-    p = OCR(data_directory=data_dir, output_directory=output_dir, metadata_file=metadata_file, settings=ocr_settings, temp_directory=tmp_dir)
-    print(p)
+    # p = OCR(data_directory=data_dir, output_directory=output_dir, metadata_file=metadata_file, settings=ocr_settings, temp_directory=tmp_dir)
+
 
     # p.temp_directory = None
     r  = p.run()
