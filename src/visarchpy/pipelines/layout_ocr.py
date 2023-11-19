@@ -515,38 +515,6 @@ def extract_visuals_by_ocr(pdf: str, metadata: Metadata, data_dir: str,
     return {'no_images_pages': no_image_pages, "metadata": metadata}
 
 
-layout_settings = {
-        "caption": {
-            "offset": [4, "mm"],
-            "direction": "down",
-            "keywords": ['figure', 'caption', 'figuur']
-            },
-        "image": {
-            "width": 120,
-            "height": 120,
-        }
-    }
-
-# OCR ANALYSIS SETTINGS
-ocr_settings = {
-        "caption": {
-            "offset": [50, "px"],
-            "direction": "down",
-            "keywords": ['figure', 'caption', 'figuur']
-            },
-        "image": {
-            "width": 120,
-            "height": 120,
-        },
-        "resolution": 250,  # dpi, default for ocr analysis,
-        "resize": 30000,  # px, if image is larger than this, it will be
-        # resized before performing OCR,
-        # this affect the quality of output images
-    }
-
-### ==================================== ###
-
-
 def find_pdf_files(directory: str, prefix: str = None) -> list:
     """
     Finds PDF files that match a given prefix.
@@ -582,7 +550,7 @@ def find_pdf_files(directory: str, prefix: str = None) -> list:
 
 def start_logging(name: str, log_file: str, entry_id: str) -> Logger:
     """Starts logging to a file.
-    
+
     Parameters
     ----------
     name : str
@@ -591,7 +559,7 @@ def start_logging(name: str, log_file: str, entry_id: str) -> Logger:
         Path to the log file.
     entry_id : str
         Identifier of the entry being processed.
-    
+
     Returns
     -------
         Logger
@@ -616,7 +584,7 @@ def start_logging(name: str, log_file: str, entry_id: str) -> Logger:
 def manage_input_files(pdf_files: list, destination_dir: str,
                        mods_file: str = None) -> None:
     """copy MODS and PDF files to a directory.
-    
+   
     Parameters
     ----------
     pdf_files : list
@@ -656,7 +624,7 @@ class Layout(Pipeline):
     def run(self) -> dict:
         """Run the pipeline."""
         print("Running layout analysis pipeline")
-        
+
         start_time = time.time()
         # INPUT DIRECTORY
         DATA_DIR = self.data_directory
@@ -714,7 +682,8 @@ class Layout(Pipeline):
             print("data dir", DATA_DIR)
             results = extract_visuals_by_layout(pdf, meta_entry, DATA_DIR,
                                                 OUTPUT_DIR, pdf_file_dir,
-                                                self.settings, logger, entry_id,
+                                                self.settings, logger,
+                                                entry_id,
                                                 )
 
             pdf_document_counter += 1
@@ -1225,7 +1194,7 @@ def pipeline(data_directory: str, output_directory: str,
 
 
 if __name__ == "__main__":
-    
+
     data_dir = './tests/data/00001/'  # this most end with a slash
     output_dir = './tests/data/layout/'
     tmp_dir = './tests/data/tmp/'
@@ -1249,6 +1218,7 @@ if __name__ == "__main__":
 
     print(p)
 
+    p.temp_directory = None
     r  = p.run()
 
     print(r)
