@@ -11,11 +11,10 @@ import shutil
 import time
 import logging
 from logging import Logger
-import typer
 import json
 # import copy
 import visarchpy.ocr as ocr
-from typing import Optional
+
 from pdfminer.high_level import extract_pages
 from pdfminer.image import ImageWriter
 from pdfminer.pdfparser import PDFSyntaxError
@@ -25,14 +24,13 @@ from visarchpy.captions import find_caption_by_distance, find_caption_by_text, B
 from visarchpy.pdf import sort_layout_elements
 from visarchpy.metadata import Document, Metadata, Visual, FilePath
 from visarchpy.captions import Offset
-from typing_extensions import Annotated 
+
 from pdfminer.pdftypes import PDFNotImplementedError
 from abc import ABC, abstractmethod
 
 # Disable PIL image size limit
 import PIL.Image
 PIL.Image.MAX_IMAGE_PIXELS = None
-
 
 
 # Common interface for all pipelines
@@ -111,10 +109,11 @@ class Pipeline(ABC):
         return f'{self.__class__.__name__} Pipeline: {properties}'
 
 
-
-def extract_visuals_by_layout(pdf: str, metadata: Metadata, data_dir: str, output_dir: str,
-                              pdf_file_dir: str, logger: Logger, entry_id: str = None,
-                              layout_settings: dict = None) -> dict:
+def extract_visuals_by_layout(pdf: str, metadata: Metadata, data_dir: str,
+                              output_dir: str, pdf_file_dir: str,
+                              layout_settings: dict, logger: Logger,
+                              entry_id: str = None,
+                              ) -> dict:
     """Extract visuals from a PDF file using layout analysis to
     a directory.
 
@@ -135,7 +134,7 @@ def extract_visuals_by_layout(pdf: str, metadata: Metadata, data_dir: str, outpu
         Identifier of the entry being processed.
     layout_settings : dict
         A dictionary containing the settings for the layout analysis.
-        
+
     Returns
     -------
 
@@ -144,28 +143,28 @@ def extract_visuals_by_layout(pdf: str, metadata: Metadata, data_dir: str, outpu
         example:
 
         ```python
-        {'no_images_pages': <list of pages where no images were found by layout analysis>, 
+        {'no_images_pages': <list of pages where no images were found>,
         "metadata": <Metadata object>}
         ```
 
     Raises
     ------
-    Warning PDFSyntaxError 
+    Warning PDFSyntaxError
         If the PDF file is malformed or corrupted.
     Warning AssertionError
         If the PDF file contains an unsupported font.
-    Warning TypeError 
+    Warning TypeError
         If PDF file encounters a bug with pdfminer.
-    Warning ValueError 
+    Warning ValueError
         If image writer cannot save MCYK images with 4 bits per pixel.
         Issue: https://github.com/pdfminer/pdfminer.six/pull/854
-    Warning UnboundLocalError 
+    Warning UnboundLocalError
         If image writer's decoder doesn't support image stream.
     Warning PDFNotImplementedError
         If image writer encounters that PDF stream has an unsupported format.
-    Warning PIL.UnidentifiedImageError 
+    Warning PIL.UnidentifiedImageError
         If image writer encounters an error with io.BytesIO.
-    Warning IndexError 
+    Warning IndexError
         If image writer encounters an error with PNG predictor for some image.
     Warning KeyError
         If image writer encounters an error with JBIG2Globals decoder.
@@ -186,8 +185,8 @@ def extract_visuals_by_layout(pdf: str, metadata: Metadata, data_dir: str, outpu
     # PREPARE OUTPUT DIRECTORY
     # a directory is created for each PDF file
     entry_directory = os.path.join(output_dir, entry_id)
-    image_directory = create_output_dir(entry_directory, pdf_file_dir)  # returns a
-    # pathlib object
+    # returns a pathlib object
+    image_directory = create_output_dir(entry_directory, pdf_file_dir)
     # PROCESS PDF
     pdf_pages = extract_pages(pdf_document.location.full_path())
     pages = []
@@ -205,21 +204,21 @@ def extract_visuals_by_layout(pdf: str, metadata: Metadata, data_dir: str, outpu
                 img_height=layout_settings["image"]["height"]
             )
             pages.append(elements)
-            
+
     except PDFSyntaxError:  # skip malformed or corrupted PDF files
-        logger.error("PDFSyntaxError. Couldn't read: " +
-                        pdf_document.location.file_path)
+        logger.error("PDFSyntaxError. Couldn't read: "
+                     + pdf_document.location.file_path)
         Warning("PDFSyntaxError. Couldn't read: " +
                 pdf_document.location.file_path)
     except AssertionError as e:  # skip unsupported fonts
-        logger.error("AssertionError. Unsupported font: " +
-                        pdf_document.location.file_path + str(e))
+        logger.error("AssertionError. Unsupported font: "
+                     + pdf_document.location.file_path + str(e))
         Warning("AssertionError. Unsupported font: " +
                 pdf_document.location.file_path + str(e))
     except TypeError as e:  # skip bug in pdfminer
         # no_image_pages.append(page) # pass page to OCR analysis
-        logger.error("TypeError. Bug with Predictor: " +
-                        pdf_document.location.file_path + str(e))
+        logger.error("TypeError. Bug with Predictor: "
+                     + pdf_document.location.file_path + str(e))
         Warning("TypeError. Bug with Predictor: " +
                 pdf_document.location.file_path + str(e))
     else:
@@ -288,8 +287,7 @@ def extract_visuals_by_layout(pdf: str, metadata: Metadata, data_dir: str, outpu
 
             # rename image name to include page number
             img.name = str(entry_id)+"-page"+str(
-                page["page_number"])
-            +"-"+img.name
+                page["page_number"])+"-"+img.name
             # save image to file
             try:
                 image_file_name = iw.export_image(img)
@@ -302,7 +300,8 @@ def extract_visuals_by_layout(pdf: str, metadata: Metadata, data_dir: str, outpu
                 # https://github.com/pdfminer/pdfminer.six/pull/854
                 logger.warning("Image with unsupported format wasn't\
                                 saved:" + img.name)
-                Warning("Image with unsupported format wasn't saved:" + img.name)
+                Warning("Image with unsupported format wasn't saved:"
+                        + img.name)
             except UnboundLocalError:
                 logger.warning("Decocder doesn't support image stream,\
                                 therefore not saved:" + img.name)
@@ -323,23 +322,23 @@ def extract_visuals_by_layout(pdf: str, metadata: Metadata, data_dir: str, outpu
                 logger.warning("IndexError, png predictor/decoder\
                                 failed:" + img.name)
                 Warning("IndexError, png predictor/decoder\
-                                failed:" + img.name)
+                        failed:" + img.name)
             except KeyError:  # avoid decoding error of JBIG2 images
                 logger.warning("KeyError, JBIG2Globals decoder failed:"
-                                + img.name)
+                               + img.name)
                 Warning("KeyError, JBIG2Globals decoder failed:"
-                                + img.name)
+                        + img.name)
             except TypeError:  # avoid filter error with PDFObjRef
                 logger.warning("TypeError, filter error PDFObjRef:"
-                                + img.name)
+                               + img.name)
                 Warning("TypeError, filter error PDFObjRef:"
-                                + img.name)
+                        + img.name)
             else:
-                visual.set_location(FilePath(root_path=output_dir,
-                                                file_path=entry_id
-                                                + '/' + pdf_file_dir
-                                                + '/' + image_file_name))
-        
+                visual.set_location(
+                                    FilePath(root_path=output_dir,
+                                             file_path=entry_id
+                                             + '/' + pdf_file_dir
+                                             + '/' + image_file_name))
                 # add visual to entry
                 metadata.add_visual(visual)
     del pages  # free memory
@@ -347,14 +346,15 @@ def extract_visuals_by_layout(pdf: str, metadata: Metadata, data_dir: str, outpu
     return {'no_images_pages': no_image_pages, "metadata": metadata}
 
 
-def extract_visuals_by_ocr(pdf: str, metadata: Metadata, data_dir: str, output_dir: str,
-                        pdf_file_dir: str, logger: Logger, entry_id: str = None,
-                        ocr_settings: dict = None, image_pages: list = None) -> dict:
+def extract_visuals_by_ocr(pdf: str, metadata: Metadata, data_dir: str,
+                           output_dir: str, pdf_file_dir: str, logger: Logger,
+                           entry_id: str = None, ocr_settings: dict = None,
+                           image_pages: list = None) -> dict:
     """Extract visuals from a PDF file using OCR analysis to
     a directory.
 
     """
-    
+
     pdf_root = data_dir
     pdf_file_path = os.path.basename(pdf).split("/")[-1]  # file name
     # with extension
@@ -368,8 +368,8 @@ def extract_visuals_by_ocr(pdf: str, metadata: Metadata, data_dir: str, output_d
     # PREPARE OUTPUT DIRECTORY
     # a directory is created for each PDF file
     entry_directory = os.path.join(output_dir, entry_id)
-    image_directory = create_output_dir(entry_directory, pdf_file_dir)  # returns a
-    # pathlib object
+    # returns a pathlib object
+    image_directory = create_output_dir(entry_directory, pdf_file_dir)
     # PROCESS PDF
     pdf_pages = extract_pages(pdf_document.location.full_path())
     no_image_pages = []  # collects pages where no images were found
@@ -377,28 +377,30 @@ def extract_visuals_by_ocr(pdf: str, metadata: Metadata, data_dir: str, output_d
     # PROCESS PAGE USING OCR ANALYSIS
     logger.info("OCR input image resolution (DPI): " + str(
         ocr_settings["resolution"]))
-    
+
     if image_pages:
         pdf_pages = image_pages
     else:
         pdf_pages = extract_pages(metadata.pdf_location)
 
-    for page in tqdm(pdf_pages, desc="OCR analysis", total=len(pdf_pages), unit="OCR pages"):
+    for page in tqdm(pdf_pages, desc="OCR analysis", total=len(pdf_pages),
+                     unit="OCR pages"):
 
-        page_image = ocr.convert_pdf_to_image( # returns a list with one element
-            metadata.pdf_location, 
-            dpi= ocr_settings["resolution"], 
-            first_page=page["page_number"], 
+        page_image = ocr.convert_pdf_to_image(  # returns a list with one
+            # element
+            metadata.pdf_location,
+            dpi=ocr_settings["resolution"],
+            first_page=page["page_number"],
             last_page=page["page_number"],
             )
 
         ocr_results = ocr.extract_bboxes_from_horc(
-            page_image, config='--psm 3 --oem 1', 
-            entry_id=entry_id, 
+            page_image, config='--psm 3 --oem 1',
+            entry_id=entry_id,
             page_number=page["page_number"],
             resize=ocr_settings["resize"]
             )
-        
+
         if ocr_results:  # skips pages with no results
             page_key = ocr_results.keys()
             page_id = list(page_key)[0]
@@ -406,38 +408,42 @@ def extract_visuals_by_ocr(pdf: str, metadata: Metadata, data_dir: str, output_d
             # FILTERING OCR RESULTS
             # filter by bbox size
             filtered_width_height = ocr.filter_bbox_by_size(
-                                                    ocr_results[page_id]["bboxes"],
-                                                    min_width= ocr_settings["image"]["width"],
-                                                    min_height= ocr_settings["image"]["height"],
+                                                    ocr_results[page_id]
+                                                    ["bboxes"],
+                                                    min_width=ocr_settings["image"]["width"],
+                                                    min_height=ocr_settings["image"]["height"],
                                                     )
-            
+
             ocr_results[page_id]["bboxes"] = filtered_width_height
 
-            # # filter bboxes that are extremely horizontally long 
+            # # filter bboxes that are extremely horizontally long
             filtered_ratio = ocr.filter_bbox_by_size(
-                                                    ocr_results[page_id]["bboxes"],
-                                                    aspect_ratio = (20/1, ">")
+                                                    ocr_results[page_id]
+                                                    ["bboxes"],
+                                                    aspect_ratio=(20/1, ">")
                                                     )
             ocr_results[page_id]["bboxes"]= filtered_ratio      
 
             # filter boxes with extremely vertically long
-            filtered_ratio = ocr.filter_bbox_by_size(ocr_results[page_id]["bboxes"],
-                                                    aspect_ratio = (1/20, "<")
-                                                    )
-            ocr_results[page_id]["bboxes"]= filtered_ratio              
-    
+            filtered_ratio = ocr.filter_bbox_by_size(ocr_results[page_id]
+                                                     ["bboxes"],
+                                                     aspect_ratio=(1/20, "<")
+                                                     )
+            ocr_results[page_id]["bboxes"] = filtered_ratio
+
             # filter boxes contained by larger boxes
             filtered_contained = ocr.filter_bbox_contained(ocr_results[page_id]["bboxes"])
-            ocr_results[page_id]["bboxes"]= filtered_contained
+            ocr_results[page_id]["bboxes"] = filtered_contained
 
             # print("OCR text boxes: ", ocr_results[page_id]["text_bboxes"])
 
             # exclude pages with no bboxes (a.k.a. no inner images)
             # print("searching ocr captions")
-            if len (ocr_results[page_id]["bboxes"]) > 0:
-                for bbox_id in ocr_results[page_id]["bboxes"]: # loop over image boxes
-
-                    bbox_cords = ocr_results[page_id]["bboxes"][bbox_id] # bbox of image in page
+            if len(ocr_results[page_id]["bboxes"]) > 0:
+                # loop over imageboxes
+                for bbox_id in ocr_results[page_id]["bboxes"]:
+                    # bbox of image in page
+                    bbox_cords = ocr_results[page_id]["bboxes"][bbox_id]
 
                     visual = Visual(document=pdf_document,
                                     document_page=page["page_number"],
@@ -445,64 +451,69 @@ def extract_visuals_by_ocr(pdf: str, metadata: Metadata, data_dir: str, output_d
                     
                     # Search for captions using proximity to image
                     # This may generate multiple matches
-                    bbox_matches =[]
-                    bbox_object = BoundingBox(tuple(bbox_cords), ocr_settings["resolution"])
+                    bbox_matches = []
+                    bbox_object = BoundingBox(tuple(bbox_cords),
+                                              ocr_settings["resolution"])
 
                     # print('searching for caption for: ', bbox_id)
                     for text_box in ocr_results[page_id]["text_bboxes"].items():
 
                         # print("text box: ", text_box)
-
                         text_cords = text_box[1]
-                        text_object = BoundingBox(tuple(text_cords), ocr_settings["resolution"])
+                        text_object = BoundingBox(tuple(text_cords),
+                                                  ocr_settings["resolution"])
                         match = find_caption_by_distance(
-                            bbox_object, 
-                            text_object, 
-                            offset= ocr_settings["caption"]["offset"],
-                            direction= ocr_settings["caption"]["direction"]
+                            bbox_object,
+                            text_object,
+                            offset=ocr_settings["caption"]["offset"],
+                            direction=ocr_settings["caption"]["direction"]
                         )
                         if match:
                             bbox_matches.append(match)
                             # print('matched text id: ', text_box[0])
                             # print(match)
-                    
+
                     # print('found matches: ', len(bbox_matches))
 
                     # print(bbox_matches)
                     # caption = None
-                    if len(bbox_matches) == 0: # if more than one bbox matches, move to text analysis
+                    if len(bbox_matches) == 0:  # if more than one bbox 
+                        # matches, skip and do text analysis
                         pass
                     else:
-                        # get text from image   
+                        # get text from image
                         for match in bbox_matches:
                             # print(match.bbox_px())
                             ########################
                             # TODO: decode text from strings. Tests with multiple image files.
 
-                            ocr_caption = ocr.region_to_string(page_image[0], match.bbox_px(), config='--psm 3 --oem 1')
+                            ocr_caption = ocr.region_to_string(page_image[0],
+                                                               match.bbox_px(),
+                                                               config='--psm 3 --oem 1')
                             # print('ocr box: ', match.bbox_px())
                             # print('orc caption: ', ocr_caption)
-                    
+
                             if ocr_caption:
                                 try:
                                     visual.set_caption(ocr_caption)
-                                except Warning: # ignore warnings when caption is already set.
-                                    logger.warning("Caption already set for: " + str(match.bbox()))
-                
+                                except Warning:  # ignore warnings when caption 
+                                    # is already set.
+                                    logger.warning("Caption already set for: "
+                                                   + str(match.bbox()))
 
-                    visual.set_location(FilePath(root_path=output_dir, file_path= entry_id + '/'
-                                                 + pdf_file_dir + '/' + f'{page_id}-{bbox_id}.png'))
+                    visual.set_location(FilePath(root_path=output_dir,
+                                                 file_path=entry_id + '/'
+                                                 + pdf_file_dir + '/'
+                                                 + f'{page_id}-{bbox_id}.png'))
 
                     # visual.set_location(FilePath(str(image_directory), f'{page_id}-{bbox_id}.png' ))
 
                     metadata.add_visual(visual)
 
-        ocr.crop_images_to_bbox(ocr_results, image_directory)         
-        del page_image # free memory
+        ocr.crop_images_to_bbox(ocr_results, image_directory)
+        del page_image  # free memory
 
     return {'no_images_pages': no_image_pages, "metadata": metadata}
-
-
 
 
 # app = typer.Typer(help="Extract visuals from PDF files using layout and OCR analysis.",
@@ -535,6 +546,8 @@ def extract_visuals_by_ocr(pdf: str, metadata: Metadata, data_dir: str, output_d
 ### ==================================== ##
 
 # LAYOUT ANALYSIS SETTINGS
+
+
 layout_settings = {
         "caption": {
             "offset": [4, "mm"],
@@ -633,7 +646,37 @@ def start_logging(name: str, log_file: str, entry_id: str) -> Logger:
     return logger
 
 
+def manage_input_files(pdf_files: list, destination_dir: str,
+                       mods_file: str = None) -> None:
+    """copy MODS and PDF files to a directory.
+    
+    Parameters
+    ----------
+    pdf_files : list
+        List of paths to PDF files.
+    destination_dir : str
+        Path to the directory where the files will be copied to.
+    mods_file : str, optional
+        Path to the MODS file. The default is None.
 
+    Returns
+    -------
+    None.
+
+    """
+
+    if mods_file:
+        mods_file_name = pathlib.Path().stem + ".xml"
+        if not os.path.exists(os.path.join(destination_dir, mods_file_name)):
+            shutil.copy2(mods_file, destination_dir)
+
+    if len(pdf_files) > 0:
+        for pdf in pdf_files:
+            if not os.path.exists(os.path.join(destination_dir,
+                                  os.path.basename(pdf))):
+                shutil.copy2(pdf, destination_dir)
+
+    return None
 
 
 class Layout(Pipeline):
@@ -663,17 +706,16 @@ class Layout(Pipeline):
             entry_id = None  # a default entry id is used if
             # no MODS file is provided
 
-        # TEMPORARY DIRECTORY
-        # this directory is used to store temporary files.
-        if self.temp_directory:
-            TMP_DIR = self.temp_directory
+        if self.settings is None:
+            raise ValueError("No settings provided")
 
         # Create output directory for the entry
         entry_directory = create_output_dir(OUTPUT_DIR, entry_id)
 
         # start logging
-        logger = start_logging('layout', os.path.join(OUTPUT_DIR, entry_directory,
-                                                      entry_id + '.log'),
+        logger = start_logging('layout',
+                               os.path.join(entry_directory,
+                                            entry_id + '.log'),
                                entry_id)
 
         # EXTRACT METADATA FROM MODS FILE
@@ -687,50 +729,39 @@ class Layout(Pipeline):
         base_url = "http://resolver.tudelft.nl/"
         meta_entry.add_web_url(base_url)
 
-        # TODO: setting should be passed as a dictionary to extract_visuals_by_layout()
-        if self.settings is None:
-            # use default settings
-            layout_offset_dist = Offset(4.0, 'mm')
-            ocr_offset_dist = Offset(50, 'px')
-        else:
-            # use settings provided by user
-            layout_offset_dist = Offset(self.settings["caption"]
-                                        ["offset"][0],
-                                        self.settings["caption"]
-                                        ["offset"][1])
+        # TODO: setting should be passed as a dictionary to
+        # extract_visuals_by_layout()
 
-            ocr_offset_dist = Offset(self.settings["caption"]
-                                     ["offset"][0],
-                                     self.settings["caption"]
-                                     ["offset"][1])
-        
         # FIND PDF FILES in data directory
         PDF_FILES = find_pdf_files(DATA_DIR, prefix=entry_id)
         logger.info("PDF files in entry: " + str(len(PDF_FILES)))
 
-           # PROCESS PDF FILES
+        # PROCESS PDF FILES
         pdf_document_counter = 1
         results = {}
         for pdf in PDF_FILES:
 
             print("--> Processing file:", pdf)
             pdf_file_dir = 'pdf-' + str(pdf_document_counter).zfill(3)
-        
-            results = extract_visuals_by_layout(pdf, meta_entry, DATA_DIR, OUTPUT_DIR,
-                                      pdf_file_dir, logger, entry_id,
-                                      layout_settings)
+
+            print("data dir", DATA_DIR)
+            results = extract_visuals_by_layout(pdf, meta_entry, DATA_DIR,
+                                                OUTPUT_DIR, pdf_file_dir,
+                                                self.settings, logger, entry_id,
+                                                )
 
             pdf_document_counter += 1
-        
+
         end_time = time.time()
         processing_time = end_time - start_time
         logger.info("Processing time: " + str(processing_time) + " seconds")
-
         logger.info("Extracted visuals: " + str(meta_entry.total_visuals))
 
         # SAVE METADATA TO files
-        csv_file = str(os.path.join(entry_directory, entry_id) + "-metadata.csv")
-        json_file = str(os.path.join(entry_directory, entry_id) + "-metadata.json")
+        csv_file = str(os.path.join(entry_directory, entry_id)
+                       + "-metadata.csv")
+        json_file = str(os.path.join(entry_directory, entry_id)
+                        + "-metadata.json")
         meta_entry.save_to_csv(csv_file)
         meta_entry.save_to_json(json_file)
 
@@ -738,14 +769,24 @@ class Layout(Pipeline):
             logger.warning("No identifier found in MODS file")
 
         # SAVE settings to json file
-        settings_file = str(os.path.join(entry_directory, entry_id) + "-settings.json")
+        settings_file = str(os.path.join(entry_directory, entry_id)
+                            + "-settings.json")
         with open(settings_file, 'w') as f:
             json.dump({"layout": layout_settings}, f, indent=4)
-        
+
+        # TEMPORARY DIRECTORY
+        # this directory is used to store temporary files.
+        if self.temp_directory:
+
+            TMP_DIR = self.temp_directory
+            temp_entry_directory = create_output_dir(
+                os.path.join(TMP_DIR, entry_id)
+            )
+            logger.info("Managing file and copying to:" + str(temp_entry_directory))
+            manage_input_files(PDF_FILES, temp_entry_directory, MODS_FILE)
+            logger.info("Done managing files")
 
         return results
-
-
 
 
 class OCR(Pipeline):
@@ -1193,21 +1234,7 @@ def pipeline(data_directory: str, output_directory: str,
         # and images are saved to subdirectories in the entry direct, subdirectory name is the pdf file name
         # e.g.:  00001/00001/page1-00001.png, 00001/00001/page2-00001.png
 
-    # TODO: move this to a function
-    # Copy MODS file and PDF files to output directory
-    temp_entry_directory = create_output_dir( os.path.join(TMP_DIR, entry_id))
 
-    mods_file_name = pathlib.Path(MODS_FILE).stem + ".xml"
-    if not os.path.exists(os.path.join(temp_entry_directory, mods_file_name)):
-        shutil.copy2(MODS_FILE, temp_entry_directory)
-
-
-    if len(PDF_FILES) > 0:
-        for pdf in PDF_FILES:
-            if not os.path.exists(os.path.join(temp_entry_directory, os.path.basename(pdf) )):
-                shutil.copy2(pdf, temp_entry_directory)
-        
-    logger.info("Extracted visuals: " + str(meta_.total_visuals))
 
     # SAVE METADATA TO files
     csv_file = str(os.path.join(entry_directory, entry_id) + "-metadata.csv")
@@ -1232,19 +1259,32 @@ def pipeline(data_directory: str, output_directory: str,
 
 if __name__ == "__main__":
     
-    data_dir = '/data/'
-    output_dir = '/output/'
-    tmp_dir = '/tmp/'
+    data_dir = './tests/data/00001/'  # this most end with a slash
+    output_dir = './tests/data/layout/'
+    tmp_dir = './tests/data/tmp/'
+    metadata_file = './tests/data/00001/00001_mods.xml'
 
     s = {'setting1': 'value1', 'setting2': 'value2'}
 
+    layout_settings = {
+        "caption": {
+            "offset": [4, "mm"],
+            "direction": "down",
+            "keywords": ['figure', 'caption', 'figuur']
+            },
+        "image": {
+            "width": 120,
+            "height": 120,
+        }
+    }
 
-    p = Layout(data_directory=data_dir, output_directory=output_dir)
+    p = Layout(data_directory=data_dir, output_directory=output_dir, metadata_file=metadata_file, settings=layout_settings, temp_directory=tmp_dir)
 
     print(p)
 
-    p.run()
+    r  = p.run()
 
+    print(r)
     # app()
 
     # pipeline("01960",
