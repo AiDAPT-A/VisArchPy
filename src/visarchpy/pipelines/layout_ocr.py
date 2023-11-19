@@ -12,15 +12,14 @@ import time
 import logging
 from logging import Logger
 import json
-# import copy
 import visarchpy.ocr as ocr
-
 from pdfminer.high_level import extract_pages
 from pdfminer.image import ImageWriter
 from pdfminer.pdfparser import PDFSyntaxError
 from tqdm import tqdm
 from visarchpy.utils import extract_mods_metadata, create_output_dir
-from visarchpy.captions import find_caption_by_distance, find_caption_by_text, BoundingBox
+from visarchpy.captions import find_caption_by_distance, find_caption_by_text
+from visarchpy.captions import BoundingBox
 from visarchpy.pdf import sort_layout_elements
 from visarchpy.metadata import Document, Metadata, Visual, FilePath
 from visarchpy.captions import Offset
@@ -514,38 +513,6 @@ def extract_visuals_by_ocr(pdf: str, metadata: Metadata, data_dir: str,
         del page_image  # free memory
 
     return {'no_images_pages': no_image_pages, "metadata": metadata}
-
-
-# app = typer.Typer(help="Extract visuals from PDF files using layout and OCR analysis.",
-#     context_settings={"help_option_names": ["-h", "--help"]},
-#                    add_completion=False)
-
-# @app.command()
-# def run(entry_range: str = typer.Argument(help="Range of entries to process. e.g.: 1-10"),
-#                data_directory: str = typer.Argument( help="path to directory containing MODS and pdf files"),
-#                output_directory: str = typer.Argument( help="path to directory where results will be saved"),
-#                temp_directory: Annotated[Optional[str], typer.Argument(help="temporary directory")] = None
-#                ) -> None:
-#     """Extracts metadata from MODS files and images from PDF files
-#       using layout and OCR analysis."""
-    
-#     start_id = int(entry_range.split("-")[0])
-#     end_id = int(entry_range.split("-")[1])
-
-#     for id in range(start_id, end_id+1):
-#         str_id = str(id).zfill(5)
-
-#         pipeline(str_id,
-#                  data_directory,
-#                  output_directory,
-#                  temp_directory)
-
-
-### ==================================== ###
-# Default SETTINGS                        #
-### ==================================== ##
-
-# LAYOUT ANALYSIS SETTINGS
 
 
 layout_settings = {
