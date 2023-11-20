@@ -1,0 +1,40 @@
+{
+    "layout": {
+        "caption": {
+            "offset": [
+                4,
+                "mm"
+            ],
+            "direction": "down",
+            "keywords": [
+                "figure",
+                "caption",
+                "figuur"
+            ]
+        },
+        "image": {
+            "width": 120,
+            "height": 120
+        }
+    },
+    "ocr": {
+        "caption": {
+            "offset": [
+                50,
+                "px"
+            ],
+            "direction": "down",
+            "keywords": [
+                "figure",
+                "caption",
+                "figuur"
+            ]
+        },
+        "image": {
+            "width": 120,
+            "height": 120
+        },
+        "resolution": 250,
+        "resize": 30000
+    }
+}
