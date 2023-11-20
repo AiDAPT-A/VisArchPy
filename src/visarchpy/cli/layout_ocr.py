@@ -25,12 +25,27 @@ def from_file() -> None:
 
 @app.command(help="Extract visuals from all PDF files in a directory.")
 def from_dir(
-    directory: str = typer.Argument(help="Path to directory containing PDF files"),
-    output: str = typer.Argument(help="Path to output directory"),
+    data_directory: str = typer.Argument(help="Path to directory containing PDF files."),
+    output_directory: str = typer.Argument(help="Path to directory where results will be saved."),
+    settings: Annotated[str, typer.Option(help="Path to pipeline JSON setting file. If None default settings will be used. Use: visarch settings, to see current settings.")] = None,
+    mods_file: Annotated[str, typer.Option(help="Path to MODS file. If None, metadata extraction will be skiped.")] = None,
+    tmp_dir: Annotated[str,
+                       typer.Option(help="If provided, PDF files in the data directory will be copied to this directory.")
+                       ] = None
     ) -> None:
-    # TODO: implement extraction of visuals from all PDF files in a directory.
-    return None
+    
+    if settings is None:
+        settings = default_settings
+    else:
+        with open(settings, "r") as f:
+            settings = json.load(f)
+            print('loaded settings from file: ', settings)
 
+    pipeline = LayoutOCR(data_directory, output_directory,
+                             settings=settings, metadata_file=mods_file,
+                             temp_directory=tmp_dir, ignore_id=True)
+
+    pipeline.run()
 
 
 @app.command(help="Show default settings for the pipeline.")
@@ -38,29 +53,23 @@ def settings() -> None:
     """Show default settings for the pipeline."""
     typer.echo(default_settings)
 
-@app.command(help="batch processing for TU Delft's dataset")
-def batch(entry_range: str = typer.Argument(help="Range of entries to process\
-                                            e.g.: 1-10"),
-          data_directory: str = typer.Argument(help="path to directory\
-                                               containing MODS and pdf files"),
-          output_directory: str = typer.Argument(help="path to directory where\
-                                                 results will be saved"),
-          settings_file: Annotated[Optional[str],
-                                   typer.Argument(help="path to pipeline JSON settings\
-                                             file. If None default settings will be\
-                                             used. Use: [COMMAND] setting, to see\
-                                             current settings")]= None,
-          temp_directory: Annotated[Optional[str],
-                                    typer.Argument(help="temporary directory")
-                                    ] = None,
+
+@app.command(help="batch processing for TU Delft's dataset.")
+def batch(entry_range: str = typer.Argument(help="Range of entries to process, e.g.: 1-10."),
+          data_directory: str = typer.Argument(help="path to directory containing MODS and PDF files."),
+          output_directory: str = typer.Argument(help="path to directory where results will be saved."),
+          settings: Annotated[str, typer.Option(help="path to pipeline JSON setting file. If None default settings will be used. Use: visarch settings, to see current settings.")] = None,
+          tmp_dir: Annotated[str,
+                                    typer.Option(help="If provided, PDF files in the data directory will be copied to this directory.")
+                                    ] = None
           ) -> None:
     """Extracts metadata from MODS files and images from PDF files
       using layout and OCR pipeline"""
 
-    if settings_file is None:
+    if settings is None:
         settings = default_settings
     else:
-        with open(settings_file, "r") as f:
+        with open(settings, "r") as f:
             settings = json.load(f)
 
     start_id = int(entry_range.split("-")[0])
@@ -71,11 +80,14 @@ def batch(entry_range: str = typer.Argument(help="Range of entries to process\
 
         MODS_FILE = os.path.join(data_directory, str_id + "_mods.xml")
 
-        LayoutOCR(data_directory, output_directory,
-                  settings=settings, metadata_file=MODS_FILE,
-                  temp_directory=temp_directory)
+        pipeline = LayoutOCR(data_directory, output_directory,
+                             settings=settings, metadata_file=MODS_FILE,
+                             temp_directory=tmp_dir)
 
-        # TODO: test batch cli
+        pipeline.run()
+
 
 if __name__ == "__main__":
     app()
+
+    # batch 2-2 ../../../tests/data/00001/ ../../../tests/data/layout/  ../../../tests/data/tmp/ 
