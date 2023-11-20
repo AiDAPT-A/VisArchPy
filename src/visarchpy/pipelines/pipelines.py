@@ -199,8 +199,8 @@ def extract_visuals_by_layout(pdf: str, metadata: Metadata, data_dir: str,
                             analysis", unit="pages"):
             elements = sort_layout_elements(
                 page,
-                img_width=layout_settings["image"]["width"],
-                img_height=layout_settings["image"]["height"]
+                img_width=layout_settings["layout"]["image"]["width"],
+                img_height=layout_settings["layout"]["image"]["height"]
             )
             pages.append(elements)
 
@@ -224,13 +224,15 @@ def extract_visuals_by_layout(pdf: str, metadata: Metadata, data_dir: str,
         # TODO: test this only happnes when no exception is raised
         del elements  # free memory
 
-    layout_offset_dist = Offset(layout_settings["caption"]["offset"][0],
-                                layout_settings["caption"]["offset"][1])
+    layout_offset_dist = Offset(layout_settings["layout"]["caption"]
+                                ["offset"][0],
+                                layout_settings["layout"]["caption"]
+                                ["offset"][1])
     
     # PROCESS PAGE USING LAYOUT ANALYSIS
     for page in tqdm(pages,
-                        desc="layout analysis", total=len(pages),
-                        unit="sorted pages"):
+                     desc="layout analysis", total=len(pages),
+                     unit="sorted pages"):
 
         iw = ImageWriter(image_directory)
 
@@ -249,7 +251,7 @@ def extract_visuals_by_layout(pdf: str, metadata: Metadata, data_dir: str,
                     img,
                     _text,
                     offset=layout_offset_dist,
-                    direction=layout_settings["caption"]["direction"]
+                    direction=layout_settings["layout"]["caption"]["direction"]
                     )
                 if match:
                     bbox_matches.append(match)
@@ -266,7 +268,8 @@ def extract_visuals_by_layout(pdf: str, metadata: Metadata, data_dir: str,
                 for _text in bbox_matches:
                     text_match = find_caption_by_text(
                         _text,
-                        keywords=layout_settings["caption"]["keywords"]
+                        keywords=layout_settings["layout"]["caption"]
+                        ["keywords"]
                         )
                 if text_match:
                     caption = ""
@@ -401,8 +404,19 @@ def extract_visuals_by_ocr(metadata: Metadata, data_dir: str,
         raise ValueError("No PDF file or LTPage list. At least one\
                          of them must be provided.")
 
+    if isinstance(lt_pages, list) and len(lt_pages) == 0:
+        # This handles the case: chaining layout analysis and
+        # OCR analysis, and layout analysis returns an empty
+        # list of pages
+        logger.warning("Found empty list of LTPages. No OCR performed.")
+        return {'no_images_pages': [], "metadata": metadata}
+
     pdf_root = data_dir
-    pdf_file_path = os.path.basename(pdf).split("/")[-1]  # file name
+
+    if pdf:
+        pdf_file_path = os.path.basename(pdf).split("/")[-1]  # file name
+    elif lt_pages is not None:  # to process empty list of pages
+        pdf_file_path = metadata.documents[-1].location.file_path  # get last document in list
     # with extension
     logger.info("Processing file: " + pdf_file_path)
 
@@ -422,9 +436,9 @@ def extract_visuals_by_ocr(metadata: Metadata, data_dir: str,
 
     # PROCESS PAGE USING OCR ANALYSIS
     logger.info("OCR input image resolution (DPI): " + str(
-        ocr_settings["resolution"]))
+        ocr_settings["ocr"]["resolution"]))
 
-    if lt_pages:
+    if lt_pages is not None:
         pages = lt_pages
     else:
         pdf_pages = extract_pages(pdf)  # returns generator
@@ -439,8 +453,8 @@ def extract_visuals_by_ocr(metadata: Metadata, data_dir: str,
             for page in pdf_pages:
                 elements = sort_layout_elements(
                     page,
-                    img_width=ocr_settings["image"]["width"],
-                    img_height=ocr_settings["image"]["height"]
+                    img_width=ocr_settings["ocr"]["image"]["width"],
+                    img_height=ocr_settings["ocr"]["image"]["height"]
                 )
                 
                 pages.append(elements)
@@ -460,8 +474,8 @@ def extract_visuals_by_ocr(metadata: Metadata, data_dir: str,
                      unit="OCR pages"):
 
         page_image = ocr.convert_pdf_to_image(  
-            pdf,
-            dpi=ocr_settings["resolution"],
+            pdf_formatted_path.full_path(),
+            dpi=ocr_settings["ocr"]["resolution"],
             first_page=page["page_number"],
             last_page=page["page_number"],
             )
@@ -470,7 +484,7 @@ def extract_visuals_by_ocr(metadata: Metadata, data_dir: str,
             page_image, config='--psm 3 --oem 1',
             entry_id=entry_id,
             page_number=page["page_number"],
-            resize=ocr_settings["resize"]
+            resize=ocr_settings["ocr"]["resize"]
             )
 
         if ocr_results:  # skips pages with no results
@@ -480,11 +494,12 @@ def extract_visuals_by_ocr(metadata: Metadata, data_dir: str,
             # FILTERING OCR RESULTS
             # filter by bbox size
             filtered_width_height = ocr.filter_bbox_by_size(
-                                                    ocr_results[page_id]
-                                                    ["bboxes"],
-                                                    min_width=ocr_settings["image"]["width"],
-                                                    min_height=ocr_settings["image"]["height"],
-                                                    )
+                                    ocr_results[page_id]["bboxes"],
+                                    min_width=ocr_settings["ocr"]["image"]
+                                    ["width"],
+                                    min_height=ocr_settings["ocr"]["image"]
+                                    ["height"],
+                                    )
 
             ocr_results[page_id]["bboxes"] = filtered_width_height
 
@@ -522,21 +537,21 @@ def extract_visuals_by_ocr(metadata: Metadata, data_dir: str,
                     # This may generate multiple matches
                     bbox_matches = []
                     bbox_object = BoundingBox(tuple(bbox_cords),
-                                              ocr_settings["resolution"])
+                                              ocr_settings["ocr"]["resolution"])
 
                     for text_box in ocr_results[page_id]["text_bboxes"].items():
 
                         text_cords = text_box[1]
                         text_object = BoundingBox(tuple(text_cords),
-                                                  ocr_settings["resolution"])
+                                                  ocr_settings["ocr"]["resolution"])
                         
-                        _offset = Offset(ocr_settings["caption"]["offset"][0],
-                                         ocr_settings["caption"]["offset"][1])
+                        _offset = Offset(ocr_settings["ocr"]["caption"]["offset"][0],
+                                         ocr_settings["ocr"]["caption"]["offset"][1])
                         match = find_caption_by_distance(
                             bbox_object,
                             text_object,
                             offset=_offset,
-                            direction=ocr_settings["caption"]["direction"]
+                            direction=ocr_settings["ocr"]["caption"]["direction"]
                         )
                         if match:
                             bbox_matches.append(match)
@@ -764,7 +779,7 @@ class Layout(Pipeline):
         settings_file = str(os.path.join(entry_directory, entry_id)
                             + "-settings.json")
         with open(settings_file, 'w') as f:
-            json.dump({"layout": self.settings}, f, indent=4)
+            json.dump(self.settings, f, indent=4)
 
         # TEMPORARY DIRECTORY
         # this directory is used to store temporary files.
@@ -872,7 +887,7 @@ class OCR(Pipeline):
         settings_file = str(os.path.join(entry_directory, entry_id)
                             + "-settings.json")
         with open(settings_file, 'w') as f:
-            json.dump({"ocr": self.settings}, f, indent=4)
+            json.dump(self.settings, f, indent=4)
 
         # TEMPORARY DIRECTORY
         # this directory is used to store temporary files.
@@ -931,7 +946,7 @@ class LayoutOCR(Pipeline):
         entry_directory = create_output_dir(OUTPUT_DIR, entry_id)
 
         # start logging
-        logger = start_logging('layout',
+        logger = start_logging('layout+OCR',
                                os.path.join(entry_directory,
                                             entry_id + '.log'),
                                entry_id)
@@ -968,7 +983,7 @@ class LayoutOCR(Pipeline):
             results = extract_visuals_by_ocr(
                 meta_entry, DATA_DIR, OUTPUT_DIR, pdf_file_dir,
                 logger, entry_id, self.settings,
-                image_pages=layout_results["no_images_pages"])
+                lt_pages=layout_results["no_images_pages"])
 
             pdf_document_counter += 1
 
@@ -1463,7 +1478,7 @@ if __name__ == "__main__":
 
     s = {'setting1': 'value1', 'setting2': 'value2'}
 
-    layout_settings = {
+    layout_settings = {"layout": {
         "caption": {
             "offset": [4, "mm"],
             "direction": "down",
@@ -1474,8 +1489,9 @@ if __name__ == "__main__":
             "height": 120,
         }
     }
+    }
 
-    ocr_settings = {
+    ocr_settings = {"ocr": {
         "caption": {
             "offset": [50, "px"],
             "direction": "down",
@@ -1490,21 +1506,19 @@ if __name__ == "__main__":
         # resized before performing OCR,
         # this affect the quality of output images
     }
+    }
+
+    settings = layout_settings | ocr_settings
+
+    print(settings)
 
     # p = Layout(data_directory=data_dir, output_directory=output_dir, metadata_file=metadata_file, settings=layout_settings, temp_directory=tmp_dir)
 
-    p = OCR(data_directory=data_dir, output_directory=output_dir, metadata_file=metadata_file, settings=ocr_settings, temp_directory=tmp_dir)
+    # p = OCR(data_directory=data_dir, output_directory=output_dir, metadata_file=metadata_file, settings=ocr_settings, temp_directory=tmp_dir)
 
+    p = LayoutOCR(data_directory=data_dir, output_directory=output_dir, metadata_file=metadata_file, settings=settings, temp_directory=tmp_dir)
 
     # p.temp_directory = None
     r  = p.run()
 
     # print(r)
-    # app()
-
-    # pipeline("01960",
-    #         "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/pdf-issues/",
-    #         "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/",
-    #         "/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/tmp/"
-    #         )
-    
