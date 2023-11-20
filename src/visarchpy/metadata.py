@@ -194,38 +194,38 @@ class Metadata:
 
     persons: List[Person] = field(init=False, default=None)
     faculty: Faculty = field(init=False, default=None)
-    mods_file: str = field(init=False)  # location of the MODS file
+    mods_file: str = field(init=False, default=None)  # location of the MODS file
 
-    title: str = field(init=False)
-    abstract: str = field(init=False)
-    submission_date: str = field(init=False)  # year, month, day
-    thesis_type: str = field(init=False)  # master or bachelor thesis
+    title: str = field(init=False, default=None)
+    abstract: str = field(init=False, default=None)
+    submission_date: str = field(init=False, default=None)  # year, month, day
+    thesis_type: str = field(init=False, default=None)  # master or bachelor thesis
     # list of subjects defined in repository
-    subjects: List = field(init=False)
-    copyright: str = field(init=False)
-    languages: List[dict] = field(init=False)  # list of languages
+    subjects: List = field(init=False, default=None)
+    copyright: str = field(init=False, default=None)
+    languages: List[dict] = field(init=False, default=None)  # list of languages
     uuid: Optional[str] = field(init=False, default=None)  # unique identifier
     # identifiers: List = field(init=False) #
-    iid: str = field(init=False)  # internal identifier
-    media_type: List = field(init=False)  # internet media type
-    issuance: List = field(init=False)  # type of issuance
-    digital_origin: str = field(init=False)  # digital origin
-    doi: str = field(init=False)  # digital object identifier
-    edition: str = field(init=False)  # edition
-    extent: List = field(init=False)  # extent
-    form: List = field(init=False)  # form
-    classification: List = field(init=False)  # classification
-    collection: str = field(init=False)  # collection
-    geo_code: List = field(init=False)  # geographic code
-    corp_names: List = field(init=False)  # corporate names
-    creators: List = field(init=False)  # creators
-    physical_description: List = field(init=False)  # physical description
-    physical_location: List = field(init=False)  # physical location
-    pid: str = field(init=False)  # persistent identifier
-    publication_place: List = field(init=False)  # publication place
-    publisher: List = field(init=False)  # publisher
-    purl: List = field(init=False)  # persistent URL
-    type_resource: str = field(init=False)  # type of resource
+    iid: str = field(init=False, default=None)  # internal identifier
+    media_type: List = field(init=False, default=None)  # internet media type
+    issuance: List = field(init=False, default=None)  # type of issuance
+    digital_origin: str = field(init=False, default=None)  # digital origin
+    doi: str = field(init=False, default=None)  # digital object identifier
+    edition: str = field(init=False, default=None)  # edition
+    extent: List = field(init=False, default=None)  # extent
+    form: List = field(init=False, default=None)  # form
+    classification: List = field(init=False, default=None)  # classification
+    collection: str = field(init=False, default=None)  # collection
+    geo_code: List = field(init=False, default=None)  # geographic code
+    corp_names: List = field(init=False, default=None)  # corporate names
+    creators: List = field(init=False, default=None)  # creators
+    physical_description: List = field(init=False, default=None)  # physical description
+    physical_location: List = field(init=False, default=None)  # physical location
+    pid: str = field(init=False, default=None)  # persistent identifier
+    publication_place: List = field(init=False, default=None)  # publication place
+    publisher: List = field(init=False, default=None)  # publisher
+    purl: List = field(init=False, default=None)  # persistent URL
+    type_resource: str = field(init=False, default=None)  # type of resource
     # URL at Educational Repository
     web_url: str = field(init=False, default=None)
     # total number of images/visuals extracted from the PDF files for
