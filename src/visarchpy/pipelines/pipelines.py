@@ -1,4 +1,5 @@
-"""Data pipelines for extracting metadata from MODS files and imges from PDF files.
+"""Data pipelines for extracting metadata from MODS files and imges from
+PDF files.
 Author: Manuel Garcia
 """
 
@@ -20,8 +21,8 @@ from visarchpy.captions import BoundingBox
 from visarchpy.pdf import sort_layout_elements
 from visarchpy.metadata import Document, Metadata, Visual, FilePath
 from visarchpy.captions import Offset
-
 from pdfminer.pdftypes import PDFNotImplementedError
+from pdfminer.layout import LTPage
 from abc import ABC, abstractmethod
 
 # Disable PIL image size limit
@@ -117,6 +118,8 @@ def extract_visuals_by_layout(pdf: str, metadata: Metadata, data_dir: str,
     ----------
     pdf : str
         Path to the PDF file as returned by find_pdf_files().
+    metadata: Metadata
+        A Metadata object to store metadata of extracted visuals.
     data_dir : str
         Path to the input directory containing the PDF file.
     output_dir : str
@@ -342,14 +345,61 @@ def extract_visuals_by_layout(pdf: str, metadata: Metadata, data_dir: str,
     return {'no_images_pages': no_image_pages, "metadata": metadata}
 
 
-def extract_visuals_by_ocr(pdf: str, metadata: Metadata, data_dir: str,
+def extract_visuals_by_ocr(metadata: Metadata, data_dir: str,
                            output_dir: str, pdf_file_dir: str, logger: Logger,
                            entry_id: str = None, ocr_settings: dict = None,
-                           image_pages: list = None) -> dict:
+                           pdf: str = None,
+                           lt_pages: list[LTPage] = None) -> dict:
     """Extract visuals from a PDF file using OCR analysis to
     a directory.
 
+    Parameters
+    ----------
+    metadata: Metadata
+        A Metadata object to store metadata of extracted visuals.
+    data_dir : str
+        Path to the input directory containing the PDF file.
+    output_dir : str
+        Path to the output directory where visuals will be saved.
+    pdf_file_dir : str
+        Name of a directory where the results will be saved. This
+        directory will be created inside the output directory.
+    logger : Logger
+        A logger object.
+    entry_id : str
+        Identifier of the entry being processed.
+    ocr_settings : dict
+        A dictionary containing setting for OCR analysis.
+    pdf : str
+        Path to the PDF file as returned by find_pdf_files(). If
+        None, 'lt_pages' must be provided.
+    lt_pages : list[LTPage]
+        A list of pdfminer.six type pages to be processed. If None,
+        'pdf' must be provided.
+
+    Returns
+    -------
+
+    dict
+        A dictionary containing the extracted visuals.
+        example:
+
+        ```python
+        {'no_images_pages': <list of pages where no images were found>,
+        "metadata": <Metadata object>}
+        ```
+
+    Raises
+    ------
+
+    ValueError
+        If no PDF file or LTPage list is provided.
+
     """
+
+    if pdf is None and lt_pages is None:
+        raise ValueError("No PDF file or LTPage list. At least one\
+                         of them must be provided.")
 
     pdf_root = data_dir
     pdf_file_path = os.path.basename(pdf).split("/")[-1]  # file name
@@ -374,8 +424,8 @@ def extract_visuals_by_ocr(pdf: str, metadata: Metadata, data_dir: str,
     logger.info("OCR input image resolution (DPI): " + str(
         ocr_settings["resolution"]))
 
-    if image_pages:
-        pages = image_pages
+    if lt_pages:
+        pages = lt_pages
     else:
         pdf_pages = extract_pages(pdf)  # returns generator
         # intantiate generator
@@ -793,10 +843,11 @@ class OCR(Pipeline):
             print("--> Processing file:", pdf)
             pdf_file_dir = 'pdf-' + str(pdf_document_counter).zfill(3)
 
-            results = extract_visuals_by_ocr(pdf, meta_entry, DATA_DIR,
+            results = extract_visuals_by_ocr(meta_entry, DATA_DIR,
                                              OUTPUT_DIR, pdf_file_dir,
                                              logger,
-                                             entry_id, self.settings
+                                             entry_id, self.settings,
+                                             pdf=pdf
                                              )
 
             pdf_document_counter += 1
@@ -846,7 +897,7 @@ class LayoutOCR(Pipeline):
         text, and other elements. OCR analysis extracts images using
         Tesseract OCR.
 
-        It applyes image search and analysis based  in two steps:
+        It applyes image search and analysis in two steps:
         First, it analyses the layout of the PDF file using the pdfminer.six
         library.
         Second, it applies OCR to the pages where no images were found by
@@ -857,7 +908,106 @@ class LayoutOCR(Pipeline):
         """Run the pipeline."""
         print("Running layout+OCR analysis pipeline")
 
-        # TODO: combine code in layout and OCR pipelines
+        start_time = time.time()
+        # INPUT DIRECTORY
+        DATA_DIR = self.data_directory
+        # OUTPUT DIRECTORY
+        # if run multiple times to the same output directory, the images will
+        # be duplicated and metadata will be overwritten
+        # This will become the root path for a Visual object
+        OUTPUT_DIR = self.output_directory  # an absolute path is recommended
+        # SET MODS FILE
+        if self.metadata_file:
+            MODS_FILE = self.metadata_file
+            entry_id = pathlib.Path(MODS_FILE).stem.split("_")[0]
+        else:
+            entry_id = None  # a default entry id is used if
+            # no MODS file is provided
+
+        if self.settings is None:
+            raise ValueError("No settings provided")
+
+        # Create output directory for the entry
+        entry_directory = create_output_dir(OUTPUT_DIR, entry_id)
+
+        # start logging
+        logger = start_logging('layout',
+                               os.path.join(entry_directory,
+                                            entry_id + '.log'),
+                               entry_id)
+
+        # EXTRACT METADATA FROM MODS FILE
+        meta_blob = extract_mods_metadata(MODS_FILE)
+        # initialize metdata object
+        meta_entry = Metadata()
+        # add metadata from MODS file
+        meta_entry.set_metadata(meta_blob)
+        # set web url. This is not part of the MODS file
+        base_url = "http://resolver.tudelft.nl/"
+        meta_entry.add_web_url(base_url)
+
+        # FIND PDF FILES in data directory
+        PDF_FILES = find_pdf_files(DATA_DIR, prefix=entry_id)
+        logger.info("PDF files in entry: " + str(len(PDF_FILES)))
+
+        # PROCESS PDF FILES
+        pdf_document_counter = 1
+        results = {}
+        for pdf in PDF_FILES:
+
+            print("--> Processing file:", pdf)
+            pdf_file_dir = 'pdf-' + str(pdf_document_counter).zfill(3)
+
+            # Step 1: Layout analysis
+            layout_results = extract_visuals_by_layout(
+                pdf, meta_entry, DATA_DIR, OUTPUT_DIR, pdf_file_dir,
+                self.settings, logger, entry_id)
+            
+            # Step 2: OCR analysis on pages where no images were found
+            # by step 1.
+            results = extract_visuals_by_ocr(
+                meta_entry, DATA_DIR, OUTPUT_DIR, pdf_file_dir,
+                logger, entry_id, self.settings,
+                image_pages=layout_results["no_images_pages"])
+
+            pdf_document_counter += 1
+
+        end_time = time.time()
+        processing_time = end_time - start_time
+        logger.info("Processing time: " + str(processing_time) + " seconds")
+        logger.info("Extracted visuals: " + str(meta_entry.total_visuals))
+
+        # SAVE METADATA TO files
+        csv_file = str(os.path.join(entry_directory, entry_id)
+                       + "-metadata.csv")
+        json_file = str(os.path.join(entry_directory, entry_id)
+                        + "-metadata.json")
+        meta_entry.save_to_csv(csv_file)
+        meta_entry.save_to_json(json_file)
+
+        if not meta_entry.uuid:
+            logger.warning("No identifier found in MODS file")
+
+        # SAVE settings to json file
+        settings_file = str(os.path.join(entry_directory, entry_id)
+                            + "-settings.json")
+        with open(settings_file, 'w') as f:
+            json.dump({"layout": self.settings}, f, indent=4)
+
+        # TEMPORARY DIRECTORY
+        # this directory is used to store temporary files.
+        if self.temp_directory:
+
+            TMP_DIR = self.temp_directory
+            temp_entry_directory = create_output_dir(
+                os.path.join(TMP_DIR, entry_id)
+            )
+            logger.info("Managing file and copying to: " + str(temp_entry_directory))
+            manage_input_files(PDF_FILES, temp_entry_directory, MODS_FILE)
+            logger.info("Done managing files")
+
+        logger.info("Done")
+        return results
 
 
 def pipeline(data_directory: str, output_directory: str,
@@ -1341,9 +1491,9 @@ if __name__ == "__main__":
         # this affect the quality of output images
     }
 
-    p = Layout(data_directory=data_dir, output_directory=output_dir, metadata_file=metadata_file, settings=layout_settings, temp_directory=tmp_dir)
+    # p = Layout(data_directory=data_dir, output_directory=output_dir, metadata_file=metadata_file, settings=layout_settings, temp_directory=tmp_dir)
 
-    # p = OCR(data_directory=data_dir, output_directory=output_dir, metadata_file=metadata_file, settings=ocr_settings, temp_directory=tmp_dir)
+    p = OCR(data_directory=data_dir, output_directory=output_dir, metadata_file=metadata_file, settings=ocr_settings, temp_directory=tmp_dir)
 
 
     # p.temp_directory = None
