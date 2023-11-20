@@ -139,7 +139,7 @@ if __name__ == "__main__":
     pages = extract_pages(pdf_3)
 
     for page in pages:
-        elements=sort_layout_elements(page, img_width=100, img_height=100)
+        elements = sort_layout_elements(page, img_width=100, img_height=100)
         # print(elements)
         for img in elements["images"]:
             for _text in elements["texts"]:
