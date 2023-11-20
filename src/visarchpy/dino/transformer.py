@@ -25,7 +25,7 @@ def save_pickle_dinov2(pickle_filename: str,
     pickle_filename : str
         Path to pickle file
     outputs : BaseModelOutputWithPooling
-        Pickle file with outputs object of dinov2 model. File willl be saved 
+        Pickle file with outputs object of dinov2 model. File willl be saved
         to the same directory as the image file, and with the same name as the
         image file.
 
