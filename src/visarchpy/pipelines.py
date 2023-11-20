@@ -36,7 +36,7 @@ class Pipeline(ABC):
 
     def __init__(self, data_directory: str, output_directory: str,
                  settings: dict = None, metadata_file: str = None,
-                 temp_directory: str = None) -> None:
+                 temp_directory: str = None, ignore_id: bool = False) -> None:
         """"
         Parameters
         ----------
@@ -53,6 +53,9 @@ class Pipeline(ABC):
             If provided PDF files in the data directory will be copied to this
             directory. This is useful for data management purposes, and it was
             introduced to manage the TU Delft dataset. Defaults to None.
+        ignore_id : bool
+            If True, it won't filter PDF by ID (TU Delft dataset specific). Defaults to False.
+            As a result, all PDF files in the data directory will be processed.
 
         """
         self.data_directory = data_directory
@@ -60,6 +63,7 @@ class Pipeline(ABC):
         self.settings = settings
         self.metadata_file = metadata_file
         self.temp_directory = temp_directory
+        self.ignore_id = ignore_id
 
     @property
     def settings(self) -> dict:
@@ -94,6 +98,18 @@ class Pipeline(ABC):
         """Sets the path to the temporary directory.
         """
         self._temp_directory = temp_directory
+
+    @property
+    def ignore_id(self) -> bool:
+        """Gets the ignore_id flag.
+        """
+        return self._ignore_id
+    
+    @ignore_id.setter
+    def ignore_id(self, ignore_id: bool) -> None:
+        """Sets the ignore_id flag.
+        """
+        self._ignore_id = ignore_id
 
     @abstractmethod
     def run(self) -> dict:
@@ -702,7 +718,7 @@ class Layout(Pipeline):
 
     def run(self) -> dict:
         """Run the pipeline."""
-        print("Running layout analysis pipeline")
+        print("Running layout pipeline")
 
         start_time = time.time()
         # INPUT DIRECTORY
@@ -808,7 +824,7 @@ class OCR(Pipeline):
 
     def run(self):
         """Run the pipeline."""
-        print("Running OCR analysis pipeline")
+        print("Running OCR pipeline")
 
         start_time = time.time()
         # INPUT DIRECTORY
@@ -923,7 +939,7 @@ class LayoutOCR(Pipeline):
 
     def run(self):
         """Run the pipeline."""
-        print("Running layout+OCR analysis pipeline")
+        print("Running layout+OCR pipeline")
 
         start_time = time.time()
         # INPUT DIRECTORY
@@ -933,13 +949,33 @@ class LayoutOCR(Pipeline):
         # be duplicated and metadata will be overwritten
         # This will become the root path for a Visual object
         OUTPUT_DIR = self.output_directory  # an absolute path is recommended
-        # SET MODS FILE
-        if self.metadata_file:
+        # SET MODS FILE and extract metadata
+        # initialize metdata object
+        meta_entry = Metadata()
+        if self.metadata_file and not self.ignore_id:
             MODS_FILE = self.metadata_file
             entry_id = pathlib.Path(MODS_FILE).stem.split("_")[0]
-        else:
-            entry_id = None  # a default entry id is used if
+            # EXTRACT METADATA FROM MODS FILE
+            meta_blob = extract_mods_metadata(MODS_FILE)
+            # add metadata from MODS file
+            meta_entry.set_metadata(meta_blob)
+        elif self.metadata_file and self.ignore_id:
+            MODS_FILE = self.metadata_file
+            entry_id = '00000'  # a default entry id
+            # EXTRACT METADATA FROM MODS FILE
+            meta_blob = extract_mods_metadata(MODS_FILE)
+            # add metadata from MODS file
+            meta_entry.set_metadata(meta_blob)
+        elif not self.metadata_file and self.ignore_id:
+            MODS_FILE = None  # no MODS file is provided
+            #  therefore no metadata is added
+            entry_id = '00000'  # a default entry id
             # no MODS file is provided
+
+        if self.ignore_id:
+            search_prefix = None
+        else:
+            search_prefix = pathlib.Path(MODS_FILE).stem.split("_")[0]
 
         if self.settings is None:
             raise ValueError("No settings provided")
@@ -953,18 +989,13 @@ class LayoutOCR(Pipeline):
                                             entry_id + '.log'),
                                entry_id)
 
-        # EXTRACT METADATA FROM MODS FILE
-        meta_blob = extract_mods_metadata(MODS_FILE)
-        # initialize metdata object
-        meta_entry = Metadata()
-        # add metadata from MODS file
-        meta_entry.set_metadata(meta_blob)
+
         # set web url. This is not part of the MODS file
         base_url = "http://resolver.tudelft.nl/"
         meta_entry.add_web_url(base_url)
 
         # FIND PDF FILES in data directory
-        PDF_FILES = find_pdf_files(DATA_DIR, prefix=entry_id)
+        PDF_FILES = find_pdf_files(DATA_DIR, prefix=search_prefix)
         logger.info("PDF files in entry: " + str(len(PDF_FILES)))
 
         # PROCESS PDF FILES
@@ -1009,7 +1040,7 @@ class LayoutOCR(Pipeline):
         settings_file = str(os.path.join(entry_directory, entry_id)
                             + "-settings.json")
         with open(settings_file, 'w') as f:
-            json.dump({"layout": self.settings}, f, indent=4)
+            json.dump(self.settings, f, indent=4)
 
         # TEMPORARY DIRECTORY
         # this directory is used to store temporary files.
@@ -1033,7 +1064,7 @@ if __name__ == "__main__":
     output_dir = './tests/data/layout/'
     tmp_dir = './tests/data/tmp/'
     # metadata_file = './tests/data/00001/00001_mods.xml'
-    metadata_file = './tests/data/00001/00001_mods.xml'
+    metadata_file = './tests/data/00001/00002_mods.xml'
 
     layout_settings = {"layout": {
         "caption": {
