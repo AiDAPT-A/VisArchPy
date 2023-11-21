@@ -728,13 +728,33 @@ class Layout(Pipeline):
         # be duplicated and metadata will be overwritten
         # This will become the root path for a Visual object
         OUTPUT_DIR = self.output_directory  # an absolute path is recommended
-        # SET MODS FILE
-        if self.metadata_file:
+        # SET MODS FILE and extract metadata
+        # initialize metdata object
+        meta_entry = Metadata()
+        if self.metadata_file and not self.ignore_id:
             MODS_FILE = self.metadata_file
             entry_id = pathlib.Path(MODS_FILE).stem.split("_")[0]
-        else:
-            entry_id = None  # a default entry id is used if
+            # EXTRACT METADATA FROM MODS FILE
+            meta_blob = extract_mods_metadata(MODS_FILE)
+            # add metadata from MODS file
+            meta_entry.set_metadata(meta_blob)
+        elif self.metadata_file and self.ignore_id:
+            MODS_FILE = self.metadata_file
+            entry_id = '00000'  # a default entry id
+            # EXTRACT METADATA FROM MODS FILE
+            meta_blob = extract_mods_metadata(MODS_FILE)
+            # add metadata from MODS file
+            meta_entry.set_metadata(meta_blob)
+        elif not self.metadata_file and self.ignore_id:
+            MODS_FILE = None  # no MODS file is provided
+            #  therefore no metadata is added
+            entry_id = '00000'  # a default entry id
             # no MODS file is provided
+
+        if self.ignore_id:
+            search_prefix = None
+        else:
+            search_prefix = pathlib.Path(MODS_FILE).stem.split("_")[0]
 
         if self.settings is None:
             raise ValueError("No settings provided")
@@ -748,18 +768,13 @@ class Layout(Pipeline):
                                             entry_id + '.log'),
                                entry_id)
 
-        # EXTRACT METADATA FROM MODS FILE
-        meta_blob = extract_mods_metadata(MODS_FILE)
-        # initialize metdata object
-        meta_entry = Metadata()
-        # add metadata from MODS file
-        meta_entry.set_metadata(meta_blob)
+
         # set web url. This is not part of the MODS file
         base_url = "http://resolver.tudelft.nl/"
         meta_entry.add_web_url(base_url)
 
         # FIND PDF FILES in data directory
-        PDF_FILES = find_pdf_files(DATA_DIR, prefix=entry_id)
+        PDF_FILES = find_pdf_files(DATA_DIR, prefix=search_prefix)
         logger.info("PDF files in entry: " + str(len(PDF_FILES)))
 
         # PROCESS PDF FILES
@@ -835,12 +850,33 @@ class OCR(Pipeline):
         # This will become the root path for a Visual object
         OUTPUT_DIR = self.output_directory  # an absolute path is recommended
         # SET MODS FILE
-        if self.metadata_file:
+                # SET MODS FILE and extract metadata
+        # initialize metdata object
+        meta_entry = Metadata()
+        if self.metadata_file and not self.ignore_id:
             MODS_FILE = self.metadata_file
             entry_id = pathlib.Path(MODS_FILE).stem.split("_")[0]
-        else:
-            entry_id = None  # a default entry id is used if
+            # EXTRACT METADATA FROM MODS FILE
+            meta_blob = extract_mods_metadata(MODS_FILE)
+            # add metadata from MODS file
+            meta_entry.set_metadata(meta_blob)
+        elif self.metadata_file and self.ignore_id:
+            MODS_FILE = self.metadata_file
+            entry_id = '00000'  # a default entry id
+            # EXTRACT METADATA FROM MODS FILE
+            meta_blob = extract_mods_metadata(MODS_FILE)
+            # add metadata from MODS file
+            meta_entry.set_metadata(meta_blob)
+        elif not self.metadata_file and self.ignore_id:
+            MODS_FILE = None  # no MODS file is provided
+            #  therefore no metadata is added
+            entry_id = '00000'  # a default entry id
             # no MODS file is provided
+
+        if self.ignore_id:
+            search_prefix = None
+        else:
+            search_prefix = pathlib.Path(MODS_FILE).stem.split("_")[0]
 
         if self.settings is None:
             raise ValueError("No settings provided")
@@ -849,23 +885,17 @@ class OCR(Pipeline):
         entry_directory = create_output_dir(OUTPUT_DIR, entry_id)
 
         # start logging
-        logger = start_logging('OCR',
+        logger = start_logging('layout',
                                os.path.join(entry_directory,
                                             entry_id + '.log'),
                                entry_id)
 
-        # EXTRACT METADATA FROM MODS FILE
-        meta_blob = extract_mods_metadata(MODS_FILE)
-        # initialize metdata object
-        meta_entry = Metadata()
-        # add metadata from MODS file
-        meta_entry.set_metadata(meta_blob)
+
         # set web url. This is not part of the MODS file
         base_url = "http://resolver.tudelft.nl/"
         meta_entry.add_web_url(base_url)
-
         # FIND PDF FILES in data directory
-        PDF_FILES = find_pdf_files(DATA_DIR, prefix=entry_id)
+        PDF_FILES = find_pdf_files(DATA_DIR, prefix=search_prefix)
         logger.info("PDF files in entry: " + str(len(PDF_FILES)))
 
         # PROCESS PDF FILES
@@ -1100,11 +1130,11 @@ if __name__ == "__main__":
 
     print(settings)
 
-    # p = Layout(data_directory=data_dir, output_directory=output_dir, metadata_file=metadata_file, settings=layout_settings, temp_directory=tmp_dir)
+    p = Layout(data_directory=data_dir, output_directory=output_dir, metadata_file=metadata_file, settings=layout_settings, temp_directory=tmp_dir)
 
     # p = OCR(data_directory=data_dir, output_directory=output_dir, metadata_file=metadata_file, settings=ocr_settings, temp_directory=tmp_dir)
 
-    p = LayoutOCR(data_directory=data_dir, output_directory=output_dir, metadata_file=metadata_file, settings=settings, temp_directory=tmp_dir)
+    # p = LayoutOCR(data_directory=data_dir, output_directory=output_dir, metadata_file=metadata_file, settings=settings, temp_directory=tmp_dir)
 
     # p.temp_directory = None
     r  = p.run()  # run pipeline
