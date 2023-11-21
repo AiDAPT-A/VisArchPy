@@ -19,7 +19,7 @@ Data pipelines for extraction and visual analysis of architectural visuals in Py
 After installing the requirements, install VisArchPy using `pip`.
 
 ```shell
-pip install visarcpy
+pip install visarchpy
 ```
 
 ## Usage
