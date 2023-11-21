@@ -885,7 +885,7 @@ class OCR(Pipeline):
         entry_directory = create_output_dir(OUTPUT_DIR, entry_id)
 
         # start logging
-        logger = start_logging('layout',
+        logger = start_logging('OCR',
                                os.path.join(entry_directory,
                                             entry_id + '.log'),
                                entry_id)
