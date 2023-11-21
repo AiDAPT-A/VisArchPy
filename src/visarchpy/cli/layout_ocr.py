@@ -13,7 +13,7 @@ OCR analysis.",
                   context_settings={"help_option_names": ["-h", "--help"]},
                   add_completion=False)
 
-with open("../default-settings.json", "r") as f:
+with open("./src/visarchpy/default-settings.json", "r") as f:
     default_settings = json.load(f)
 
 
@@ -115,10 +115,10 @@ if __name__ == "__main__":
     app()
 
     # CLI examples:
-    
+
     # batch 1-2 ../../../tests/data/00001/ ../../../tests/data/layout/  ../../../tests/data/tmp/ 
 
-    # from-dir ../../../tests/data/00001/ ../../../tests/data/layout/  --tmp-dir ../../../tests/data/tmp/
+    # from-dir ../../../tests/data/00001/ ../../../tests/data/layout/  --tmp ../../../tests/data/tmp/
 
     # from-file ../../../tests/data/00001/00002_sample.pdf ../../../tests/data/layout/ --mods ../../../tests/data/00001/00002_mods.xml
 
