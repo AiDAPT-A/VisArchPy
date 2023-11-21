@@ -22,6 +22,22 @@ After installing the requirements, install VisArchPy using `pip`.
 pip install visarchpy
 ```
 
+### Installing from source
+
+1. Clone the repository.
+    ```shell
+    git clone https://github.com/AiDAPT-A/VisArchPy.git
+    ```
+2. Go to the root of the repository.
+   ```shell
+   cd VisArchPy/
+   ```
+3. Install the package using `pip`.
+
+    ```shell
+    pip install .
+    ```
+    
 ## Usage
 
 VisArchPy provides a command line interface to access its functionality. If you want to VisArchPy as a Python package consult the [documentation]().
