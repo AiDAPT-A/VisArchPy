@@ -63,7 +63,7 @@ Results from the data extraction pipelines (Layout, OCR, LayoutOCR) are save to 
 
 The pipeline's settings determine how visual extraction from PDF files is performed. Settings must be passed as a JSON file on the CLI. Settings may must include all items listed below. The values showed belowed are the defaults.
 
-```json
+```python
 {
     "layout": { # setting for layout analysis
         "caption": { 
