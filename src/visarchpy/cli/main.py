@@ -7,6 +7,7 @@ import typer
 # import aidapta.pipelines.ocr as ocr
 import visarchpy.cli.layout_ocr as layout_ocr
 import visarchpy.cli.layout as layout
+import visarchpy.cli.ocr as ocr
 import visarchpy.cli.dino as dino
 
 app = typer.Typer(
@@ -18,11 +19,9 @@ app = typer.Typer(
     add_completion=False)
 
 # Each of this subcommands are defined in their own file in the cli directory
-
 app.add_typer(layout.app, name="layout")
-# app.add_typer(ocr.app, name="ocr"from typing import Optional)
+app.add_typer(ocr.app, name="ocr")
 app.add_typer(layout_ocr.app, name="layoutocr")
-
 app.add_typer(dino.app, name="dino")
 
 
