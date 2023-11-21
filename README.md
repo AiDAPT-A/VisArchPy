@@ -1,64 +1,118 @@
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 # VisArchPy
 
-Data pipelines for extraction and analysis of architectural visuals in Python.
+Data pipelines for extraction and visual analysis of architectural visuals in Python. It extracts images embedded in PDF files, collects relevant metadata, and extracts visual features using the DinoV2 model.
 
-- [x] Extraction of architectural visuals from PDF documents.
-- [x] Extraction of features from images using the DinoV2 model.
-- [x] Analytics for exploring results.
+- **Layout:** pipeline for extracting metadata and visuals from PDF files using a layout analysis. Layout analysis recursively checks elements in the PDF file and sorts them into images, text, and other elements.
+- **OCR:** pipeline for extracting metadata and visuals from PDF files using OCR analysis. OCR analysis extracts images from PDF files using Tesseract OCR.
+- **LayoutOCR:** pipeline for extracting metadata and visuals from PDF files that combines layout and OCR analysis.
 
-## Requiremtns
+## Requirements
 
 - Python 3.10 or newer 
-- [Tesseract v4.0](https://tesseract-ocr.github.io/)
+- [Tesseract v4.0 or recent](https://tesseract-ocr.github.io/)
 - [PyTorch v2.1 or recent](https://pytorch.org/get-started/locally/)
 
-## Installing the AiDAT-A library
+## Installion
 
-1. Create a virtual environment:
-    ```shell
-    python3 -m venv .venv/
-    ```
-2. Clone the repository.
-3. Install required aidapta package. From the repository root run:
+After installing the requirements, install VisArchPy using `pip`.
 
-    ```shell
-    pip install -e .
-    ```
-
-## Pipelines
-
-The pakcage implements two case-specific pipelines for the extraction visuals from PDF files.
-
-1. The `image_pipeline.py`, uses `PDFMiner.six` to analyse the elements in a PDF file and extract visual and captions. We called this approache **layout analysis**.
-2. The `image_ocr_pipeline.py`, uses *layout analysis* and **OCR analysis** to extract visual. The OCR analysis uses **Tesseract** to improve the extraction of drawing and floorplans.
-
-## Running the Pipelines
-
-1. Open the pipeline of your choice using Python
-2. Configure the settings
-3. Run
-
-## Pipeline Settings
-The following settings determine how image extraction is performed and they impact the outcomes.
-
-**Image Settings:** `width` and `height` exlcude images in the PDF which size smaller than the values provided (pixels). If values for `width` and `height` are different, the smaller value will be used to exclude images. 
-If present, the `ocr_output_resolution` defines the resolution of images used in OCR analysis, and therefore the resolution of extrated images. Higher resolutions do not necessarily improve the accuracy of the analysis.
-
-```python
-IMG_SETTINGS = {"width": 100, # pixels
-                "height": 100, # recommended values: 0
-                "ocr_output_resolution": 200, # dpi
-                }
+```shell
+pip install visarcpy
 ```
 
-**Caption Settings:** strategy to look for captions during **layout analysis**. The `ofset` defines a maximum distance to look for captions around an image's bounding box; the `direction` defines the derection relative to the image that will be used to look for captions (using `all` increases the search area but might create more mismatches); and `keywords` is a list of words that are expected at the very beginning of a caption. *For example, it is commom to start captions with 'Figure' in academic documents.*
+## Usage
 
+VisArchPy provides a command line interface to access its functionality. If you want to VisArchPy as a Python package consult the [documentation]().
 
-```python
-CAP_SETTINGS ={"method": "bbox",
-            "offset": 14, # one unit equals 1/72 inch or 0.3528 mm
-            "direction": "down", # all directions
-            "keywords": ['figure', 'caption', 'figuur'], # case insentitive
-            "ocr_output_resolution": 200, # dpi
-            }
+1. To access the main CLI program:
+
+```shell
+visarch -h
 ```
+
+2. To access a particular pipeline:
+
+```shell
+visarch [PIPELINE] [SUBCOMMAND]
+```
+
+For example, to run the `layout` pipeline using a single PDF file, do the following:
+
+```shell
+visarch layout from-file <path-to-pdf-file> <path-output-directory>
+```
+
+Use `visarch [PIPELINE] [SUBCOMMAND] -h` for help.
+
+### Results:
+
+Results from the data extraction pipelines (Layout, OCR, LayoutOCR) are save to the output directory. Results are organized as following:
+
+```shell
+00000/  # results directory
+├── pdf-001  # directory where images are saved to. One per PDF file
+├── 00000-metadata.csv  # extracted metadata as CSV
+├── 00000-metadata.json  # extracted metadata as JSON
+├── 00000-settings.json  # settings used by pipeline
+└── 00000.log  # log file
+```
+
+## Settings
+
+The pipeline's settings determine how visual extraction from PDF files is performed. Settings must be passed as a JSON file on the CLI. Settings may must include all items listed below. The values showed belowed are the defaults.
+
+```json
+{
+    "layout": { # setting for layout analysis
+        "caption": { 
+            "offset": [ # distance used to locate captions
+                4,
+                "mm"
+            ],
+            "direction": "down", # direction used to locate captions
+            "keywords": [  # keywords used to find captions based on text analysis
+                "figure",
+                "caption",
+                "figuur"
+            ]
+        },
+        "image": { # images smaller than these dimensions will be ignored
+            "width": 120,
+            "height": 120
+        }
+    },
+    "ocr": {  # settings for OCR analysis
+        "caption": {
+            "offset": [
+                50,
+                "px"
+            ],
+            "direction": "down",
+            "keywords": [
+                "figure",
+                "caption",
+                "figuur"
+            ]
+        },
+        "image": {
+            "width": 120,
+            "height": 120
+        },
+        "resolution": 250, # dpi to convert PDF pages to images before OCR
+        "resize": 30000  # total pixels. Larger OCR inputs are downsize to this before OCR
+    }
+}
+```
+
+When no seetings are passed to an pipeline, the defaults are used. To print the default seetting to the terminal use:
+
+```shell
+visarch [PIPELINE] settings
+```
+
+## Acknowlegdements
+
+- AeoLiS is supported by the [Digital Competence Centre](https://dcc.tudelft.nl), Delft University of Technology.
+- Reseach Data Services, Delft University of Technology, The Netherlands.
