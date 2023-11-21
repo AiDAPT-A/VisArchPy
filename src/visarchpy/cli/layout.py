@@ -88,4 +88,3 @@ if __name__ == "__main__":
     # visarch layout from-dir ./tests/data/00001/ ./tests/data/layout/  --tmp ./tests/data/tmp/
 
     # visarch layout from-file ./tests/data/00001/00002_sample.pdf ./tests/data/layout/ --mods ./tests/data/00001/00002_mods.xml
-
