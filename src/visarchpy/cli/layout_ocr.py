@@ -116,9 +116,9 @@ if __name__ == "__main__":
 
     # CLI examples:
 
-    # batch 1-2 ../../../tests/data/00001/ ../../../tests/data/layout/  ../../../tests/data/tmp/ 
+    # visarch batch 1-2 ./tests/data/00001/ ./tests/data/layout/  ./tests/data/tmp/ 
 
-    # from-dir ../../../tests/data/00001/ ../../../tests/data/layout/  --tmp ../../../tests/data/tmp/
+    # from-dir ./tests/data/00001/ ./tests/data/layout/  --tmp ./tests/data/tmp/
 
-    # from-file ../../../tests/data/00001/00002_sample.pdf ../../../tests/data/layout/ --mods ../../../tests/data/00001/00002_mods.xml
+    # from-file ./tests/data/00001/00002_sample.pdf ./tests/data/layout/ --mods ./tests/data/00001/00002_mods.xml
 
