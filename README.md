@@ -106,7 +106,7 @@ The pipeline's settings determine how visual extraction from PDF files is perfor
 }
 ```
 
-When no seetings are passed to an pipeline, the defaults are used. To print the default seetting to the terminal use:
+When no seetings are passed to a pipeline, the defaults are used. To print the default seetting to the terminal use:
 
 ```shell
 visarch [PIPELINE] settings
