@@ -3,8 +3,6 @@ Main CLI entry point for VisArchPy.
 """
 
 import typer
-# import aidapta.pipelines.layout as layout
-# import aidapta.pipelines.ocr as ocr
 import visarchpy.cli.layout_ocr as layout_ocr
 import visarchpy.cli.layout as layout
 import visarchpy.cli.ocr as ocr
