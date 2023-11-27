@@ -1,5 +1,5 @@
 """
-Convenience functions for analysing data produced byt the pipelines
+Convenience functions for analysing data produced by the pipelines
 Author: M.G. Garcia
 """
 
