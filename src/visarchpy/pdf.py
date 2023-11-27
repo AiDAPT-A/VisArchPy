@@ -8,7 +8,7 @@ Author: M.G. Garcia
 
 from pdfminer.high_level import extract_pages
 from pdf2image import convert_from_path
-from PIL import Image
+from typing import Any
 
 from pdfminer.layout import (
     LTPage,
@@ -87,7 +87,7 @@ def sort_layout_elements(
 
 def convert_pdf_to_image(pdf_file: str,
                          dpi: int = 200,
-                         **kargs) -> list[Image]:
+                         **kargs) -> list[Any]:
     """
     Convert PDF file to image, one page at a time.
 
@@ -105,7 +105,7 @@ def convert_pdf_to_image(pdf_file: str,
     Returns
     --------
     list of images
-        List of images. Images are of type Pillow Image
+        List of images. Each element in the list must be a Pillow Image object.
 
     """
 
