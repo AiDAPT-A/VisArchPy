@@ -8,8 +8,8 @@ import pathlib
 import shutil
 import time
 import logging
-from logging import Logger
 import json
+from logging import Logger
 import visarchpy.ocr as ocr
 from pdfminer.high_level import extract_pages
 from pdfminer.image import ImageWriter
