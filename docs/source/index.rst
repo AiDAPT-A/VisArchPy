@@ -8,8 +8,17 @@ Welcome to OpenDesign Handbook's documentation!
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :caption: User documentation
 
+   installation
+   quick-start
+   
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Developer documentation
+
+   devel.rst
    data-extraction
 
 
