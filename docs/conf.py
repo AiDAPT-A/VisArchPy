@@ -16,6 +16,9 @@ release = '1'
 
 extensions = [
     'sphinx_rtd_theme',
+    'sphinx.ext.autodoc',
+    'sphinx.ext.napoleon',
+    'sphinx_copybutton',
 ]
 
 templates_path = ['_templates']
