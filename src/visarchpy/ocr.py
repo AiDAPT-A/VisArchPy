@@ -10,7 +10,7 @@ import copy
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from bs4 import BeautifulSoup
-from pdf2image import convert_from_path
+from visarchpy.pdf import convert_pdf_to_image
 from PIL.Image import Image
 
 
@@ -41,40 +41,6 @@ def region_to_string(image: Image,
     region = image.crop((x1, y1, x2, y2))
     text = pytesseract.image_to_string(region, config=config)
     return text
-
-
-def convert_pdf_to_image(pdf_file: str,
-                         dpi: int = 200,
-                         **kargs) -> list[Image]:
-    """
-    Convert PDF file to image, one page at a time.
-
-    Parameters
-    ----------
-    pdf_file: str
-        path to PDF file
-    dpi: int
-        resolution of the output image
-    kargs:
-        additional arguments for the convert_from_path function from pdf2image
-        package. For example, first_page and last_page can be used to specify
-        the range of pages to convert.
-
-    Returns
-    --------
-    list of images
-        List of images. Images are of type Pillow Image
-
-    """
-
-    if 'first_page' in kargs and 'last_page' in kargs:
-
-        first_page = kargs['first_page']
-        last_page = kargs['last_page']
-        return convert_from_path(pdf_file, dpi=dpi, first_page=first_page,
-                                 last_page=last_page)
-    else:
-        return convert_from_path(pdf_file, dpi=dpi)
 
 
 def extract_bboxes_from_horc(images: list[Image],
@@ -497,15 +463,6 @@ def filter_bbox_contained(bboxes: dict) -> dict:
 if __name__ == '__main__':
 
     PDF_FILE = 'tests/data/multi-image-caption.pdf'
-    # registry 1
-    # PDF_FILE='data-pipelines/data/design-data100/00001_P5_Yilin_Zhou.pdf'
-    # regisry 2
-    # PDF_FILE='data-pipelines/data/design-data100/00002_P5PresentatieEricdeRidder_28jun.pdf' 
-    # PDF_FILE= 'data-pipelines/data/design-data100/00002_RESEARCHBOOKEricdeRidder_P5Repository.pdf'
-    # registry 3
-    # PDF_FILE = 'data-pipelines/data/design-data100/00003/00003_Report_Giorgio_Larcher_vol.1.pdf'
-    # PDF_FILE = 'data-pipelines/data/design-data100/00003/00003_Report_Giorgio_Larcher_vol.2.pdf'
-    # PDF_FILE = 'data-pipelines/data/design-data100/00003/00003_Report_Giorgio_Larcher_vol.3.pdf'    
     OUTPUT_DIR = 'tests/data'
     images = convert_pdf_to_image(PDF_FILE, dpi=200)
 

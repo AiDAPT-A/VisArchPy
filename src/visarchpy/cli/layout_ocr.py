@@ -8,7 +8,7 @@ import json
 from visarchpy.utils import create_output_dir
 import shutil
 
-app = typer.Typer(help="Extract visuals from PDF files using layout and \
+app = typer.Typer(help="Extract images from PDF files using layout and \
 OCR analysis.",
                   context_settings={"help_option_names": ["-h", "--help"]},
                   add_completion=False)
@@ -17,7 +17,7 @@ with open("./src/visarchpy/default-settings.json", "r") as f:
     default_settings = json.load(f)
 
 
-@app.command(help="Extract visuals from a single PDF file.")
+@app.command(help="Extract images from a single PDF file.")
 def from_file(
     pdf_file: str = typer.Argument(help="Path to directory containing PDF files."),
     output_directory: str = typer.Argument(help="Path to directory where results will be saved."),
@@ -51,7 +51,7 @@ def from_file(
         shutil.rmtree(temp_directory)
 
 
-@app.command(help="Extract visuals from all PDF files in a directory.")
+@app.command(help="Extract images from all PDF files in a directory.")
 def from_dir(
     data_directory: str = typer.Argument(help="Path to directory containing PDF files."),
     output_directory: str = typer.Argument(help="Path to directory where results will be saved."),

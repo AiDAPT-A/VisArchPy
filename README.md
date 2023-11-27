@@ -2,11 +2,21 @@
 
 # VisArchPy
 
-Data pipelines for extraction and visual analysis of architectural visuals in Python. It extracts images embedded in PDF files, collects relevant metadata, and extracts visual features using the DinoV2 model.
+Data pipelines for extraction, transformation and visualization of architectural visuals in Python. It extracts images embedded in PDF files, collects relevant metadata, and extracts visual features using the DinoV2 model.
 
-- **Layout:** pipeline for extracting metadata and visuals from PDF files using a layout analysis. Layout analysis recursively checks elements in the PDF file and sorts them into images, text, and other elements.
+## Extraction pipelines
+
+- **Layout:** pipeline for extracting metadata and visuals (images) from PDF files using a layout analysis. Layout analysis recursively checks elements in the PDF file and sorts them into images, text, and other elements.
 - **OCR:** pipeline for extracting metadata and visuals from PDF files using OCR analysis. OCR analysis extracts images from PDF files using Tesseract OCR.
 - **LayoutOCR:** pipeline for extracting metadata and visuals from PDF files that combines layout and OCR analysis.
+
+## Transformation pipelines
+- **Dino:** pipeline for transforming images into visual features using the self-supervised  learning in [DinoV2.](https://ai.meta.com/blog/dino-v2-computer-vision-self-supervised-learning/)
+
+## Visualization pipelines
+- **Viz:** an utility to create a *bounding box plot*. This plot provides an overview of the shapes, and size of images in a data set. 
+
+     [INLCUDE image as example]
 
 ## Requirements
 
@@ -22,6 +32,22 @@ After installing the requirements, install VisArchPy using `pip`.
 pip install visarchpy
 ```
 
+### Installing from source
+
+1. Clone the repository.
+    ```shell
+    git clone https://github.com/AiDAPT-A/VisArchPy.git
+    ```
+2. Go to the root of the repository.
+   ```shell
+   cd VisArchPy/
+   ```
+3. Install the package using `pip`.
+
+    ```shell
+    pip install .
+    ```
+    
 ## Usage
 
 VisArchPy provides a command line interface to access its functionality. If you want to VisArchPy as a Python package consult the [documentation]().
