@@ -7,6 +7,7 @@ Author: M.G. Garcia
 """
 
 from pdfminer.high_level import extract_pages
+from pdf2image import convert_from_path
 from pdfminer.layout import (
     LTPage,
     LTItem,
@@ -17,54 +18,6 @@ from pdfminer.layout import (
     LTFigure,
     LTCurve
 )
-
-
-# TODO: test if this code can be removed. It belongs to the old version of
-# the code
-# def extract_images(pdf_file: str, output_dir: str) -> None:
-#     """
-#     extracts image from a PDF file
-    
-#     Parameters
-#     ----------
-#     pdf_file: str
-#         path to the PDF file
-#     output_dir: str 
-#         path to directory to extract images. Outputs
-#         are organized in folder based on the name of the input PDF
-    
-#     Returns
-#     -------
-#     None
-#     """
-    
-#     # open PDF document
-#     reader = PdfReader(pdf_file)
-
-#     # prepare output directory
-#     pdf_file_name = pathlib.Path(pdf_file).stem
-#     output_directory = create_output_dir(output_dir, pdf_file_name)
-
-#     for page_index in range(0,len(reader.pages)):
-#         page = reader.pages[page_index]
-
-#         # TODO: fix issue with ValueError: not enough data in PIL
-#         try:
-#             count=1
-#             print('page/img index', page_index, count)
-       
-#             for image_file_object in page.images:
-#                 print(image_file_object)
-                
-#                 with open(str(output_directory)+'/' + 'page' + 
-#                   str(page_index) +'-'+str(count) + 
-#                           image_file_object.name, "wb") as fp:
-#                     fp.write(image_file_object.data)
-#                     count += 1
-#         except ValueError:
-#             print("error")
-
-#     return None
 
 
 def sort_layout_elements(
@@ -129,6 +82,42 @@ def sort_layout_elements(
             "vectors": vector_elements}
 
 
+
+def convert_pdf_to_image(pdf_file: str,
+                         dpi: int = 200,
+                         **kargs) -> list[Image]:
+    """
+    Convert PDF file to image, one page at a time.
+
+    Parameters
+    ----------
+    pdf_file: str
+        path to PDF file
+    dpi: int
+        resolution of the output image
+    kargs:
+        additional arguments for the convert_from_path function from pdf2image
+        package. For example, first_page and last_page can be used to specify
+        the range of pages to convert.
+
+    Returns
+    --------
+    list of images
+        List of images. Images are of type Pillow Image
+
+    """
+
+    if 'first_page' in kargs and 'last_page' in kargs:
+
+        first_page = kargs['first_page']
+        last_page = kargs['last_page']
+        return convert_from_path(pdf_file, dpi=dpi, first_page=first_page,
+                                 last_page=last_page)
+    else:
+        return convert_from_path(pdf_file, dpi=dpi)
+
+
+
 if __name__ == "__main__":
     from visarchpy.captions import find_caption_by_distance
     # has 158283 figure elements
@@ -146,3 +135,16 @@ if __name__ == "__main__":
                 match = find_caption_by_distance(img, _text, offset_distance=10, direction="down")
                 if match:
                     print(img, _text)
+
+    PDF_FILE = 'tests/data/multi-image-caption.pdf'
+    OUTPUT_DIR = 'tests/data'
+    images = convert_pdf_to_image(PDF_FILE, dpi=200)
+
+    # print(images[0])
+
+    region = [1000, 500, 2000, 1000]
+
+    # result = region_to_string(images[0], region)
+
+    # print(result)
+
