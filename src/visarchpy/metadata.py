@@ -10,7 +10,6 @@ import json
 import warnings
 from dataclasses import dataclass, field, asdict
 from typing import Optional, List
-from visarchpy.metadata import Person, Faculty, Department
 from pymods import MODSReader
 
 @dataclass
