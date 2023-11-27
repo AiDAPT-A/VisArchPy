@@ -1,7 +1,8 @@
 """
-Utility functions to extract image features using DINOv2
-https://github.com/facebookresearch/dinov2
-
+Utility functions to extract visual features using `DINOv2
+<https://github.com/facebookresearch/dinov2>`_ model and the
+**huggingface** `transformers <https://huggingface.co/transformers/>`_ 
+package.
 """
 
 import torch
