@@ -15,11 +15,11 @@ from pdfminer.high_level import extract_pages
 from pdfminer.image import ImageWriter
 from pdfminer.pdfparser import PDFSyntaxError
 from tqdm import tqdm
-from visarchpy.utils import extract_mods_metadata, create_output_dir
+from visarchpy.utils import create_output_dir
 from visarchpy.captions import find_caption_by_distance, find_caption_by_text
 from visarchpy.captions import BoundingBox
 from visarchpy.pdf import sort_layout_elements
-from visarchpy.metadata import Document, Metadata, Visual, FilePath
+from visarchpy.metadata import Document, Metadata, Visual, FilePath, extract_mods_metadata
 from visarchpy.captions import Offset
 from pdfminer.pdftypes import PDFNotImplementedError
 from pdfminer.layout import LTPage
@@ -640,6 +640,8 @@ def find_pdf_files(directory: str, prefix: str = None) -> list:
             if f.endswith(".pdf"):
                 pdf_files.append(directory+f)
 
+    print("Found PDF files: ", len(pdf_files))
+
     return pdf_files
 
 
@@ -1094,7 +1096,7 @@ if __name__ == "__main__":
     output_dir = './tests/data/layout/'
     tmp_dir = './tests/data/tmp/'
     # metadata_file = './tests/data/00001/00001_mods.xml'
-    metadata_file = './tests/data/00001/00002_mods.xml'
+    metadata_file = './tests/data/00001/00001_mods.xml'
 
     layout_settings = {"layout": {
         "caption": {
@@ -1130,11 +1132,11 @@ if __name__ == "__main__":
 
     print(settings)
 
-    p = Layout(data_directory=data_dir, output_directory=output_dir, metadata_file=metadata_file, settings=layout_settings, temp_directory=tmp_dir)
+    # p = Layout(data_directory=data_dir, output_directory=output_dir, metadata_file=metadata_file, settings=layout_settings, temp_directory=tmp_dir)
 
     # p = OCR(data_directory=data_dir, output_directory=output_dir, metadata_file=metadata_file, settings=ocr_settings, temp_directory=tmp_dir)
 
-    # p = LayoutOCR(data_directory=data_dir, output_directory=output_dir, metadata_file=metadata_file, settings=settings, temp_directory=tmp_dir)
+    p = LayoutOCR(data_directory=data_dir, output_directory=output_dir, metadata_file=metadata_file, settings=settings, temp_directory=tmp_dir)
 
     # p.temp_directory = None
     r  = p.run()  # run pipeline
