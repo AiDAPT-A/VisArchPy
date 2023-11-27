@@ -2,10 +2,7 @@ import requests
 import re
 import os
 import pathlib
-import warnings
-from pymods import MODSReader
 from bs4 import BeautifulSoup
-from visarchpy.metadata import Person, Faculty, Department
 
 
 def create_output_dir(base_path: str, path="") -> str:
@@ -75,126 +72,6 @@ def convert_dpi_to_point(quantity: float, dpi: int) -> float:
         raise ValueError("dpi must be positive")
 
     return quantity / dpi * 72
-
-
-def extract_mods_metadata(mods_file: str) -> dict:
-    """ Extract metadata from MODS files, version 3.6
-
-    Parameters
-    ----------
-    mods_file: str
-        path to MODS file
-
-    Returns
-    -------
-    dict
-        Dictionary with MODS elements and values
-    """
-
-    mods = MODSReader(mods_file)
-
-    meta = {}
-    meta["modsfile"] = mods_file
-
-    for record in mods:
-
-        # Thesis Title
-        meta["title"] = record.titles[0]
-
-        # Abtracts
-        abstracts = []  # MODS allows multiple abstract
-        [abstracts.append(abstract.text) for abstract in record.abstract]
-        meta["abstract"] = abstracts
-
-        # Dates
-        dates = []  # MODS allows multiple dates
-        [dates.append(date.text) for date in record.dates]
-        meta["date"] = dates[0]
-        if len(dates) > 1:
-            raise ValueError("More than one date found in MODS file")
-
-        # Type of work, MSC or bachelor thesis
-        genre = []  # MODS allows multiple abstract
-        [genre.append(g.text) for g in record.genre]
-        meta["genre"] = genre
-
-        # Departments
-        departments = []  # MODS allows multiple departments
-        [departments.append(Department(name=department.text)) for department
-         in record.get_notes(type='department')]
-        meta["department"] = departments
-
-        # Faculty
-        faculties = []  # MODS allows multiple faculties
-        [faculties.append(Faculty(name=faculty.text, departments=departments))
-         for faculty in record.get_notes(type='faculty')]
-        meta["faculty"] = faculties
-
-        # subjects
-        subjects = []  # MODS allows multiple subjects (keywords)
-        [subjects.append(subject.text) for subject in record.subjects]
-        meta["subjects"] = subjects
-
-        # Author and Mentor names as <surname>, <initials>
-        persons = []
-        # dictionary with fullname and role
-        [persons.append(Person(name=name.text, role=name.role.text)) for
-         name in record.names]
-        meta["persons"] = persons
-
-        # Copyright statement
-        rights = []  # MODS allows multiple copyright statements
-        [rights.append(right.text) for right in record.rights]
-        if len(rights) > 1:
-            raise ValueError("More than one copyright found in MODS file")
-        else:
-            meta["rights"] = rights
-
-        # Language
-        languages = []  # MODS allows multiple languages
-        [languages.append(
-            {"code": language.code, "authority": language.authority}
-            ) for language in record.language]
-        meta["language"] = languages
-
-        # Identifiers
-        if record.identifiers:  # some MODS files don't have identifiers
-            meta["identifiers"] = record.identifiers[0].text  # MODS allows
-            # multiple identifiers
-        else:
-            warnings.warn("No identifiers found in MODS file")
-        # only the first one is used. Uuid is used as identifier
-        meta["iid"] = record.iid
-        meta["internet_media_type"] = record.internet_media_type
-        meta["issuance"] = record.issuance
-        meta["digital_origin"] = record.digital_origin
-        meta["doi"] = record.doi
-        meta["edition"] = record.edition
-        meta["extent"] = record.extent
-        meta["form"] = record.form
-        meta["classification"] = record.classification
-        meta["collection"] = record.collection
-        meta["geographic_code"] = record.geographic_code
-
-        corp_names = []  # MODS allows multiple corporate names
-        # we collect the name and the role of each corporate name
-        [corp_names.append(
-            {"name": corp_name.text, "role": corp_name.role.text}
-            ) for corp_name in record.get_corp_names]
-        meta["corp_names"] = corp_names
-
-        meta["rights"] = rights
-
-        meta["creators"] = record.get_creators
-        meta["physical_description"] = record.physical_description_note
-        meta["physical_location"] = record.physical_location
-        meta["pid"] = record.pid
-        meta["publication_place"] = record.publication_place
-        meta["publisher"] = record.publisher
-        meta["purl"] = record.purl
-        meta["type_resource"] = record.type_of_resource
-
-    return meta
 
 
 def extract_metadata_from_html(reference_url: str) -> dict:
@@ -300,7 +177,5 @@ def get_entry_number_from_mods(mods_file_path: str) -> str:
 
 
 if __name__ == '__main__':
-    mods_file = "/home/manuel/Documents/devel/VisArchPy/tests/data/sample-mods.xml"
-    meta = extract_mods_metadata(mods_file)
-    print(meta)
-    # pass
+
+    pass
