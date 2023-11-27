@@ -1130,7 +1130,7 @@ if __name__ == "__main__":
 
     settings = layout_settings | ocr_settings
 
-    print(settings)
+    # print(settings)
 
     # p = Layout(data_directory=data_dir, output_directory=output_dir, metadata_file=metadata_file, settings=layout_settings, temp_directory=tmp_dir)
 
