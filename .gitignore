@@ -16,6 +16,7 @@ data/results-artifacts/
 data/tmp/
 data/detect/
 data/ocr-test/
+dinov2-test/*
 
 img/
 ./data/
