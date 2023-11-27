@@ -72,7 +72,7 @@ def plot_bboxes(images: List[str],
     image_paths: List[str]
         A list of image file paths.
     cmap: str
-        Name of the matplotlig color map to be used. Consult the matplotlib
+        Name of the matplotlib color map to be used. Consult the matplotlib
         documentation for valid values.
     predictor: Kmeans
         A clustering Kmeans (Scikit Learn) trained model for assing a label
@@ -251,6 +251,7 @@ def plot_bboxes(images: List[str],
         plt.savefig(save_to_file, dpi=resolution, bbox_inches='tight')
         print(f'Plot saved to {save_to_file}')
 
+    print('Close the plot window to continue.')
     # Show the plot
     if show:
         plt.show()
