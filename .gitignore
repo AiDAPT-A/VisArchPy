@@ -5,6 +5,7 @@ venv/
 # Compiled source
 docs/build/
 dist/
+docs/_build/
 
 # Data directories
 
