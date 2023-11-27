@@ -8,6 +8,8 @@ Author: M.G. Garcia
 
 from pdfminer.high_level import extract_pages
 from pdf2image import convert_from_path
+from PIL import Image
+
 from pdfminer.layout import (
     LTPage,
     LTItem,
