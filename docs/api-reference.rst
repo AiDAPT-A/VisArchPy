@@ -1,3 +1,4 @@
+.. _python api:
 
 Package Reference
 ==========================
