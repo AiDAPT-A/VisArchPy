@@ -138,6 +138,11 @@ When no seetings are passed to a pipeline, the defaults are used. To print the d
 visarch [PIPELINE] settings
 ```
 
+## Citation
+Please cite this software using as follows:
+
+*Garcia Alvarez, M. G., Khademi, S., & Pohl, D. (2023). VisArchPy [Computer software]. https://github.com/AiDAPT-A/VisArchPy*
+
 ## Acknowlegdements
 
 - AeoLiS is supported by the [Digital Competence Centre](https://dcc.tudelft.nl), Delft University of Technology.
