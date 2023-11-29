@@ -1,0 +1,38 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: VisArchPy
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Manuel Gilberto
+    family-names: Garcia Alvarez
+    email: m.g.garciaalvarez@tudelft.nl
+    affiliation: Delft University of Technology
+    orcid: 'https://orcid.org/0000-0003-1579-9989'
+  - given-names: Seyran
+    family-names: Khademi
+    orcid: 'https://orcid.org/0000-0003-4623-3689'
+    affiliation: Delft University of Techonology
+    email: S.Khademi@tudelft.nl
+  - email: D.Pohl@tudelft.nl
+    given-names: Dennis
+    family-names: Pohl
+    affiliation: Delft University of Technology
+    orcid: 'https://orcid.org/0000-0002-4847-1501'
+repository-code: 'https://github.com/AiDAPT-A/VisArchPy'
+abstract: >-
+  Data pipelines for extraction, transformation and
+  visualization of architectural visuals in Python.
+keywords:
+  - architectural visual
+  - data pipeline
+  - architecture
+  - pdf
+  - image
+  - dinov2
+license: MIT
+date-released: '2023-12-04'
