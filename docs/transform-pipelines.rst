@@ -70,28 +70,28 @@ The following examples show how to extract visual features of images using the *
                                                         save_csv_dinov2, 
                                                         save_pickle_dinov2) 
 
-                """ results will be saved in a subdirectory named after the input directory
-                and with the output directory as parent directory
+                """ results will be saved in a subdirectory named after the image directory
+                with the output directory as parent directory
                 """
                 
-                input_dir = './my-images/'
+                image_dir = './my-images/'
                 model = 'facebook/dinov2-small'  
                 output_dir = './dinov2'  # directory to save outputs
 
-                output_dir = os.path.join(output_dir, os.path.basename(input_dir.rstrip('/')))
+                output_dir = os.path.join(output_dir, os.path.basename(image_dir.rstrip('/')))
                 os.makedirs(output_dir, exist_ok=True)
                 files = os.listdir(input_dir)
 
                 for file in tqdm(files, desc="Extracting features", unit="images"):
+                    # fetch name of image file
                     filename = os.path.basename(file).split('.')[0]
 
                     # extract visual features
                     try:
-                        results = transform_to_dinov2(os.path.join(input_dir, file), model)
+                        results = transform_to_dinov2(os.path.join(image_dir, file), model)
                     except IOError:  # prevents raising error when file is not an image
                         print(f"WARNING: Directory contain that's not an image: {file}. Skipping...")
                         continue
-                        
                     else:
                         # save features as pandas dataframe to CSV file
                         save_csv_dinov2(os.path.join(output_dir, filename + '.csv'), 
@@ -105,147 +105,26 @@ The following examples show how to extract visual features of images using the *
 .. tip::
     Use ``visarch dino [SUBCOMMAND] -h`` to see which options are available in the CLI. Or consult the :ref:`python api` if using Python.
 
-Pipeline Outputs
+
+Outputs
 ----------------
 
-All extraction pipeline result in the following outputs. Outputs are saved to the ``<output directory>``.
+The ``dino`` transformation tools transforms images into tensors and  Python objects. The results of transforming images in a data directory are organized as follows.
+
 
 .. code-block:: shell
 
-   <output-directory>
-    └──00000/  # result directory
-       ├── pdf-001  # PDF directory, one per PDF. Extracted images are saved here.
-       ├── 00000-metadata.csv  # extracted metadata as CSV
-       ├── 00000-metadata.json  # extracted metadata as JSON
-       ├── 00000-settings.json  # a copy of settings used by pipeline
-       └── 00000.log  # processing log file
+   dinov2  # default output directory
+    └── pdf-001  # directory named after the input directory
+        ├── 00001-page1-Im0.csv  # Pytorch tensor as Pandas dataframe
+        ├── 00001-page1-Im0.pickle  # Huggingface object with full model outputs
+        ├── 00001-page1-Im1.csv
+        ├── 00001-page1-Im1.pickle
+        ├── 00001-page1-Im2.csv
+        └── 00001-page1-Im2.pickle
 
-.. warning::
-    Be mindful when running the pipeline multiple times on the same ``<output-directory``.
-    The ``00000`` directory is created if it does not exist. However, if exists, the pipeline will overwrite/update its contents. 
-
-       * **pdf-001:**  existing images are kept, new images are added.
-       * **00000-metadata.csv:**  existing metadata will be overwritten.
-       * **00000-metadata.json:**  existing metadata will be overwritten.
-       * **00000-settings.json:**  existing settings will be overwritten.
-       * **00000.log:** existing recodrs are kept, new records are added.
-
-
-Settings
----------
-
-The pipelines settings determine how image extraction is performed. By default, the pipelines use the settings in ``visarchpy/default-settings.json``. However, these settings can be overwritten by passing custom settings to the pipeline.
-
-Default settings can be shown on the terminal by using the following command:
-
-.. code-block:: shell
-   
-    visarch [PIPELINE] settings
-
-
-Default Setting
-""""""""""""""""
-
-Extraction pipelines use the following default settings:
-
-.. code-block:: json
+.. important::
     
-    {
-        "layout": { 
-            "caption": { 
-                "offset": [ 
-                    4,
-                    "mm"
-                ],
-                "direction": "down", 
-                "keywords": [  
-                    "figure",
-                    "caption",
-                    "figuur"
-                ]
-            },
-            "image": { 
-                "width": 120,
-                "height": 120
-            }
-        },
-        "ocr": {  
-            "caption": {
-                "offset": [
-                    50,
-                    "px"
-                ],
-                "direction": "down",
-                "keywords": [
-                    "figure",
-                    "caption",
-                    "figuur"
-                ]
-            },
-            "image": {
-                "width": 120,
-                "height": 120
-            },
-            "resolution": 250,
-            "resize": 30000 
-        }
-    }
-
-
-.. table:: Settings for the data extraction pipelines in VisArchPy.
-        
-    ======================= ===================================== =================================
-     Setting                Meaning                               Expected values
-    ======================= ===================================== =================================
-    *layout*                Group settings for Layout analysis
-    *ocr*                   Group settings for OCR analysis
-    *caption.offset*        | Distance around an image boundary   | ``[ number, "mm" ]`` (for layout)
-                            | where captions will be searched     | ``[ number, "px" ]`` (for OCR) 
-                            | for                                                    
-    *caption.direction*     | Derection relative to an image 
-                            | where captions are searched for     | ``all, up, down,``
-                            |                                     | ``right, left ```
-    *caption.keywords*      | Keywords used to find captions      | ``[keyword1, keyword2, ...]``
-                            | based on text analysis                          
-    *image.width*           | minimum width of an image to be     ``integer`` 
-                            | extracted, in pixels                              
-    *image.height*          | minimum height of an image to be    ``integer`` 
-                            | extracted, in pixels
-    *ocr.resolution*        | DPI used to convert PDF pages       ``integer``
-                            | into images befor applying OCR
-    *ocr.resize*            | Maximum width and height of PDF     ``integer``
-                            | page used as input by Tesseract.    
-                            | in pixels. If page conversion       
-                            | results in a larger image, it will  
-                            | be downsized to fit this value.     
-                            | Tesseract maximum values  for       
-                            | width and height is :math:`2^{15}`    
-    ======================= ===================================== =================================
-
-
-
-Custom Settings
-""""""""""""""""""
-
-When defining custom setting, the schema defined above should be used. Note that settings for different extraction approaches are grouped together. When using a pipeline that implements only one approach, settigs for the other approach can be ommitted. Custom settings can be passed to a pipeline as a JSON file (CLI) or as a dictionary (Python).
-
-.. tabs::
-
-    .. code-tab:: bash  CLI
-
-        visarch layoutocr from-file --settings <settings-file> <path-pdf-directory> \
-        <path-output-directory>
-
-    .. code-tab:: py
-
-        from visarchpy.pipelines import LayoutOCR
-
-        custom_settings = {}  # a dictionary with custom settings following schema above
-
-        pipeline = LayoutOCR('path-to-data-dir', 'path-to-output-dir', 
-                            metadata_file='path-to-mods-file', 
-                            settings=custom_settings
-                            )
-
-        pipeline.run()
+    * The ``dino`` transformation tools will overwrite existing files in the output directory. 
+    * The *tensor* in the CSV files is a Pytorch tensor converted to a Pandas dataframe. The *object* in the pickle files is a Huggingface object with the full model outputs. See the `Huggingface documentation <https://huggingface.co/transformers/main_classes/output.html>`_ for more information.
 
