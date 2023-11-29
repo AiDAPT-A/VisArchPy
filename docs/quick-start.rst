@@ -1,7 +1,21 @@
 Quick Start  
 =============
 
-Start here if you are new to VisArchPy.
+Start here if you are new to VisArchPy. This guide will help you get started with VisArchPy. VisArchPy provides a set of pipelines and tools for extracting, transforming, and visualizing images from PDF files. It was developed to support the development of a visual archive of architectural visuals (photographs, drawings, floorplans, 3D renders, etc), however it can be used on any PDF file and image data set.
+
+The main features of VisArchPy are:
+
+* **Layout:** pipeline for extracting metadata and visuals (images) from PDF files using a layout analysis. Layout analysis recursively checks elements in the PDF file and sorts them into images, text, and other elements.
+* **OCR:** pipeline for extracting metadata and visuals from PDF files using OCR analysis. OCR analysis extracts images from PDF files using Tesseract OCR.
+* **LayoutOCR:** pipeline for extracting metadata and visuals from PDF files that combines layout and OCR analysis.
+* **Dino:** pipeline for transforming images into visual features using the self-supervised  learning in [DinoV2.](https://ai.meta.com/blog/dino-v2-computer-vision-self-supervised-learning/)
+* **Viz:** an utility to create a *bounding box plot*. This plot provides an overview of the shapes, and size of images in a data set. 
+   
+   .. image:: img/all-plot-heat.png
+      :alt: Example Bbox plot
+      :align: center
+      :width: 100%
+
 
 Installation
 -------------
