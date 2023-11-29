@@ -16,7 +16,7 @@ Data pipelines for extraction, transformation and visualization of architectural
 ## Visualization pipelines
 - **Viz:** an utility to create a *bounding box plot*. This plot provides an overview of the shapes, and size of images in a data set. 
 
-     [INLCUDE image as example]
+![Example Bbox plot](docs/img/all-plot-heat.png)
 
 ## Requirements
 
