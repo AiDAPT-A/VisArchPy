@@ -65,7 +65,7 @@ def extract_bboxes_from_horc(images: list[Image],
         id for entry (an entry identifies a group of files somehow related).
         Optional.
     resize: int
-        maximun with or height allowed before resizing is enforced. Optional.
+        maximun width or height allowed before resizing is enforced. Optional.
         This avoids to send images that are too large to be processed by
         Tesseract. Default: 32767 pixels (limit in Tessaract 5.3)
 

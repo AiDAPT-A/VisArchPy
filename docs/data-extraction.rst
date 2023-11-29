@@ -10,7 +10,7 @@ PyMuPDF and PyPDF2
 """""""""""""""""""
 
 PyMuPDF and PyPDF2 were relatively successful in extracting image-based visual. Out of the two, PyPDF2 was more successful in extracting image-based visuals. However, both tools were not able to extract captions and references to where in the document a visual is located. And none of the tools were able to extract vector-based visuals in an usable format (e.g. SVG).
-PyMuPDF is a Python binding for MuPDF – a lightweight PDF, XPS, and E-book viewer. PyPDF2 is a pure-python PDF library capable of splitting, merging together, cropping, and transforming the pages of PDF files.
+PyMuPDF is a Python binding for MuPDF, a lightweight PDF, XPS, and E-book viewer. PyPDF2 is a pure-python PDF library capable of splitting, merging together, cropping, and transforming the pages of PDF files.
 
 PDFMiner.six
 """""""""""""""""""

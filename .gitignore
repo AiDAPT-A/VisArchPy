@@ -5,6 +5,7 @@ venv/
 # Compiled source
 docs/build/
 dist/
+docs/_build/
 
 # Data directories
 
@@ -15,6 +16,7 @@ data/results-artifacts/
 data/tmp/
 data/detect/
 data/ocr-test/
+dinov2-test/*
 
 img/
 ./data/
