@@ -55,7 +55,7 @@ The following examples show how to extract images and metadata from PDF files us
 
 
 .. tip::
-    Use ``visarch layout from-file -h`` to see which options are available in the CLI. Or consult the :ref:`python api` if using Python.
+    Use ``visarch layout [SUBCOMMAND] -h`` to see which options are available in the CLI. Or consult the :ref:`python api` if using Python.
 
 
 OCR Pipeline
@@ -107,7 +107,7 @@ The following examples show how to extract images and metadata from PDF files us
 
 
 .. tip::
-    Use ``visarch ocr from-file -h`` to see which options are available in the CLI. Or consult the :ref:`python api` if using Python.
+    Use ``visarch ocr [SUBCOMMAND] -h`` to see which options are available in the CLI. Or consult the :ref:`python api` if using Python.
 
 
 LayoutOCR Pipeline
@@ -159,7 +159,7 @@ The following examples show how to extract images and metadata from PDF files us
 
 
 .. tip::
-    Use ``visarch ocr from-file -h`` to see which options are available in the CLI. Or consult the :ref:`python api` if using Python.
+    Use ``visarch ocr [SUBCOMMAND] -h`` to see which options are available in the CLI. Or consult the :ref:`python api` if using Python.
 
 
 Pipeline Outputs
@@ -185,7 +185,7 @@ All extraction pipeline result in the following outputs. Outputs are saved to th
        * **00000-metadata.csv:**  existing metadata will be overwritten.
        * **00000-metadata.json:**  existing metadata will be overwritten.
        * **00000-settings.json:**  existing settings will be overwritten.
-       * **00000.log:** existing recodrs are kept, new records are added.
+       * **00000.log:** existing records are kept, new records are added.
 
 
 Settings
