@@ -15,8 +15,17 @@ VisArchPy is a Python package for extracting, transforming and visualizing archi
    quick-start
    data-extraction
    extraction-pipelines
-   transform-pipelines
+   transform-utility
+   visual-utility
+
+
+.. toctree::
+   :maxdepth: 1
+   :caption: References
+
+   cli-reference
    api-reference
+   meta-reference
 
 .. toctree::
    :maxdepth: 1
