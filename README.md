@@ -14,7 +14,7 @@ Data pipelines for extraction, transformation and visualization of architectural
 - **Dino:** pipeline for transforming images into visual features using the self-supervised  learning in [DinoV2.](https://ai.meta.com/blog/dino-v2-computer-vision-self-supervised-learning/)
 
 ## Visualization pipelines
-- **Viz:** an utility to create a *bounding box plot*. This plot provides an overview of the shapes, and size of images in a data set. 
+- **Viz:** an utility to create a *bounding box plot*. This plot provides an overview of the shapes and sizes of images in a data set. 
 
 ![Example Bbox plot](docs/img/all-plot-heat.png)
 
