@@ -8,7 +8,7 @@ version = "1.0.0"
 authors = [
     {name = "Manuel Garcia", email = "m.g.garciaalvarez@tudelft.nl"},
 ]
-description = "Data pipelines for extraction and visual analysis of architectural visuals in Python."
+description = "Data pipelines for extraction, transformation and visualization of architectural visuals in Python."
 readme = "README.md"
 requires-python = ">=3.10"
 keywords = ["data pipelines", "visuals", "architecture",
