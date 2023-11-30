@@ -1,6 +1,6 @@
 .. _python api:
 
-Package Reference
+Python Reference
 ==========================
 
 The API reference for the most relevant features in the *visarchpy* package. For other features, please refer to the source code.
