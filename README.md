@@ -4,6 +4,7 @@
 
 Data pipelines for extraction, transformation and visualization of architectural visuals in Python. It extracts images embedded in PDF files, collects relevant metadata, and extracts visual features using the DinoV2 model.
 
+
 ## Main Features
 
 ### Extraction pipelines
