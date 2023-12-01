@@ -251,9 +251,10 @@ def plot_bboxes(images: List[str],
         plt.savefig(save_to_file, dpi=resolution, bbox_inches='tight')
         print(f'Plot saved to {save_to_file}')
 
-    print('Close the plot window to continue.')
+   
     # Show the plot
     if show:
+        print('Close the plot window to continue...')
         plt.show()
 
 
