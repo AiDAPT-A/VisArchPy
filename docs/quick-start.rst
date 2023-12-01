@@ -8,7 +8,7 @@ The main features of VisArchPy are:
 * **Layout:** pipeline for extracting metadata and visuals (images) from PDF files using a layout analysis. Layout analysis recursively checks elements in the PDF file and sorts them into images, text, and other elements.
 * **OCR:** pipeline for extracting metadata and visuals from PDF files using OCR analysis. OCR analysis extracts images from PDF files using Tesseract OCR.
 * **LayoutOCR:** pipeline for extracting metadata and visuals from PDF files that combines layout and OCR analysis.
-* **Dino:** pipeline for transforming images into visual features using the self-supervised  learning in [DinoV2.](https://ai.meta.com/blog/dino-v2-computer-vision-self-supervised-learning/)
+* **Dino:** utility for transforming images into visual features using the self-supervised  learning in [DinoV2.](https://ai.meta.com/blog/dino-v2-computer-vision-self-supervised-learning/)
 * **Viz:** an utility to create a *bounding box plot*. This plot provides an overview of the shapes, and size of images in a data set. 
    
    .. image:: img/all-plot-heat.png
@@ -16,6 +16,9 @@ The main features of VisArchPy are:
       :align: center
       :width: 100%
 
+.. note::
+   
+   VisArchPy manage the extraction of metadata of extracted images, and the extraction of captions based on text analysis and proximity to images.
 
 Installation
 -------------

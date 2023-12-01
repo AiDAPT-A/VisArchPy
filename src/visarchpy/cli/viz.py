@@ -27,3 +27,5 @@ def bbox_plot(
     # create plot
     plot_bboxes(images, cmap=color_map, show=show, size=size, resolution=resolution, save_to_file=output_file, max_image_size=max_image_size)
 
+if __name__ == "__main__":
+    app()

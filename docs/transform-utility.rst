@@ -1,8 +1,8 @@
-Transformation Pipelines
+Transformation Utilities
 ==============================
 
-Data tranformation pipelines provide utilities to extract visual features from images. The current utilities extract visual features uing the DinoV2 model, and store the results as CSV files and pickle files.
-*VisArchPy* provides one transformation pipeline: dino.
+Data tranformation utilities help with extracting visual features from images. The current utilities extract visual features uing the DinoV2 model, and store the results as CSV files and pickle files.
+*VisArchPy* provides one transformation utility: dino.
 
 
 Dino 

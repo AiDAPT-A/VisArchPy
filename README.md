@@ -4,19 +4,26 @@
 
 Data pipelines for extraction, transformation and visualization of architectural visuals in Python. It extracts images embedded in PDF files, collects relevant metadata, and extracts visual features using the DinoV2 model.
 
-#### Extraction pipelines
+
+## Main Features
+
+### Extraction pipelines
 
 - **Layout:** pipeline for extracting metadata and visuals (images) from PDF files using a layout analysis. Layout analysis recursively checks elements in the PDF file and sorts them into images, text, and other elements.
 - **OCR:** pipeline for extracting metadata and visuals from PDF files using OCR analysis. OCR analysis extracts images from PDF files using Tesseract OCR.
 - **LayoutOCR:** pipeline for extracting metadata and visuals from PDF files that combines layout and OCR analysis.
 
-#### Transformation pipelines
+### Metadata Extraction
+- Extraction of medatdata of extracted images (document page, image size)
+- Extraction of captions of images based on proximity to images and  *text-analysis* using keywords.
+
+### Transformation utilities
 - **Dino:** pipeline for transforming images into visual features using the self-supervised  learning in [DinoV2.](https://ai.meta.com/blog/dino-v2-computer-vision-self-supervised-learning/)
 
-#### Visualization pipelines
-- **Viz:** an utility to create a *bounding box plot*. This plot provides an overview of the shapes, and size of images in a data set. 
+### Visualization utilities
+- **Viz:** an utility to create a *bounding box plot*. This plot provides an overview of the shapes and sizes of images in a data set. 
 
-![Example Bbox plot](docs/img/all-plot-heat.png)
+    ![Example Bbox plot](docs/img/all-plot-heat.png)
 
 ## Requirements
 
@@ -137,6 +144,11 @@ When no seetings are passed to a pipeline, the defaults are used. To print the d
 ```shell
 visarch [PIPELINE] settings
 ```
+
+## Citation
+Please cite this software using as follows:
+
+*Garcia Alvarez, M. G., Khademi, S., & Pohl, D. (2023). VisArchPy [Computer software]. https://github.com/AiDAPT-A/VisArchPy*
 
 ## Acknowlegdements
 
