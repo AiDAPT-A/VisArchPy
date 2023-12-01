@@ -16,6 +16,9 @@ The main features of VisArchPy are:
       :align: center
       :width: 100%
 
+.. note::
+   
+   VisArchPy manage the extraction of metadata of extracted images, and the extraction of captions based on text analysis and proximity to images.
 
 Installation
 -------------
