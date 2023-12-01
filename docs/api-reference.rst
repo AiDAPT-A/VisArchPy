@@ -7,7 +7,7 @@ The API reference for the most relevant features in the *visarchpy* package. For
 
 
 
-Data Extraction Pipelines
+Extraction Pipelines
 -------------------------
 
 All data extraction pipelines inherit from the :class:`Pipeline` abstract class.
@@ -31,7 +31,7 @@ All data extraction pipelines inherit from the :class:`Pipeline` abstract class.
    :undoc-members:
    :show-inheritance:
 
-Data Transformation Utilities
+Transformation Utilities
 -----------------------------
 
 .. automodule:: visarchpy.dino.transformer
