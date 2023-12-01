@@ -8,7 +8,7 @@ import json
 from visarchpy.utils import create_output_dir
 import shutil
 
-app = typer.Typer(help="Extract images from PDF files using layout \
+app = typer.Typer(help="Extract images from PDF files using OCR \
 analysis.",
                   context_settings={"help_option_names": ["-h", "--help"]},
                   add_completion=False)
