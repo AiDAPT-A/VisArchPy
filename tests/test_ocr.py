@@ -12,7 +12,7 @@ def test_convert_pdf_to_images():
     Test convert_pdf_to_images function
     """
     # Fixtures
-    pdf_file = './data/multi-image-caption.pdf' 
+    pdf_file = './tests/data/multi-image-caption.pdf' 
     dpi = 200
 
 @pytest.fixture(scope="module")
