@@ -135,7 +135,7 @@ The pipeline's settings determine how visual extraction from PDF files is perfor
         },
         "resolution": 250, # dpi to convert PDF pages to images before OCR
         "resize": 30000  # total pixels. Larger OCR inputs are downsize to this before OCR
-        "tesseract" : "--psm 1 --oem 1"  # tesseract options
+        "tesseract" : "--psm 1 --oem 3"  # tesseract options
     }
 }
 ```

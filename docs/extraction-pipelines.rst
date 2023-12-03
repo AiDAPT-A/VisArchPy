@@ -245,7 +245,7 @@ Extraction pipelines use the following default settings:
             },
             "resolution": 250,
             "resize": 30000,
-            "tesseract" : "--psm 1 --oem 1"
+            "tesseract" : "--psm 1 --oem 3"
         }
     }
 
