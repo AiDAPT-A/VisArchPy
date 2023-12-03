@@ -21,8 +21,6 @@ The following examples show how to create a *bbox plot* using a collection of im
           .. code-tab:: bash  CLI
 
              visarch viz bbox-plot <path-image-directory>
-             # TODO: fix follwing error
-             OSError: [Errno 24] Too many open files: '../data/plot/00002-page50-Im0.jpg'
 
           .. code-tab:: py
 
