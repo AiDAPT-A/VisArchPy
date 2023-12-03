@@ -57,7 +57,7 @@ class FilePath:
 @dataclass
 class Person:
     """
-    Represents a person
+    Represents a person and its role
     """
     name: str
     role: str
@@ -83,19 +83,19 @@ class Faculty:
 @dataclass
 class Document:
     """
-    Represents a document
+    Represents a (PDF) document
     """
-    # location where the visual is stored
+    
     location: FilePath = field(init=True, default=None)
 
     def update_root_path(self, path: str) -> None:
-        """Updates the root path of the file path """
+        """Updates the root of the path of the document"""
         self.location.update_root_path(path)
 
 
 @dataclass
 class Visual:
-    """A class for handling metadata for architectural visuals
+    """A class for handling metadata of visuals (images)
     extracted from PDF files"""
 
     document: Document  # document where the visual is located
