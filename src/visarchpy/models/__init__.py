@@ -1,5 +1,5 @@
 """
-Loads pretrained models for use in the VisArchPy package.
+Loads pretrained models for its use in the VisArchPy package.
 """
 
 import pickle
