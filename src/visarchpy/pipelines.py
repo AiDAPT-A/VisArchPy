@@ -499,7 +499,7 @@ def extract_visuals_by_ocr(metadata: Metadata, data_dir: str,
             )
 
         ocr_results = ocr.extract_bboxes_from_horc(
-            page_image, config='--psm 3 --oem 1',
+            page_image, config=ocr_settings["ocr"]["tesseract"],
             entry_id=entry_id,
             page_number=page["page_number"],
             resize=ocr_settings["ocr"]["resize"]
@@ -1125,13 +1125,16 @@ if __name__ == "__main__":
         "resize": 30000,  # px, if image is larger than this, it will be
         # resized before performing OCR,
         # this affect the quality of output images
+        "tesseract": "--psm 3 --oem 1"  # tesseract config flags
     }
     }
 
     settings = layout_settings | ocr_settings
 
 
-    p = Layout(data_directory=data_dir, output_directory=output_dir, metadata_file=metadata_file, settings=layout_settings, temp_directory=tmp_dir)
+    # p = Layout(data_directory=data_dir, output_directory=output_dir, metadata_file=metadata_file, settings=layout_settings, temp_directory=tmp_dir)
+
+    p = OCR(data_directory=data_dir, output_directory=output_dir, metadata_file=metadata_file, settings=ocr_settings)
 
     r  = p.run()  # run pipeline
 
