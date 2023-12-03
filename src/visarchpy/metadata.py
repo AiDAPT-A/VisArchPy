@@ -57,7 +57,7 @@ class FilePath:
 @dataclass
 class Person:
     """
-    Represents a person
+    Represents a person and its role
     """
     name: str
     role: str
@@ -83,19 +83,19 @@ class Faculty:
 @dataclass
 class Document:
     """
-    Represents a document
+    Represents a (PDF) document
     """
-    # location where the visual is stored
+    
     location: FilePath = field(init=True, default=None)
 
     def update_root_path(self, path: str) -> None:
-        """Updates the root path of the file path """
+        """Updates the root of the path of the document"""
         self.location.update_root_path(path)
 
 
 @dataclass
 class Visual:
-    """A class for handling metadata for architectural visuals
+    """A class for handling metadata of visuals (images)
     extracted from PDF files"""
 
     document: Document  # document where the visual is located
@@ -296,7 +296,16 @@ class Metadata:
         -------
         None
 
+        Raises
+        ------
+        TypeError
+            if document is not a Document object
+
         """
+
+        if not isinstance(document, Document):
+            raise TypeError('document must be a Document object')
+
         if not self.documents:
             self.documents = []
         self.documents.append(document)
@@ -370,7 +379,16 @@ class Metadata:
         -------
         None
 
+        Raises
+        ------
+        TypeError
+            if visual is not a Visual object
+
         """
+
+        if not isinstance(visual, Visual):
+            raise TypeError('visual must be a Visual object')
+        
         if not self.visuals:
             self.visuals = []
         self.visuals.append(visual)
@@ -540,30 +558,8 @@ def extract_mods_metadata(mods_file: str) -> dict:
 
 
 def main() -> None:
-    from visarchpy.utils import extract_mods_metadata
-
-    meta_blob = extract_mods_metadata('/home/manuel/Documents/devel/desing-handbook/data-pipelines/data/test/00002_mods.xml')
-    
-    person1 = Person(name='John Doe', role='author')
-    person2 = Person(name='Jane Doe', role='mentor')
-
-    department1 = Department(name='Department of Architecture')
-
-    faculty1 = Faculty(name='Faculty of Architecture', departments=[department1])
-
-    document1 = Document(location='data-pipelines/data/4563050_AmberLuesink_P5Report_TheRevivaloftheJustCity.pdf')
-    print(document1.location )
-
-    # meta_data = Metadata(documents=[document1])
-    # meta_data.set_metadata(meta_blob)
-
-    # print(meta_data.as_dict())
-    # meta_data.write_to_csv('data-pipelines/data/metadata.csv')
-
-    # print(meta_data.as_dataframe())
-    mods_file = "/home/manuel/Documents/devel/VisArchPy/tests/data/sample-mods.xml"
-    meta = extract_mods_metadata(mods_file)
-    print(meta)
+    pass
+   
     
 if __name__ == "__main__":
     main()

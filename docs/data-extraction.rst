@@ -1,7 +1,9 @@
 Data Extraction
 =======================
 
-The aim of data extraciotn is to extract architectural visuals from PDF documents along with their captions while maintainig refereces to where (page) in the document a visual is located. Architectural visual of interest can be devide in two categories: image-based visuals and vector-based visuals. Image-based visuals include photos, 3D renders and collages. Vector-based visuals include floorplans and maps embedded in the PDF in an scalable format. To achive this we explored several tools and approaches.
+This section provide a brief exaplanation about the motivation, tools and approaches used while developing the data extraction pipeline. 
+
+The aim of data extraction is to extract architectural visuals from PDF documents along with their captions while maintainig refereces to where (page) in the document a visual is located. Architectural visual of interest can be devide in two categories: image-based visuals and vector-based visuals. Image-based visuals include photos, 3D renders and collages. Vector-based visuals include floorplans and maps embedded in the PDF in an scalable format. To achive this we explored several tools and approaches.
 
 Tools 
 -----

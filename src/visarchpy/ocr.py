@@ -44,7 +44,7 @@ def region_to_string(image: Image,
 
 
 def extract_bboxes_from_horc(images: list[Image],
-                             config: str = '--oem 1 --psm 1',
+                             config: str = '--oem 3 --psm 1',
                              page_number: int = None,
                              entry_id: str = None,
                              resize: int = 32767) -> dict:
@@ -98,7 +98,7 @@ def extract_bboxes_from_horc(images: list[Image],
         # use a counter to keep track of page number
 
     if resize > 32767:
-        raise ValueError('resize must be less than 32767 pixels, the\
+        raise ValueError('resize must be less than 32768 pixels, the\
                          limit in Tesseract 5.3')
 
     for img in images:
@@ -462,33 +462,15 @@ def filter_bbox_contained(bboxes: dict) -> dict:
 
 if __name__ == '__main__':
 
+    # example usage
     PDF_FILE = 'tests/data/multi-image-caption.pdf'
     OUTPUT_DIR = 'tests/data'
     images = convert_pdf_to_image(PDF_FILE, dpi=200)
 
-    # print(images[0])
-
-    region = [1000, 500, 2000, 1000]
-
-    # result = region_to_string(images[0], region)
-
-    # print(result)
-
     results = extract_bboxes_from_horc(images, config='--psm 3 --oem 1')
-    # key_ = next(iter(results))
-    # key_2 = next(iter(results))
-    # print(results[key_], results[key_2])
-
-    # boxes = {'id1':[0, 0, 100, 100], 'id2': [200, 300, 350, 400], 'id3': [10, 20, 90, 90],
-    #          'id4':[10, 10, 90, 90], 'id5': [10, 10, 90, 90], 'id6': [10, 10, 15, 20],
-    #            'id7':  [1000, 1000, 1200, 1200], 'id8': [200, 300, 350, 400], 'id9': [200, 300, 350, 400],}
 
     boxes2 = {'id1':[0, 0, 100, 210], 'id2': [80, 300, 350, 400], 
                'id7':  [1000, 1000, 1200, 1200]}
-    
-    # print(filter_bbox_by_size(boxes, min_width=100, min_height=100))
-    # print(filter_bbox_largest(boxes))
-    # print(filter_bbox_contained(boxes2))
 
     mark_bounding_boxes(results, OUTPUT_DIR, filter_size=100)
-    # crop_images_to_bbox(results, OUTPUT_DIR, filter_size=100)
+

@@ -187,3 +187,37 @@ Metadata File Example
     ]
     }
 
+
+Metadata Classes
+-------------------------
+
+VisArchPy provides handles metdata extracted from the MODS file (if given) and extracted images (visuals) using the following classes:
+
+.. autoclass:: visarchpy.metadata.FilePath
+   :members:
+   :undoc-members:
+
+
+.. autoclass:: visarchpy.metadata.Person
+   :members:
+   :undoc-members:
+
+.. autoclass:: visarchpy.metadata.Department
+   :members:
+   :undoc-members:
+
+.. autoclass:: visarchpy.metadata.Faculty
+   :members:
+   :undoc-members:
+
+.. autoclass:: visarchpy.metadata.Document
+   :members:
+   :undoc-members:
+
+.. autoclass:: visarchpy.metadata.Visual
+    :members:
+    :undoc-members:
+
+.. autoclass:: visarchpy.metadata.Metadata
+    :members:
+    :undoc-members:

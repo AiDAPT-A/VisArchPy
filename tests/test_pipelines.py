@@ -4,7 +4,7 @@ Pytest will automatically run all functions that start with test_ in this file.
 """
 
 import os
-from visarchpy.pipelines.pipelines import start_logging, find_pdf_files
+from visarchpy.pipelines import start_logging, find_pdf_files
 from logging import Logger
 
 

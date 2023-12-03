@@ -32,11 +32,3 @@ def test_convert_dpi_to_point():
     assert utils.convert_dpi_to_point(1, 5) == pytest.approx(14.4)
 
 
-def test_extract_mods_metadata():
-    """Test extract_mods_metadata function"""
-
-    results = utils.extract_mods_metadata("tests/data/sample-mods.xml")
-    with pytest.warns(UserWarning):
-        warnings.warn("No identifiers found in MODS file", UserWarning)
-
-    assert isinstance(results, dict)

@@ -5,7 +5,7 @@ Test for metadata pakcage
 import pytest
 import os
 import visarchpy.metadata as metadata
-
+import warnings
 
 @pytest.fixture(scope="module")
 def root_path():
@@ -14,6 +14,17 @@ def root_path():
 @pytest.fixture(scope="module")
 def file_path():
     return 'multi-image-caption.pdf'
+
+
+def test_extract_mods_metadata():
+    """Test extract_mods_metadata function"""
+
+    results = metadata.extract_mods_metadata("tests/data/sample-mods.xml")
+    with pytest.warns(UserWarning):
+        warnings.warn("No identifiers found in MODS file", UserWarning)
+
+    assert isinstance(results, dict)
+
 
 
 class TestFilePathClass:

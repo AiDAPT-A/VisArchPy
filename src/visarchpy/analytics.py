@@ -107,7 +107,7 @@ def plot_bboxes(images: List[str],
 
     Warning: If an image has no bounding box in the alpha channel.
     Warning: Decompression Bomb. If an image is larger than the maximum
-            maximum size allowed for a 32-bit system.
+             size allowed for a 32-bit system.
     Killed: If system runs out of memory during plotting. Adjusting the
             `max_image_size` and `scale_factor` parameters may help.
 
@@ -262,7 +262,7 @@ if __name__ == "__main__":
 
     # Example of how to use the plot_bboxes function
     img_plot = get_image_paths(
-        directory='/home/manuel/Documents/devel/data/plot')
+        directory='data/plot')
 
     plot_bboxes(img_plot, cmap='gist_heat_r',
                 size=10, show=True, resolution=300)

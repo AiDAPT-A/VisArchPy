@@ -245,7 +245,7 @@ def find_caption_by_distance(image_object: LTImage | BoundingBox,
         |    search area     |
         |  ++++++++++++++++  |
         |  +              +  |
-        |  + image hole   +  |
+        |  +  image box   +  |
         |  +              +  |
         |  +              +  |
         |  ++++++++++++++++  |

@@ -18,7 +18,7 @@ data/detect/
 data/ocr-test/
 dinov2-test/*
 
-img/examples/*
+docs/img/examples/*
 ./data/
 vector/
 *.html

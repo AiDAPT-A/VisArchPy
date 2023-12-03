@@ -5,7 +5,7 @@ Unit tests for dinov2/transformer.py
 import pytest
 from transformers.modeling_outputs import BaseModelOutputWithPooling 
 from torch import Tensor
-from visarchpy.dino.transformer import save_pickle_dinov2, load_pickle_dinov2, transform_to_dinov2
+from visarchpy.dino.transformer import transform_to_dinov2
 
 
 @pytest.fixture(scope='class')

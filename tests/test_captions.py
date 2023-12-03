@@ -8,13 +8,13 @@ import pytest
 
 @pytest.fixture(scope="class")
 def bbox_():
-    """Fixture for BoundingBox"""
+    """Fixture for BoundingBox using mm units"""
     return captions.BoundingBox((1, 2, 3, 4), "mm")
 
 
 @pytest.fixture(scope="class")
 def bbox_dpi():
-    """Fixture for BoundingBox"""
+    """Fixture for BoundingBox using dpi units"""
     return captions.BoundingBox((1, 2, 3, 4), 200)
 
 
@@ -50,5 +50,5 @@ class TestBoundingBox:
                                    )
 
     def test_bbox(self, bbox_):
-        """Test BoundingBox bbox property"""
+        """Test BoundingBox bbox method has the correct number of coordinates"""
         assert len(bbox_.bbox()) == 4
