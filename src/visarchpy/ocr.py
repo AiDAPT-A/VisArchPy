@@ -44,7 +44,7 @@ def region_to_string(image: Image,
 
 
 def extract_bboxes_from_horc(images: list[Image],
-                             config: str = '--oem 1 --psm 1',
+                             config: str = '--oem 3 --psm 1',
                              page_number: int = None,
                              entry_id: str = None,
                              resize: int = 32767) -> dict:
