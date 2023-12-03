@@ -33,8 +33,8 @@ def sort_layout_elements(
 
     Parameters
     ----------
-    pdf_file: LTPage
-        path to the PDF file
+    page: LTPage
+        LTPage object from PDFMiner.six
     img_width: int
         minimum width of image to be extracted. If
         None,  a value of 0 will be used
