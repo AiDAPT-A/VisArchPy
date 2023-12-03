@@ -2,7 +2,7 @@
 Test for OCR pipeline
 """
 
-import PIL
+
 import pytest
 import visarchpy.ocr as ocr 
 
