@@ -1130,15 +1130,9 @@ if __name__ == "__main__":
 
     settings = layout_settings | ocr_settings
 
-    # print(settings)
 
-    # p = Layout(data_directory=data_dir, output_directory=output_dir, metadata_file=metadata_file, settings=layout_settings, temp_directory=tmp_dir)
+    p = Layout(data_directory=data_dir, output_directory=output_dir, metadata_file=metadata_file, settings=layout_settings, temp_directory=tmp_dir)
 
-    # p = OCR(data_directory=data_dir, output_directory=output_dir, metadata_file=metadata_file, settings=ocr_settings, temp_directory=tmp_dir)
-
-    p = LayoutOCR(data_directory=data_dir, output_directory=output_dir, metadata_file=metadata_file, settings=settings, temp_directory=tmp_dir)
-
-    # p.temp_directory = None
     r  = p.run()  # run pipeline
 
-    # print(r)
+
