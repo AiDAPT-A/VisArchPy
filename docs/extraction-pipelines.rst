@@ -262,6 +262,7 @@ Extraction pipelines use the following default settings:
     *caption.direction*     | Derection relative to an image 
                             | where captions are searched for     | ``all, up, down,``
                             |                                     | ``right, left ```
+                            |                                     | ``down-right, up-left,``      
     *caption.keywords*      | Keywords used to find captions      | ``[keyword1, keyword2, ...]``
                             | based on text analysis                          
     *image.width*           | minimum width of an image to be     ``integer`` 
