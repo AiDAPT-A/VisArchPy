@@ -35,6 +35,7 @@
             "height": 120
         },
         "resolution": 250,
-        "resize": 30000
+        "resize": 30000,
+        "tesseract" : "--psm 1 --oem 3"
     }
 }
