@@ -121,6 +121,7 @@ def convert_pdf_to_image(pdf_file: str,
 
 
 if __name__ == "__main__":
+    
     from visarchpy.captions import find_caption_by_distance
     # has 158283 figure elements
     pdf_3 = "data-pipelines/data/caption-tests/multi-image-caption.pdf"
@@ -145,8 +146,4 @@ if __name__ == "__main__":
     # print(images[0])
 
     region = [1000, 500, 2000, 1000]
-
-    # result = region_to_string(images[0], region)
-
-    # print(result)
 
