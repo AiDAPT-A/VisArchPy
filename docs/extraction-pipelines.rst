@@ -244,7 +244,8 @@ Extraction pipelines use the following default settings:
                 "height": 120
             },
             "resolution": 250,
-            "resize": 30000 
+            "resize": 30000,
+            "tesseract" : "--psm 1 --oem 1"
         }
     }
 
@@ -278,9 +279,13 @@ Extraction pipelines use the following default settings:
                             | be downsized to fit this value.     
                             | Tesseract maximum values  for       
                             | width and height is :math:`2^{15}`    
+    *ocr.tesseract*         | Tesseract command line options      ``string``
+                            | passed to Tesseract. See Tesseract  
+                            | man page [1]_ for more 
+                            | information.
     ======================= ===================================== =================================
 
-
+.. [1] `Tesseract options <https://github.com/tesseract-ocr/tesseract/blob/main/doc/tesseract.1.asc>`_
 
 Custom Settings
 """"""""""""""""""
