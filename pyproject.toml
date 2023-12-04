@@ -47,8 +47,7 @@ dependencies = [
     "pytest",
     "Sphinx",
     "sphinx-rtd-theme",
-    "sphinxcontrib-bibtex>=2.5.0",
-    "sphinx-copybutton==0.5.2",
+    "sphinx-copybutton==0.5.2",s
   ]
 
 [project.urls]
