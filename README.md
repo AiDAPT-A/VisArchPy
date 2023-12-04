@@ -28,15 +28,15 @@ Data pipelines for extraction, transformation and visualization of architectural
 
     ![Example Bbox plot](docs/img/all-plot-heat.png)
 
-## Requirements
+## Dependencies
 
-- Python 3.10 or newer 
+- Python 3.10 or 3.11
 - [Tesseract v4.0 or recent](https://tesseract-ocr.github.io/)
 - [PyTorch v2.1 or recent](https://pytorch.org/get-started/locally/)
 
 ## Installion
 
-After installing the requirements, install VisArchPy using `pip`.
+After installing the dependencies, install VisArchPy using `pip`.
 
 ```shell
 pip install visarchpy
@@ -57,12 +57,22 @@ pip install visarchpy
     ```shell
     pip install .
     ```
-    
+
+Developers who intend to modify the sourcecode can install additional dependencies for test and documentation as follows. 
+
+1. Go to the root directory `visarchpy/`
+
+2.  Run:
+
+   ```shell
+   pip install -e .[dev]
+   ```
+
 ## Usage
 
-VisArchPy provides a command line interface to access its functionality. If you want to VisArchPy as a Python package consult the [documentation]().
+VisArchPy provides a command line interface to access its functionality. If you want to VisArchPy as a Python package consult the [documentation](https://visarchpy.readthedocs.io).
 
-1. To access the main CLI program:
+1. To access the CLI:
 
 ```shell
 visarch -h
@@ -82,7 +92,7 @@ visarch layout from-file <path-to-pdf-file> <path-output-directory>
 
 Use `visarch [PIPELINE] [SUBCOMMAND] -h` for help.
 
-### Results:
+### Results
 
 Results from the data extraction pipelines (Layout, OCR, LayoutOCR) are save to the output directory. Results are organized as following:
 
@@ -99,6 +109,9 @@ Results from the data extraction pipelines (Layout, OCR, LayoutOCR) are save to 
 
 The pipeline's settings determine how visual extraction from PDF files is performed. Settings must be passed as a JSON file on the CLI. Settings may must include all items listed below. The values showed belowed are the defaults.
 
+<details>
+  <summary>Available settings</summary>
+  
 ```python
 {
     "layout": { # setting for layout analysis
@@ -142,7 +155,9 @@ The pipeline's settings determine how visual extraction from PDF files is perfor
     }
 }
 ```
+</details>
 
+\
 When no seetings are passed to a pipeline, the defaults are used. To print the default seetting to the terminal use:
 
 ```shell
