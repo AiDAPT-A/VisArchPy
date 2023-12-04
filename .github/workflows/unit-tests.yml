@@ -35,6 +35,10 @@ jobs:
         pip install -e .
         pip install pytest
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+    - name: Install PyTorch
+      run: |
+        # Install CPU-based pytorch
+        pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
     - name: Run Tests
       run: |
         pytest
