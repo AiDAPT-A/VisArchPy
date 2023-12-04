@@ -1,4 +1,5 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+![Unit Tests](https://github.com/AiDAPT-A/VisArchPy/actions/workflows/unit-tests.yml/badge.svg)
 
 # VisArchPy
 
