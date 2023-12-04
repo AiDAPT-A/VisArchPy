@@ -1,5 +1,8 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![PyPI version](https://badge.fury.io/py/visarchpy.svg)](https://badge.fury.io/py/visarchpy)
+[![PyPI](https://img.shields.io/pypi/v/visarchpy.svg)](https://pypi.python.org/pypi/visarchpy)
+[![PyPI_versions](https://img.shields.io/pypi/pyversions/visarchpy.svg)](https://pypi.python.org/pypi/visarchpy)
+[![PyPI_status](https://img.shields.io/pypi/status/visarchpy.svg)](https://pypi.python.org/pypi/visarchpy)
+[![PyPI_format](https://img.shields.io/pypi/format/visarchpy.svg)](https://pypi.python.org/pypi/visarchpy)
 ![Unit Tests](https://github.com/AiDAPT-A/VisArchPy/actions/workflows/unit-tests.yml/badge.svg)
 [![Docs](https://readthedocs.org/projects/visarchpy/badge/?version=latest)](https://visarchpy.readthedocs.io)
 
