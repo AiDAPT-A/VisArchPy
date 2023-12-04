@@ -1,7 +1,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![PyPI version](https://badge.fury.io/py/visarchpy.svg)](https://badge.fury.io/py/visarchpy)
 ![Unit Tests](https://github.com/AiDAPT-A/VisArchPy/actions/workflows/unit-tests.yml/badge.svg)
-![Docs](https://readthedocs.org/projects/visarchpy/badge/?version=latest)
+[![Docs](https://readthedocs.org/projects/visarchpy/badge/?version=latest)](https://visarchpy.readthedocs.io)
 
 # VisArchPy
 
