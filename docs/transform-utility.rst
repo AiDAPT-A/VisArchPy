@@ -1,7 +1,7 @@
 Transformation Utilities
 ==============================
 
-Data tranformation utilities help with extracting visual features from images. The current utilities extract visual features uing the DinoV2 model, and store the results as CSV files and pickle files.
+Data transformation utilities help with extracting visual features from images. The current utilities extract visual features using the DinoV2 model and store the results as CSV and pickle files.
 *VisArchPy* provides one transformation utility: dino.
 
 
@@ -46,7 +46,7 @@ The following examples show how to extract visual features of images using the *
                 # extract visual features
                 results = transform_to_dinov2(iamge_file, model)
 
-                # save features as pandas dataframe to CSV file
+                # save features as Pandas data frame to CSV file
                 save_csv_dinov2(os.path.join(output, filename + '.csv'), results['tensor'])
                 
                 # save model outputs to pickle file
@@ -109,7 +109,7 @@ The following examples show how to extract visual features of images using the *
 Outputs
 ----------------
 
-The ``dino`` transformation tools transforms images into tensors and  Python objects. The results of transforming images in a data directory are organized as follows.
+The ``dino`` transformation tools transform images in a directory into tensors and  Python objects. The results are organized as follows.
 
 
 .. code-block:: shell
@@ -126,5 +126,5 @@ The ``dino`` transformation tools transforms images into tensors and  Python obj
 .. important::
     
     * The ``dino`` transformation tools will overwrite existing files in the output directory. 
-    * The *tensor* in the CSV files is a Pytorch tensor converted to a Pandas dataframe. The *object* in the pickle files is a Huggingface object with the full model outputs. See the `Huggingface documentation <https://huggingface.co/transformers/main_classes/output.html>`_ for more information.
+    * The *tensor* in the CSV files is a Pytorch tensor converted to a Pandas data frame. The *object* in the pickle files is a Huggingface object with the full model outputs. See the `Huggingface documentation <https://huggingface.co/transformers/main_classes/output.html>`_ for more information.
 

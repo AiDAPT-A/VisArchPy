@@ -1,7 +1,7 @@
 Visualisation Utilities
 ==============================
 
-Data visualisation utilities help with visual exploration of image datasets. The current utilities **viz** provides tools for visualzing propertied for an image dataset. 
+Data visualisation utilities help with the visual exploration of image datasets. The current utilities **viz** provide tools for visualising propertied for an image dataset. 
 
 Viz
 ---------------
@@ -38,7 +38,7 @@ The following examples show how to create a *bbox plot* using a collection of im
 Outputs
 ----------------
 
-The ``viz`` will show the plot on screen by detfaul. However, it is possible to save the plot as a file. The  plot supports any color map used by `Matplotlib. <https://matplotlib.org/stable/users/explain/colors/colormaps.html>`_
+The ``viz`` will show the plot on screen by default. However, it is possible to save the plot as a file. The plot supports any colour map supported by `Matplotlib. <https://matplotlib.org/stable/users/explain/colors/colormaps.html>`_
 
 
 .. image:: img/all-plot-heat.png

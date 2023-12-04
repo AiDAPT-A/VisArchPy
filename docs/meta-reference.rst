@@ -1,8 +1,7 @@
 Metadata Reference
 ======================
 
-This section describes the metadata fields that are used in the `metadata.json` file. Most of the metadata fields are based on the `MODS <https://www.loc.gov/standards/mods/>`_ standard, however some fields are added to support TU Delft specific fields, and metadata of extracted images (visuals).
-
+This section describes the metadata fields used in the `metadata.json` file. Most of the metadata fields are based on the `MODS <https://www2.archivists.org/groups/standards-committee/metadata-object-description-schema-mods>`_ standard. However, some fields were added to support TU Delft-specific fields and metadata about extracted images (visuals).
 
 
 .. table:: Metadata fields in **metadata.json** file.
@@ -10,7 +9,7 @@ This section describes the metadata fields that are used in the `metadata.json` 
    ================================ ========================================= ==============================================================================
     Field                           Explanation                                Expected values
    ================================ ========================================= ==============================================================================
-   *documents* [2]_                 | List of documment processed 
+   *documents* [2]_                 | List of documents processed 
                                     | by the pipeline                                 
    *documents.location* [2]_        Location of the document                  | ``{ root_path: string,``
                                                                               | ``file_path: string }``
@@ -27,7 +26,7 @@ This section describes the metadata fields that are used in the `metadata.json` 
    *submission_date* [3]_           Submission date of thesis                   ``YYYY-MM-DD``
    *thesis_type* [3]_               Type of thesis                              array of strings
    *subjects* [3]_                  List of subjects                            array of strings
-   *copyright* [3]_                 Copyrigth information                       array of strings
+   *copyright* [3]_                 Copyright information                       array of strings
    *languages* [3]_                 List of languages                           array of `language identifiers <https://www.rfc-editor.org/info/rfc3066>`_
    *uuid* [1]_                      Repository unique identifier                string
    *iid* [3]_                       Repository identifier                       string
@@ -61,7 +60,7 @@ This section describes the metadata fields that are used in the `metadata.json` 
    *visuals.id*                     Unique identifier of visual                string
    *visuals.caption*                Extracted caption of visual                array of strings
    *visuals.visual_type*            Type of visual                             string
-   *visuals.location*               Location where extracte visual is stored   same as *documents.location*
+   *visuals.location*               Location where extracted visual is stored   same as *documents.location*
    ================================ ========================================= ==============================================================================
 
 .. rubric:: Footnotes
@@ -73,6 +72,8 @@ This section describes the metadata fields that are used in the `metadata.json` 
 
 Metadata File Example
 ---------------------
+
+Running any VisArchPy data extraction pipelines will generate a ``metadata.json`` file in the output directory. The following example shows the structure of the ``metadata.json`` file.
 
 .. code-block:: json
 
@@ -176,7 +177,7 @@ Metadata File Example
             "bbox_units": "pt",
             "id": "5e5cc208-cd2c-4b09-a61a-5b6203d111b7",
             "caption": [
-                "Figure 1: Caption of the figure extracted from document."
+                "Figure 1: Caption of the figure extracted from the document."
             ],
             "visual_type": null,
             "location": {
@@ -191,7 +192,7 @@ Metadata File Example
 Metadata Classes
 -------------------------
 
-VisArchPy provides handles metdata extracted from the MODS file (if given) and extracted images (visuals) using the following classes:
+VisArchPy handles metadata extracted from the MODS file (if given) and images (visuals) using the following classes:
 
 .. autoclass:: visarchpy.metadata.FilePath
    :members:
