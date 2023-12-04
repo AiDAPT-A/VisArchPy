@@ -74,6 +74,8 @@ This section describes the metadata fields that are used in the `metadata.json` 
 Metadata File Example
 ---------------------
 
+Running any of the VisArchPy data extraction pipelines will generate a ``metadata.json`` file in the output directory. The following is an example shows the structure of the ``metadata.json`` file.
+
 .. code-block:: json
 
     {
