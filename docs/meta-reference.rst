@@ -1,8 +1,7 @@
 Metadata Reference
 ======================
 
-This section describes the metadata fields used in the `metadata.json` file. Most of the metadata fields are based on the `MODS <https://www.loc.gov/standards/mods/>`_ standard. However, some fields are added to support TU Delft-specific fields and metadata of extracted images (visuals).
-
+This section describes the metadata fields used in the `metadata.json` file. Most of the metadata fields are based on the `MODS <https://www2.archivists.org/groups/standards-committee/metadata-object-description-schema-mods>`_ standard. However, some fields were added to support TU Delft-specific fields and metadata about extracted images (visuals).
 
 
 .. table:: Metadata fields in **metadata.json** file.
