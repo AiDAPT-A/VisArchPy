@@ -6,7 +6,7 @@
 VisArchPy's Documentation
 ===============================================
 
-VisArchPy is a Python package for extracting, transforming and visualizing architural visuals. Visuals are images containing architectural drawings, photographs, or other visual representations embedded in PDF documents. The package is developed by the `AiDAPT-A <https://github.com/AiDAPT-A>`_ research group at the `Delft University of Technology <https://tudelft.nl/>`_.
+VisArchPy is a Python package for extracting, transforming and visualizing architectural visuals. Visuals are images containing architectural drawings, photographs, or other visual representations embedded in PDF documents. The package is developed by the `AiDAPT-A <https://github.com/AiDAPT-A>`_ research group at the `Delft University of Technology <https://tudelft.nl/>`_.
 
 .. toctree::
    :maxdepth: 1

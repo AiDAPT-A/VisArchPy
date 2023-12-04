@@ -120,7 +120,7 @@ Transforms images into visual features using DinoV2.
 **Commands**
 
   * **from-dir**   Extract features from all image files in a directory.
-  * **from-file**  Extract features from a sigle image file.
+  * **from-file**  Extract features from a single image file.
 
 
 Visualisation Utilities
