@@ -587,7 +587,7 @@ def extract_visuals_by_ocr(metadata: Metadata, data_dir: str,
                         for match in bbox_matches:
                             ocr_caption = ocr.region_to_string(page_image[0],
                                                                match.bbox_px(),
-                                                               config='--psm 3 --oem 1')
+                                                               config=ocr_settings["ocr"]["tesseract"])
 
                             if ocr_caption:
                                 try:
