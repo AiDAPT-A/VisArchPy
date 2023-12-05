@@ -9,7 +9,7 @@
 # VisArchPy
 
 Data pipelines for extraction, transformation and visualization of architectural visuals in Python. It extracts images embedded in PDF files, collects relevant metadata, and extracts visual features using the DinoV2 model.
-We ambition to make of this package Ai-powered tool with features for recorgnizing different types architectural visuals (types of buildings, structures, etc.). The package is still in development and we are working on adding more features and improving the existing ones. If you have any suggestions or questions, please open an issue in our `GitHub repository <https://github.com/AiDAPT-A/VisArchPy/issues>`_. 
+We ambition to make of this package Ai-powered tool with features for recorgnizing different types architectural visuals (types of buildings, structures, etc.). The package is still in development and we are working on adding more features and improving the existing ones. If you have any suggestions or questions, please open an issue in our [GitHub repository](https://github.com/AiDAPT-A/VisArchPy/issues). 
 
 ## Main Features
 
