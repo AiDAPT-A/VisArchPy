@@ -48,8 +48,8 @@ dependencies = [
     "pytest",
     "Sphinx",
     "sphinx-rtd-theme",
-    "sphinx-copybutton==0.5.2",s
-  ]
+    "sphinx-copybutton==0.5.2",
+]
 
 [project.urls]
 Documentation = "https://visarchpy.readthedocs.io"
