@@ -31,3 +31,7 @@ dev/
 */*/__pycache__/
 */*/*/__pycache__/
 src/*.egg-info
+
+# Mac OS
+.DS_Store
+

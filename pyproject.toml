@@ -43,6 +43,14 @@ dependencies = [
     "scikit-learn",
 ]
 
+[project.optional-dependencies]
+  dev = [
+    "pytest",
+    "Sphinx",
+    "sphinx-rtd-theme",
+    "sphinx-copybutton==0.5.2",s
+  ]
+
 [project.urls]
 Documentation = "https://visarchpy.readthedocs.io"
 Repository = "https://github.com/AiDAPT-A/VisArchPy.git"
