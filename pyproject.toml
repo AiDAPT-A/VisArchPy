@@ -25,6 +25,7 @@ classifiers = ["Development Status :: 5 - Production/Stable",
  "Intended Audience :: Science/Research",
  "Topic :: Utilities",
 ]
+
 dependencies = [
     "Pillow",
     "requests",
@@ -41,14 +42,6 @@ dependencies = [
     "transformers",
     "scikit-learn",
 ]
-
-[project.optional-dependencies]
-  dev = [
-    "pytest",
-    "Sphinx",
-    "sphinx-rtd-theme",
-    "sphinx-copybutton==0.5.2",
-  ]
 
 [project.urls]
 Documentation = "https://visarchpy.readthedocs.io"
