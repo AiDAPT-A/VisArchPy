@@ -1,6 +1,6 @@
 """Data pipelines for extracting metadata from MODS files and imges from
 PDF files.
-Author: Manuel Garcia
+Author: Manuel Garcia Alvarez
 """
 
 import os
