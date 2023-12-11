@@ -7,16 +7,13 @@ from visarchpy.pipelines import OCR
 import json
 from visarchpy.utils import create_output_dir
 import shutil
+import visarchpy.cli.settings as settings
+
 
 app = typer.Typer(help="Extract images from PDF files using OCR \
 analysis.",
                   context_settings={"help_option_names": ["-h", "--help"]},
                   add_completion=False)
-
-current_dir = os.path.dirname(os.path.realpath(__file__))
-default_settings_file = os.path.join(current_dir, "../default-settings.json")
-with open(default_settings_file, "r") as f:
-    default_settings = json.load(f)
 
 
 @app.command(help="Extract images from a single PDF file.")
@@ -28,7 +25,7 @@ def from_file(
     ) -> None:
 
     if settings is None:
-        settings = default_settings
+        settings = settings.init()
     else:
         with open(settings, "r") as f:
             settings = json.load(f)
@@ -63,7 +60,7 @@ def from_dir(
     ] = None) -> None:
     
     if settings is None:
-        settings = default_settings
+        settings = settings.init()
     else:
         with open(settings, "r") as f:
             settings = json.load(f)
