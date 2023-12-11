@@ -7,14 +7,12 @@ from visarchpy.pipelines import LayoutOCR
 import json
 from visarchpy.utils import create_output_dir
 import shutil
+import visarchpy.cli.settings as settings
 
 app = typer.Typer(help="Extract images from PDF files using layout and \
 OCR analysis.",
                   context_settings={"help_option_names": ["-h", "--help"]},
                   add_completion=False)
-
-with open("./src/visarchpy/default-settings.json", "r") as f:
-    default_settings = json.load(f)
 
 
 @app.command(help="Extract images from a single PDF file.")
@@ -26,7 +24,7 @@ def from_file(
     ) -> None:
 
     if settings is None:
-        settings = default_settings
+        settings = settings.init()
     else:
         with open(settings, "r") as f:
             settings = json.load(f)
@@ -61,7 +59,7 @@ def from_dir(
     ] = None) -> None:
     
     if settings is None:
-        settings = default_settings
+        settings = settings.init()
     else:
         with open(settings, "r") as f:
             settings = json.load(f)
