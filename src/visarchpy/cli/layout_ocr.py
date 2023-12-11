@@ -13,7 +13,9 @@ OCR analysis.",
                   context_settings={"help_option_names": ["-h", "--help"]},
                   add_completion=False)
 
-with open("./src/visarchpy/default-settings.json", "r") as f:
+current_dir = os.path.dirname(os.path.realpath(__file__))
+default_settings_file = os.path.join(current_dir, "../default-settings.json")
+with open(default_settings_file, "r") as f:
     default_settings = json.load(f)
 
 
