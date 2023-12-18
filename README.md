@@ -174,5 +174,5 @@ Please cite this software using as follows:
 
 ## Acknowlegdements
 
-- AeoLiS is supported by the [Digital Competence Centre](https://dcc.tudelft.nl), Delft University of Technology.
+- VisArchPy was develped thanks to the support provided by the [Digital Competence Centre](https://dcc.tudelft.nl), Delft University of Technology.
 - Reseach Data Services, Delft University of Technology, The Netherlands.
