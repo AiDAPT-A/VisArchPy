@@ -1,8 +1,10 @@
 import os
+import json
 
 def init():
-    default_settings_file = os.path.join(current_dir, "../default-settings.json")
     current_dir = os.path.dirname(os.path.realpath(__file__))
+    default_settings_file = os.path.join(current_dir, "../default-settings.json")
     with open(default_settings_file, "r") as f:
-        global default_settings 
-        dafault_settings = json.load(f)
+        default_settings = json.load(f)
+
+    return default_settings
