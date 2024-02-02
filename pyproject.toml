@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "visarchpy"
-version = "1.0.3"
+version = "1.0.4"
 authors = [
     {name = "Manuel Garcia", email = "m.g.garciaalvarez@tudelft.nl"},
 ]
@@ -68,4 +68,3 @@ addopts = [
 
 [project.scripts]
 visarch = "visarchpy.cli.main:app"
-

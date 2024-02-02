@@ -7,7 +7,7 @@ from visarchpy.pipelines import OCR
 import json
 from visarchpy.utils import create_output_dir
 import shutil
-import visarchpy.cli.settings as settings
+import visarchpy.cli.settings as default_settings
 
 
 app = typer.Typer(help="Extract images from PDF files using OCR \
@@ -20,12 +20,12 @@ analysis.",
 def from_file(
     pdf_file: str = typer.Argument(help="Path to directory containing PDF files."),
     output_directory: str = typer.Argument(help="Path to directory where results will be saved."),
-    settings: Annotated[str, typer.Option(help="Path to pipeline JSON setting file. If None default settings will be used. Use: [COMMAND] settings, to see current settings.")] = None,
+    settings: Annotated[str, typer.Option(help="Path to pipeline JSON setting file. If None default settings are used. Use: [COMMAND] settings, to see current settings.")] = None,
     mods: Annotated[str, typer.Option(help="Path to MODS file. If None, metadata extraction will be skiped.")] = None
     ) -> None:
 
     if settings is None:
-        settings = settings.init()
+        settings = default_settings.init()
     else:
         with open(settings, "r") as f:
             settings = json.load(f)
@@ -54,13 +54,13 @@ def from_file(
 def from_dir(
     data_directory: str = typer.Argument(help="Path to directory containing PDF files."),
     output_directory: str = typer.Argument(help="Path to directory where results will be saved."),
-    settings: Annotated[str, typer.Option(help="Path to pipeline JSON setting file. If None default settings will be used. Use: [COMMAND] settings, to see current settings.")] = None,
+    settings: Annotated[str, typer.Option(help="Path to pipeline JSON setting file. If None default settings are used. Use: [COMMAND] settings, to see current settings.")] = None,
     mods: Annotated[str, typer.Option(help="Path to MODS file. If None, metadata extraction will be skiped.")] = None,
     tmp: Annotated[str, typer.Option(help="If provided, PDF files in the data directory will be copied to this directory.")
     ] = None) -> None:
     
     if settings is None:
-        settings = settings.init()
+        settings = default_settings.init()
     else:
         with open(settings, "r") as f:
             settings = json.load(f)
@@ -76,7 +76,7 @@ def from_dir(
 @app.command(help="Show default settings for the pipeline.")
 def settings() -> None:
     """Show default settings for the pipeline."""
-    typer.echo(default_settings)
+    typer.echo(default_settings.init())
 
 
 if __name__ == "__main__":
