@@ -18,7 +18,7 @@ The following examples show how to extract visual features of images using the *
 
 .. tabs::
 
-    .. tab:: Sigle Image
+    .. tab:: Single Image
 
        .. tabs::
 

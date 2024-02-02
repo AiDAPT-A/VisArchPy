@@ -18,7 +18,7 @@ The following examples show how to extract images and metadata from PDF files us
 
 .. tabs::
 
-    .. tab:: Sigle PDF
+    .. tab:: Single PDF
 
        .. tabs::
 
@@ -70,7 +70,7 @@ The following examples show how to extract images and metadata from PDF files us
 
 .. tabs::
 
-    .. tab:: Sigle PDF
+    .. tab:: Single PDF
 
        .. tabs::
 
@@ -122,7 +122,7 @@ The following examples show how to extract images and metadata from PDF files us
 
 .. tabs::
 
-    .. tab:: Sigle PDF
+    .. tab:: Single PDF
 
        .. tabs::
 
