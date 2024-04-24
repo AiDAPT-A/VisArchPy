@@ -8,7 +8,7 @@ VisArchPy's Documentation
 
 VisArchPy is a Python package for extracting, transforming and visualizing visuals of *architectural design*. This visuals include images containing architectural drawings, photographs, or other visual representation contain architectural designs. The package is been developed by the `Design, Data and Society Group <https://www.tudelft.nl/bk/over-faculteit/afdelingen/architecture/organisatie/groepen/design-data-and-society-group>`_  at the `Delft University of Technology <https://www.tudelft.nl/>`_.
 
-We ambition to maek of this package an Ai-powered tool with features for recorgnizing different types architectural visuals (types of buildings, structures, etc.). The package is still in development and we are working on adding more features and improving the existing ones. If you have any suggestions or questions, please open an issue in our `GitHub repository <https://github.com/AiDAPT-A/VisArchPy/issues>`_. 
+We ambition to make this package an Ai-powered tool with features for recorgnizing different types architectural visuals (types of buildings, structures, etc.). The package is still in development and we are working on adding more features and improving the existing ones. If you have any suggestions or questions, please open an issue in our `GitHub repository <https://github.com/AiDAPT-A/VisArchPy/issues>`_. 
 
 
 .. toctree::
