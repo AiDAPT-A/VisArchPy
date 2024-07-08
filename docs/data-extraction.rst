@@ -3,7 +3,7 @@ Data Extraction
 
 This section briefly explains the motivation, tools and approaches used while developing the data extraction pipelines in *VisArchPy*. 
 
-Data extraction aimed to extract architectural visuals (images) from PDF documents in a document repository of `TU Delft <https://www.tudelft.nl>`, including images' captions, while maintaining references to where a visual is located (page). Architectural visuals of interest were divided into two categories: image- and vector-based. Image-based visuals include photos, 3D renders and collages. Vector-based visuals include floorplans and maps embedded in the PDF in a scalable format. To achieve this, we explored several tools and approaches.
+Data extraction aimed to extract architectural visuals (images) from PDF documents in a document repository of `TU Delft<https://www.tudelft.nl>`, including images' captions, while maintaining references to where a visual is located (page). Architectural visuals of interest were divided into two categories: image- and vector-based. Image-based visuals include photos, 3D renders and collages. Vector-based visuals include floorplans and maps embedded in the PDF in a scalable format. To achieve this, we explored several tools and approaches.
 
 Tools 
 -----
